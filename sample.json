@@ -1,0 +1,32 @@
+{
+  "bridged - wireless": {
+    "epoch_start": 1536336852.114756000,
+    "epoch_end":   1536336922.971244000,
+    "pcap_len":    70.856488000
+  },
+  "bridged - wired": {
+    "epoch_start": 1536337150.083103000,
+    "epoch_end":   1536337220.967570000,
+    "pcap_len":    70.884467000
+  },
+  "nat - wireless": {
+    "epoch_start": 1536337988.081285000,
+    "epoch_end":   1536338058.951763000,
+    "pcap_len":    70.870478000
+  },
+  "nat - wired": {
+    "epoch_start": 1536337405.403716000,
+    "epoch_end":   1536337475.443389000,
+    "pcap_len":    70.039673000
+  },
+  "nat - client": {
+    "epoch_start": 1536337313.157309000,
+    "epoch_end":   1536337355.457702000,
+    "pcap_len":    42.300393000
+  },
+  "bridged - client": {
+    "epoch_start": 1536336637.111354000,
+    "epoch_end":   1536336658.863242000,
+    "pcap_len":    21.751888000
+  }
+}
