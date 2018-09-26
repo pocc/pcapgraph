@@ -53,8 +53,8 @@ Formats:
 """
 import docopt
 
-from src.parse_options import parse_cli_args, get_tshark_status, get_pcap_data
-from src.draw_graph import draw_graph
+from pcapgraph.parse_options import parse_cli_args, get_tshark_status, get_pcap_data
+from pcapgraph.draw_graph import draw_graph
 
 
 def main():

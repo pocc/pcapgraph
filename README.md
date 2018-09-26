@@ -1,14 +1,19 @@
 # PcapGraph
 *This has been tested on python3.5. It would be prudent to use this version 
 of python or later.*
-## Scenario
+
+PcapGraph takes packet captures and creates a bar graph out of the start/end
+timestamps. If the --compare option is used, packet captures are compared 
+packet by packet to find what percentage of traffic is the same.  
+## Use case
+### Scenario
 * You have a bunch of packet captures all from multiple interfaces on a 
 network
 * You need to verify that they were taken at the same time and contain the 
 same packets 
  
-## Solution
-Use pcapgraph to visually see where there is time overlap and traffic overlap.
+### Solution
+Use pcapgraph to visually see where there is time and traffic overlap.
 
 ## Setup & run example
 

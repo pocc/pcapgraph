@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright 2018 Ross Jacobs All Rights Reserved.
 #
@@ -12,3 +13,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""setup file."""
+from distutils.core import setup
+from pcapgraph import __version__
+
+setup(name='PcapGraph',
+      version=__version__,
+      description='Create a graph out of packet captures',
+      author='Ross Jacobs',
+      author_email='whim42+pcapgraph@gmail.com',
+      url='https://www.github.com/pocc/pcapgraph/',
+      license='Apache 2',
+      packages=['pcapgraph'],
+      )
