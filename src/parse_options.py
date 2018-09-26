@@ -54,7 +54,7 @@ def parse_cli_args(args):
         if args['--compare']:  # Compare will double processing time.
             est_time *= 2
         if est_time > 1000:
-            print("\nEstimated time to complete is greater than 10 seconds. "
+            print("\nEstimated time to complete is greater than 10 seconds "
                   "(i.e. grab a cup of coffee).\n")
 
     return filenames
@@ -88,6 +88,8 @@ def get_pcap_data(filenames, has_compare_pcaps):
         filename_sans_path = os.path.splitext(os.path.basename(filename))[0]
         if has_compare_pcaps:
             pivot_file_similarity = get_pcap_similarity(pivot_pcap, filename)
+            if pivot_file_similarity == 0:
+                pivot_file_similarity = '0'  # So that a number% is shown.
         else:
             pivot_file_similarity = None
         pcap_data[filename_sans_path] = {
@@ -104,7 +106,7 @@ def get_pcap_similarity(pivot_pcap, other_pcap):
     """Compare the pivot pcap to another file.
 
     Take two packet captures and then compare each packet in one to each
-    packet in the other by IP ID and IP header checksum. Frames are not
+    packet in the other by IP ID and other filters. Frames are not
     considered as there is no good way to verify that one frame is the same
     as another. FCS is discarded by the capturing device and is not
     present in packet captures.
@@ -119,18 +121,19 @@ def get_pcap_similarity(pivot_pcap, other_pcap):
     """
     # Iterate over all packets with the given frame number.
     pcap_starttime = time.time()
-    print("-c flag selected. Comparison starting...")
+    print("--compare percent similar is starting... ", end='')
     pivot_raw_output = subprocess.check_output(
-        ['tshark -n -r ' + pivot_pcap +
-         ' -2 -Y ip -T fields -e ip.id -e ip.checksum'], shell=True)
-    pivot_pkts = str(pivot_raw_output.decode('utf8')).split('\n')
+        ['tshark -n -r ' + pivot_pcap + ' -2 -Y ip -T fields -e ip.id -e '
+         'ip.src -e ip.dst -e tcp.ack -e tcp.seq -e udp.srcport'], shell=True)
+    pivot_pkts = set(str(pivot_raw_output.decode('utf8')).split('\n'))
     other_raw_output = subprocess.check_output(
-        ['tshark -n -r ' + other_pcap +
-         ' -2 -Y ip -T fields -e ip.id -e ip.checksum'], shell=True)
-    other_pkts = str(other_raw_output.decode('utf8')).split('\n')
+        ['tshark -n -r ' + other_pcap + ' -2 -Y ip -T fields -e ip.id -e '
+         'ip.src -e ip.dst -e tcp.ack -e tcp.seq -e udp.srcport'], shell=True)
+    other_pkts = set(str(other_raw_output.decode('utf8')).split('\n'))
     total_count = len(pivot_pkts)
-    similarity_count = len(set(pivot_pkts).intersection(other_pkts))
+    same_pkts = set(pivot_pkts).intersection(other_pkts)
+    similarity_count = len(same_pkts)
     percent_same = round(100 * (similarity_count / total_count))
-    print("Comparison has taken", time.time() - pcap_starttime, 'seconds.')
+    print("and took", time.time() - pcap_starttime, 'seconds.')
 
     return percent_same

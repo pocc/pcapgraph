@@ -46,7 +46,11 @@ def draw_graph(pcap_times, save_fmt, output_fmt):
         for pcap in sorted(pcap_times.keys()):
             start_times.append(pcap_times[pcap]['pcap_starttime'])
             end_times.append(pcap_times[pcap]['pcap_endtime'])
-            pcap_names.append(pcap)
+            similarity = ''
+            similarity_percent = pcap_times[pcap]['pivot_similarity']
+            if similarity_percent:
+                similarity = ' (' + str(similarity_percent) + '%)'
+            pcap_names.append(pcap + similarity)  # Add percentage if it exists
 
         fig, ax = plt.subplots()
 
@@ -81,7 +85,6 @@ def draw_graph(pcap_times, save_fmt, output_fmt):
         # Use 0.95 for top because tight_layout does not consider suptitle
         plt.tight_layout(rect=[0, 0, 1, 0.95])
         if save_fmt:
-            print(save_fmt)
             plt.savefig('pcap_graph.' + save_fmt, format=save_fmt)
             print(save_fmt, "file successfully created!")
         else:
@@ -90,8 +93,8 @@ def draw_graph(pcap_times, save_fmt, output_fmt):
 
 def make_text_not_war(pcap_times):
     """Make text given pcap times."""
-    result_string = '\nPCAP NAME        DATE 0  DATE $    TIME 0    TIME $' \
-                    + '      UTC 0' + 14*' ' + 'UTC $'
+    result_string = 'PCAP NAME            DATE 0  DATE $    TIME 0    ' \
+                    'TIME $      UTC 0' + 14*' ' + 'UTC $'
     for pcap in sorted(pcap_times.keys()):
         pcap_pretty_startdate = datetime.datetime.fromtimestamp(
             pcap_times[pcap]['pcap_starttime']).strftime('%b-%d')
@@ -103,12 +106,14 @@ def make_text_not_war(pcap_times):
             pcap_times[pcap]['pcap_endtime']).strftime('%H:%M:%S')
         if pcap_times[pcap]['pivot_similarity']:
             pcap_name_string = '(' + "{: >3}".format(
-                str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap
+                str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
         else:
-            pcap_name_string = pcap
+            pcap_name_string = pcap[:18]  # Truncate if too long
 
-        result_string += \
-            "\n{: <16} {: <7} {: <9} {: <9} {: <11} {: <18} {: <18}".format(
+        # Formatter creates a bunch of columns aligned left with num spacing.
+        format_string = "\n{: <20} {: <7} " \
+                        "{: <9} {: <9} {: <11} {: <18} {: <18}"
+        result_string += format_string.format(
                 pcap_name_string,
                 pcap_pretty_startdate,
                 pcap_pretty_enddate,

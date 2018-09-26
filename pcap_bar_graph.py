@@ -15,7 +15,7 @@
 """PcapGraph
 
 Usage:
-  pcapgraph <file>... [-f <format>] [-s] [-c]
+  pcapgraph <file>... [--format <format>] [-s] [-c]
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
 
@@ -24,7 +24,7 @@ Options:
                         ip.checksum to find the percent of packets that
                         match exactly. (See About for more details).
   -h, --help            Show this screen.
-  -f, --format          Output results as a file instead of a popup.
+      --format <format> Output results as a file instead of a popup.
   -s, --show            Print the graph to the screen. If the format 'txt' is
                         selected, print to stdout instead of a text file.
   -v, --version         Show PcapGraph's version.
