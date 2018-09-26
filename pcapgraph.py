@@ -38,7 +38,7 @@ About:
   specified This is useful in determining overlap of pcaps; however,
   this is slow, so you may want to filter your pcaps before using this option.
 
-  Comparison speed tests *per file* added (on a 6-year-old laptop):
+  Comparison speed tests *per file* added as param (on a 6-year-old laptop):
     25K packets x 25K packets: 6s without -c, 12s with -c
     50K packets x 50K packets: 10s without -c, 20s with -c
     100K packets x 100K packets: 25s without -c, 50s with -c

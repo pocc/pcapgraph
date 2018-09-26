@@ -1,0 +1,2 @@
+[MASTER]
+ignore=__pycache__,.git,.idea,.virtualenv,venv,vendor,build,dist

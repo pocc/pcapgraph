@@ -21,11 +21,18 @@ import time
 
 
 def parse_cli_args(args):
-    """Parse args with docopt. Return a list of filenames"""
+    """Parse args with docopt. Return a list of filenames
+
+    Args:
+        args (dict): Dict of args that have been passed in via docopt.
+    Return:
+        (list): List of filepaths
+    """
     filenames = []
-    pcap_extensions = ['.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0',
-                       '.TRC1', '.enc', '.trc', '.fdc', '.syc', '.bfr',
-                       '.tr1', '.snoop']
+    pcap_extensions = [
+        '.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0', '.TRC1', '.enc',
+        '.trc', '.fdc', '.syc', '.bfr', '.tr1', '.snoop'
+    ]
     if args['--version']:
         print('PcapGraph v1.0.0\nLicense: Apache 2')
         sys.exit()
@@ -42,7 +49,7 @@ def parse_cli_args(args):
             sys.exit()
         filenames.append(filename)
         # Save size in MB
-        filesizes.append(os.stat(filename).st_size / 10 ** 6)
+        filesizes.append(os.stat(filename).st_size / 10**6)
 
     if args['<file>']:
         # A 100MB file is ~ 100K packets. Lazy math indicates that
@@ -50,7 +57,7 @@ def parse_cli_args(args):
         # expected 1 billion packet comparisons, let the user know.
         est_time = 0
         for filesize in filesizes:
-            est_time += filesizes[0]*filesize
+            est_time += filesizes[0] * filesize
         if args['--compare']:  # Compare will double processing time.
             est_time *= 2
         if est_time > 1000:
@@ -70,7 +77,14 @@ def get_tshark_status():
 
 
 def get_pcap_data(filenames, has_compare_pcaps):
-    """Return a dict with names of pcap files and their start/stop times."""
+    """Return a dict with names of pcap files and their start/stop times.
+
+    Args:
+        filenames (list): A list of filepaths.
+        has_compare_pcaps (bool): Has the user has provided the '-c' option.
+    Return:
+        (dict): A dict with all of the data that graph functions need.
+    """
     pcap_data = {}
     # The pivot is compared against to see how much traffic is the same.
     pivot_pcap = filenames[0]
@@ -123,12 +137,18 @@ def get_pcap_similarity(pivot_pcap, other_pcap):
     pcap_starttime = time.time()
     print("--compare percent similar is starting... ", end='')
     pivot_raw_output = subprocess.check_output(
-        ['tshark -n -r ' + pivot_pcap + ' -2 -Y ip -T fields -e ip.id -e '
-         'ip.src -e ip.dst -e tcp.ack -e tcp.seq -e udp.srcport'], shell=True)
+        [
+            'tshark -n -r ' + pivot_pcap + ' -2 -Y ip -T fields -e ip.id -e '
+            'ip.src -e ip.dst -e tcp.ack -e tcp.seq -e udp.srcport'
+        ],
+        shell=True)
     pivot_pkts = set(str(pivot_raw_output.decode('utf8')).split('\n'))
     other_raw_output = subprocess.check_output(
-        ['tshark -n -r ' + other_pcap + ' -2 -Y ip -T fields -e ip.id -e '
-         'ip.src -e ip.dst -e tcp.ack -e tcp.seq -e udp.srcport'], shell=True)
+        [
+            'tshark -n -r ' + other_pcap + ' -2 -Y ip -T fields -e ip.id -e '
+            'ip.src -e ip.dst -e tcp.ack -e tcp.seq -e udp.srcport'
+        ],
+        shell=True)
     other_pkts = set(str(other_raw_output.decode('utf8')).split('\n'))
     total_count = len(pivot_pkts)
     same_pkts = set(pivot_pkts).intersection(other_pkts)
