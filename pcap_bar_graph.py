@@ -1,44 +1,48 @@
 # -*- coding: utf-8 -*-
+# Copyright 2018 Ross Jacobs All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""PcapGraph
 
-import json
+Usage:
+  pcapgraph [-t | --text]  <file>...
+  pcapgraph (-h | --help)
+  pcapgraph (-v | --version)
 
-import matplotlib.pyplot as plt
-import numpy as np
-import datetime
+Options:
+  -h, --help            Show this screen.
+  -v, --version         Show PcapGraph's version.
+  -t, --text            Output results as markdown text instead of a graph
 
-with open('sample.json') as json_data:
-    pcap_times = json.load(json_data)
-    json_data.close()
-start_times = []
-end_times = []
-for pcap in sorted(pcap_times.keys()):
-    start_times.append(pcap_times[pcap]['epoch_start'])
-    end_times.append(pcap_times[pcap]['epoch_end'])
+About:
+  PcapGraph is used to determine whether
+"""
 
-print(start_times)
-print(end_times)
 
-fig, ax = plt.subplots()
+import docopt
 
-begin = np.array(start_times)
-end = np.array(end_times)
-first = min(start_times)
-last = max(end_times)
+from parse_options import parse_cli_args, get_tshark_status, get_pcap_data
+from draw_graph import draw_graph
 
-plt.barh(range(len(begin)),  end-begin, left=begin)
 
-step = (last - first) / 10
-x_ticks = [first]
-for i in range(9):
-    x_ticks.append(x_ticks[i] + step)
+def main():
+    """Main function."""
+    args = docopt.docopt(__doc__)
+    filenames = parse_cli_args(args)
+    get_tshark_status()  # PcapGraph requires tshark, so quit if it not installed
+    pcap_dict = get_pcap_data(filenames)
+    draw_graph(pcap_dict)
 
-for i in range(10):
-    x_ticks[i] = datetime.datetime.fromtimestamp(x_ticks[i]).strftime(
-        '%b-%d   %H:%M:%S')
-    print(x_ticks[i])
-ax.set_xticklabels(x_ticks)
-ax.set_xticks(np.round(np.linspace(first, last, 10), 2))
-plt.xticks(rotation=90)
-plt.yticks(range(len(begin)), sorted(pcap_times.keys(), reverse=True))
-plt.tight_layout()
-plt.show()
+
+if __name__ == '__main__':
+    main()
