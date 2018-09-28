@@ -25,8 +25,6 @@ Options:
                         match exactly. (See About for more details).
   -h, --help            Show this screen.
       --format <format> Output results as a file instead of a popup.
-  -s, --show            Print the graph to the screen. If the format 'txt' is
-                        selected, print to stdout instead of a text file.
   -v, --version         Show PcapGraph's version.
 
 About:
@@ -39,9 +37,9 @@ About:
   this is slow, so you may want to filter your pcaps before using this option.
 
   Comparison speed tests *per file* added as param (on a 6-year-old laptop):
-    25K packets x 25K packets: 6s without -c, 12s with -c
-    50K packets x 50K packets: 10s without -c, 20s with -c
-    100K packets x 100K packets: 25s without -c, 50s with -c
+    25K packets x 25K packets: 12s with -c, 6s without
+    50K packets x 50K packets: 20s with -c, 10s without
+    100K packets x 100K packets: 50s with -c, 25s without
 
 Formats:
   Export formats are dependent on OS capabilities. Formats may include:
@@ -53,8 +51,10 @@ Formats:
 """
 import docopt
 
-from pcapgraph.parse_options import parse_cli_args, get_tshark_status, get_pcap_data
-from pcapgraph.draw_graph import draw_graph
+from parse_options import parse_cli_args
+from parse_options import get_tshark_status
+from parse_options import get_pcap_data
+from draw_graph import draw_graph
 
 
 def main():
@@ -63,7 +63,7 @@ def main():
     filenames = parse_cli_args(args)
     get_tshark_status()  # PcapGraph requires tshark, so quit if not installed
     pcap_dict = get_pcap_data(filenames, has_compare_pcaps=args['--compare'])
-    draw_graph(pcap_dict, save_fmt=args['--format'], output_fmt=args['--show'])
+    draw_graph(pcap_dict, save_fmt=args['--format'])
 
 
 if __name__ == '__main__':

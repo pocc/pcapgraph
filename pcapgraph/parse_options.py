@@ -70,7 +70,10 @@ def parse_cli_args(args):
 def get_tshark_status():
     """Errors and quits if tshark is not installed."""
     try:
-        subprocess.check_output(['tshark -h'], shell=True)
+        # tshark is not necessarily on path in Windows, even if installed.
+        if sys.platform == 'win32':
+            os.chdir('C:\\Program Files\\Wireshark')
+        subprocess.check_output(['tshark', '-v'], shell=True)
     except subprocess.CalledProcessError as err:
         print("ERROR: tshark is not installed!", err)
         sys.exit()
@@ -88,14 +91,20 @@ def get_pcap_data(filenames, has_compare_pcaps):
     pcap_data = {}
     # The pivot is compared against to see how much traffic is the same.
     pivot_pcap = filenames[0]
+    if sys.platform == 'win32':
+        count_lines = ['cmd /c find /v /c \"\"']
+        tshark_cmd = 'cmd /c "C:\\Program Files\\Wireshark\\tshark.exe"'
+    else:
+        count_lines = 'wc -l'
+        tshark_cmd = 'tshark'
 
     for filename in filenames:
-        pkt_ct_cmd = 'tshark -r ' + filename + ' -2 | wc -l'
+        pkt_ct_cmd = 'tshark -r ' + filename + ' -2 ' + count_lines
         packet_count = int(subprocess.check_output([pkt_ct_cmd], shell=True))
         start_unixtime_cmd = 'tshark -r ' + filename + ' -2 -Y frame.' \
             'number==1 -T fields -e frame.time_epoch'
         pcap_start = subprocess.check_output([start_unixtime_cmd], shell=True)
-        end_unixtime_cmd = 'tshark -r ' + filename + ' -2 -Y frame.' \
+        end_unixtime_cmd = tshark_cmd + '-r ' + filename + ' -2 -Y frame.' \
             'number==' + str(packet_count) + ' -T fields -e frame.time_epoch'
         pcap_end = subprocess.check_output([end_unixtime_cmd], shell=True)
 

@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def draw_graph(pcap_times, save_fmt, output_fmt):
+def draw_graph(pcap_times, save_fmt):
     """Draw a graph using matplotlib and numpy.
 
     Args:
@@ -33,31 +33,29 @@ def draw_graph(pcap_times, save_fmt, output_fmt):
     """
     if save_fmt == 'txt':
         output_text = make_text_not_war(pcap_times)
-        if output_fmt:
-            print(output_text)
-        else:
-            with open('pcap_graph.txt', 'w') as file:
-                file.write(output_text)
-                file.close()
-            print("Text file successfully created!")
+        print(output_text)
+        with open('pcap_graph.txt', 'w') as file:
+            file.write(output_text)
+            file.close()
+        print("Text file successfully created!")
     else:
-        start_times = []
-        end_times = []
-        pcap_names = []
-        for pcap in sorted(pcap_times.keys()):
-            start_times.append(pcap_times[pcap]['pcap_starttime'])
-            end_times.append(pcap_times[pcap]['pcap_endtime'])
-            similarity = ''
-            similarity_percent = pcap_times[pcap]['pivot_similarity']
-            if similarity_percent:
-                similarity = ' (' + str(similarity_percent) + '%)'
-            pcap_names.append(pcap + similarity)  # Add percentage if it exists
-
-        make_graph(start_times, end_times, pcap_names, save_fmt)
+        make_graph(pcap_times, save_fmt)
 
 
-def make_graph(start_times, end_times, pcap_names, save_fmt):
+def make_graph(pcap_times, save_fmt):
     """Generate the matplotlib graph."""
+    start_times = []
+    end_times = []
+    pcap_names = []
+    for pcap in sorted(pcap_times.keys()):
+        start_times.append(pcap_times[pcap]['pcap_starttime'])
+        end_times.append(pcap_times[pcap]['pcap_endtime'])
+        similarity = ''
+        similarity_percent = pcap_times[pcap]['pivot_similarity']
+        if similarity_percent:
+            similarity = ' (' + str(similarity_percent) + '%)'
+        pcap_names.append(pcap + similarity)  # Add percentage if it exists
+
     fig, axes = plt.subplots()
 
     begin = np.array(start_times)
@@ -65,7 +63,7 @@ def make_graph(start_times, end_times, pcap_names, save_fmt):
     first = min(start_times)
     last = max(end_times)
 
-    plt.barh(range(len(begin)), end - begin, left=begin)
+    plt.barh(range(len(begin)), end - begin, left=begin, color='red')
 
     step = (last - first) / 9
     x_ticks = [first]
@@ -94,6 +92,8 @@ def make_graph(start_times, end_times, pcap_names, save_fmt):
         plt.savefig('pcap_graph.' + save_fmt, format=save_fmt)
         print(save_fmt, "file successfully created!")
     else:
+        # Show text in stdout because this is show mode.
+        make_text_not_war(pcap_times)
         plt.show()
 
 
