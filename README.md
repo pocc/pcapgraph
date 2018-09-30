@@ -15,14 +15,18 @@ same packets
 ### Solution
 Use pcapgraph to visually see where there is time and traffic overlap.
 
-## Setup & run example
+## Installation
+##### 1. Install Wireshark
+* These package managers have it in their repositories:
+`apt`, `dnf`, `pacman`, `brew`, `choco`, `...`
+* You can also download precompiled binaries [here](https://www.wireshark.org/download.html)
 
-    pip install -r requirements.txt
-    python pcapgraph.py -c examples/simul1.pcap examples/simul2.pcap 
-        examples/simul3.pcap
-
+##### 2. Install pcapgraph with pip
+    pip install --user pcapgraph
+    
 ## Examples
 ![Alt text](/examples/pcap_graph.png?raw=true "An example graph.")
+
 Above is an example graph generated with a 
 [script](/examples/generate_example_pcaps.py) that pings and nslookups once 
 per second. 

@@ -14,10 +14,11 @@
 # limitations under the License.
 """Parse CLI options"""
 
-import subprocess
 import sys
 import os
 import time
+import webbrowser
+import subprocess as sp
 
 
 def parse_cli_args(args):
@@ -73,9 +74,12 @@ def get_tshark_status():
         # tshark is not necessarily on path in Windows, even if installed.
         if sys.platform == 'win32':
             os.chdir('C:\\Program Files\\Wireshark')
-        subprocess.check_output(['tshark', '-v'], shell=True)
-    except subprocess.CalledProcessError as err:
-        print("ERROR: tshark is not installed!", err)
+        sp.Popen(['tshark', '-v'], stdout=sp.PIPE)
+    except FileNotFoundError as err:
+        print("ERROR: Requirement tshark from Wireshark is not satisfied!",
+              "\n       Please download Wireshark and try again.\n\n",
+              err)
+        webbrowser.open('https://www.wireshark.org/download.html')
         sys.exit()
 
 
@@ -92,21 +96,27 @@ def get_pcap_data(filenames, has_compare_pcaps):
     # The pivot is compared against to see how much traffic is the same.
     pivot_pcap = filenames[0]
     if sys.platform == 'win32':
-        count_lines = ['cmd /c find /v /c \"\"']
-        tshark_cmd = 'cmd /c "C:\\Program Files\\Wireshark\\tshark.exe"'
+        # To use subprocess on windows, pass in a list of commands to Popen
+        tshark_cmds = ['cmd', '/c', 'C:\\"Program Files"\\Wireshark\\tshark']
     else:
-        count_lines = 'wc -l'
-        tshark_cmd = 'tshark'
+        tshark_cmds = ['tshark']
 
     for filename in filenames:
-        pkt_ct_cmd = 'tshark -r ' + filename + ' -2 ' + count_lines
-        packet_count = int(subprocess.check_output([pkt_ct_cmd], shell=True))
-        start_unixtime_cmd = 'tshark -r ' + filename + ' -2 -Y frame.' \
-            'number==1 -T fields -e frame.time_epoch'
-        pcap_start = subprocess.check_output([start_unixtime_cmd], shell=True)
-        end_unixtime_cmd = tshark_cmd + '-r ' + filename + ' -2 -Y frame.' \
-            'number==' + str(packet_count) + ' -T fields -e frame.time_epoch'
-        pcap_end = subprocess.check_output([end_unixtime_cmd], shell=True)
+        packet_count_cmds = [*tshark_cmds, '-r', filename, '-2']
+        pcap_text_raw = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
+        pcap_text = decode_stdout(pcap_text_raw)
+        packet_count = pcap_text.count('\n')  # Each line of output is a packet.
+
+        start_unixtime_cmds = [*tshark_cmds, '-r', filename,
+                               '-2', '-Y', 'frame.number==1',
+                               '-T', 'fields', '-e', 'frame.time_epoch']
+        end_unixtime_cmds = [*tshark_cmds, '-r', filename,
+                             '-2', '-Y', 'frame.number==' + str(packet_count),
+                             '-T', 'fields', '-e', 'frame.time_epoch']
+        pcap_start_raw = sp.Popen(start_unixtime_cmds, stdout=sp.PIPE)
+        pcap_end_raw = sp.Popen(end_unixtime_cmds, stdout=sp.PIPE)
+        pcap_start = decode_stdout(pcap_start_raw)
+        pcap_end = decode_stdout(pcap_end_raw)
 
         filename_sans_path = os.path.splitext(os.path.basename(filename))[0]
         if has_compare_pcaps:
@@ -123,6 +133,11 @@ def get_pcap_data(filenames, has_compare_pcaps):
         }
 
     return pcap_data
+
+
+def decode_stdout(stdout):
+    """Given stdout, return the string."""
+    return stdout.communicate()[0].decode('utf-8')
 
 
 def get_pcap_similarity(pivot_pcap, other_pcap):

@@ -29,7 +29,6 @@ def draw_graph(pcap_times, save_fmt):
             on the capabilites of the system: [png, pdf, ps, eps, and svg]. See
             https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
             for more information.
-        output_fmt (bool): (1) print to the screen/stdout (0) print to a file
     """
     if save_fmt == 'txt':
         output_text = make_text_not_war(pcap_times)
@@ -63,7 +62,13 @@ def make_graph(pcap_times, save_fmt):
     first = min(start_times)
     last = max(end_times)
 
-    plt.barh(range(len(begin)), end - begin, left=begin, color='red')
+    barlist = plt.barh(range(len(begin)), end - begin, left=begin)
+    colors = ['#2d89ef', '#603cba', '#2b5797', '#e3a21a', '#99b433', '#da532c',
+              '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#b91d47']
+    color_count = len(colors)
+    for i, bar in enumerate(barlist):
+        color = colors[i % color_count]
+        bar.set_color(color)
 
     step = (last - first) / 9
     x_ticks = [first]
@@ -93,7 +98,7 @@ def make_graph(pcap_times, save_fmt):
         print(save_fmt, "file successfully created!")
     else:
         # Show text in stdout because this is show mode.
-        make_text_not_war(pcap_times)
+        print(make_text_not_war(pcap_times))
         plt.show()
 
 
@@ -103,8 +108,8 @@ def make_text_not_war(pcap_times):
     Return:
         (string): Full textstring of text to written to file/stdout
     """
-    result_string = 'PCAP NAME            DATE 0  DATE $    TIME 0    ' \
-                    'TIME $      UTC 0' + 14*' ' + 'UTC $'
+    result_string = 'PCAP NAME           DATE 0  DATE $     TIME 0    ' \
+                    'TIME $       UTC 0' + 14*' ' + 'UTC $'
     for pcap in sorted(pcap_times.keys()):
         pcap_pretty_startdate = datetime.datetime.fromtimestamp(pcap_times[
             pcap]['pcap_starttime']).strftime('%b-%d')
@@ -118,11 +123,11 @@ def make_text_not_war(pcap_times):
             pcap_name_string = '(' + "{: >3}".format(
                 str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
         else:
-            pcap_name_string = pcap[:18]  # Truncate if too long
+            pcap_name_string = pcap[:17]  # Truncate if too long
 
         # Formatter creates a bunch of columns aligned left with num spacing.
-        format_string = "\n{: <20} {: <7} " \
-                        "{: <9} {: <9} {: <11} {: <18} {: <18}"
+        format_string = "\n{: <19} {: <7} " \
+                        "{: <10} {: <9} {: <12} {: <18} {: <18}"
         result_string += format_string.format(
             pcap_name_string,
             pcap_pretty_startdate,
