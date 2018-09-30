@@ -95,11 +95,7 @@ def get_pcap_data(filenames, has_compare_pcaps):
     pcap_data = {}
     # The pivot is compared against to see how much traffic is the same.
     pivot_pcap = filenames[0]
-    if sys.platform == 'win32':
-        # To use subprocess on windows, pass in a list of commands to Popen
-        tshark_cmds = ['cmd', '/c', 'C:\\"Program Files"\\Wireshark\\tshark']
-    else:
-        tshark_cmds = ['tshark']
+    tshark_cmds = get_tshark_cmds()
 
     for filename in filenames:
         packet_count_cmds = [*tshark_cmds, '-r', filename, '-2']
@@ -140,6 +136,14 @@ def decode_stdout(stdout):
     return stdout.communicate()[0].decode('utf-8')
 
 
+def get_tshark_cmds():
+    """Get OS-specific tshark commands. Assuming 64-bit Windows."""
+    if sys.platform == 'win32':
+        return ['cmd', '/c', 'C:\\"Program Files"\\Wireshark\\tshark']
+    else:
+        return ['tshark']
+
+
 def get_pcap_similarity(pivot_pcap, other_pcap):
     """Compare the pivot pcap to another file.
 
@@ -152,32 +156,28 @@ def get_pcap_similarity(pivot_pcap, other_pcap):
     tshark produces two IP headers for ICMP packets. This is expected behavior.
 
     Args:
-        pivot_pcap (string): Filename of the pivot pcap
+        pivot_pcap (string): Filename of the pivot pcap (argv[1])
         other_pcap (string): Filename of the pcap to compare to the privot pcap
     Return:
         (int) 1-3 digit percentage similarity between the two files
     """
     # Iterate over all packets with the given frame number.
     pcap_starttime = time.time()
-    print("--compare percent similar is starting... ", end='')
-    pivot_raw_output = subprocess.check_output(
-        [
-            'tshark -n -r ' + pivot_pcap + ' -2 -Y ip -T fields -e ip.id -e '
-            'ip.src -e ip.dst -e tcp.ack -e tcp.seq -e udp.srcport'
-        ],
-        shell=True)
-    pivot_pkts = set(str(pivot_raw_output.decode('utf8')).split('\n'))
-    other_raw_output = subprocess.check_output(
-        [
-            'tshark -n -r ' + other_pcap + ' -2 -Y ip -T fields -e ip.id -e '
-            'ip.src -e ip.dst -e tcp.ack -e tcp.seq -e udp.srcport'
-        ],
-        shell=True)
-    other_pkts = set(str(other_raw_output.decode('utf8')).split('\n'))
+    print("--compare percent similar starting for", other_pcap + "... ")
+    tshark_cmds = get_tshark_cmds()
+    tshark_filters = [
+        '-2', '-Y', 'ip', '-T', 'fields', '-e', 'ip.id', '-e', 'ip.src', '-e',
+        'ip.dst', '-e', 'tcp.ack', '-e', 'tcp.seq', '-e', 'udp.srcport']
+    pivot_cmds = [*tshark_cmds, '-r', pivot_pcap, *tshark_filters]
+    other_cmds = [*tshark_cmds, '-r', other_pcap, *tshark_filters]
+    pivot_raw_output = sp.Popen(pivot_cmds, stdout=sp.PIPE)
+    pivot_pkts = set(decode_stdout(pivot_raw_output).split('\n'))
+    other_raw_output = sp.Popen(other_cmds, stdout=sp.PIPE)
+    other_pkts = set(decode_stdout(other_raw_output).split('\n'))
     total_count = len(pivot_pkts)
     same_pkts = set(pivot_pkts).intersection(other_pkts)
     similarity_count = len(same_pkts)
     percent_same = round(100 * (similarity_count / total_count))
-    print("and took", time.time() - pcap_starttime, 'seconds.')
+    print("\tand it took", time.time() - pcap_starttime, 'seconds.')
 
     return percent_same

@@ -94,7 +94,10 @@ def make_graph(pcap_times, save_fmt):
     # Use 0.95 for top because tight_layout does not consider suptitle
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     if save_fmt:
-        plt.savefig('pcap_graph.' + save_fmt, format=save_fmt)
+        pivot_file = pcap_names[0].split(' ')[0] + '.'
+        plt.savefig('pcap_graph-' + pivot_file + save_fmt,
+                    format=save_fmt,
+                    transparent=True)
         print(save_fmt, "file successfully created!")
     else:
         # Show text in stdout because this is show mode.
