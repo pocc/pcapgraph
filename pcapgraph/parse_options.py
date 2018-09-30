@@ -72,13 +72,14 @@ def get_tshark_status():
     """Errors and quits if tshark is not installed."""
     try:
         # tshark is not necessarily on path in Windows, even if installed.
-        if sys.platform == 'win32':
-            os.chdir('C:\\Program Files\\Wireshark')
-        sp.Popen(['tshark', '-v'], stdout=sp.PIPE)
+        tshark = get_tshark_cmds()
+        sp.Popen([*tshark, '-v'], stdout=sp.PIPE)
     except FileNotFoundError as err:
-        print("ERROR: Requirement tshark from Wireshark is not satisfied!",
-              "\n       Please download Wireshark and try again.\n\n",
-              err)
+        print(err,
+              "\nERROR: Requirement tshark from Wireshark is not satisfied!",
+              "\n       Please download Wireshark and try again.",
+              "\n\nOpening Wireshark download page...")
+        time.sleep(2)
         webbrowser.open('https://www.wireshark.org/download.html')
         sys.exit()
 
@@ -175,6 +176,7 @@ def get_pcap_similarity(pivot_pcap, other_pcap):
     other_raw_output = sp.Popen(other_cmds, stdout=sp.PIPE)
     other_pkts = set(decode_stdout(other_raw_output).split('\n'))
     total_count = len(pivot_pkts)
+    # Use python's set functions to find the fastest intersection of packets.
     same_pkts = set(pivot_pkts).intersection(other_pkts)
     similarity_count = len(same_pkts)
     percent_same = round(100 * (similarity_count / total_count))

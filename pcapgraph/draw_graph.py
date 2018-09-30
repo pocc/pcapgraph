@@ -15,6 +15,7 @@
 """Draw graph will draw a text or image graph."""
 
 import datetime
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -63,8 +64,9 @@ def make_graph(pcap_times, save_fmt):
     last = max(end_times)
 
     barlist = plt.barh(range(len(begin)), end - begin, left=begin)
-    colors = ['#2d89ef', '#603cba', '#2b5797', '#e3a21a', '#99b433', '#da532c',
-              '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#b91d47']
+    # Darker Metro UI color hex codes
+    colors = ['#2d89ef', '#603cba', '#2b5797', '#b91d47', '#99b433', '#da532c',
+              '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a']
     color_count = len(colors)
     for i, bar in enumerate(barlist):
         color = colors[i % color_count]
@@ -87,15 +89,16 @@ def make_graph(pcap_times, save_fmt):
     for tick in axes.xaxis.get_majorticklabels():
         tick.set_horizontalalignment("right")
     # Pcap names as y ticks. Position them halfway up the bar.
-    plt.yticks(np.arange(0.5, len(pcap_names), step=1), pcap_names)
+    plt.yticks(np.arange(len(pcap_names), step=1), pcap_names)
     axes.set_xlabel('Time', fontsize=16)
     axes.set_ylabel('Pcap Name', fontsize=16)
     fig.suptitle('Pcap Time Analysis', fontsize=20)
     # Use 0.95 for top because tight_layout does not consider suptitle
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     if save_fmt:
+        this_folder = os.getcwd()
         pivot_file = pcap_names[0].split(' ')[0] + '.'
-        plt.savefig('pcap_graph-' + pivot_file + save_fmt,
+        plt.savefig(this_folder + '\\pcap_graph-' + pivot_file + save_fmt,
                     format=save_fmt,
                     transparent=True)
         print(save_fmt, "file successfully created!")
