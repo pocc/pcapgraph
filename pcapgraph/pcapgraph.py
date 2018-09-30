@@ -15,7 +15,8 @@
 """PcapGraph
 
 Usage:
-  pcapgraph <file>... [--format <format>] [-s] [-c]
+  pcapgraph [-s] [-c] [-V] [--format <format>]
+    (--directory <dir>... | <file>...)
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
 
@@ -23,9 +24,12 @@ Options:
   -c, --compare         Compare all files to the first file by ip.id and
                         ip.checksum to find the percent of packets that
                         match exactly. (See About for more details).
+  -d, --directory <dir> Specify a directory instead of/addition to files.
+                        Can be used multiple times.
   -h, --help            Show this screen.
-      --format <format> Output results as a file instead of a popup.
+  -f, --format <format> Output results as a file instead of a popup.
   -v, --version         Show PcapGraph's version.
+  -V, --verbose         Provide more context to what pcapgraph is doing.
 
 About:
   PcapGraph is used to determine when packet captures were taken using the
@@ -62,7 +66,7 @@ def main():
     args = docopt.docopt(__doc__)
     filenames = parse_cli_args(args)
     get_tshark_status()  # PcapGraph requires tshark, so quit if not installed
-    pcap_dict = get_pcap_data(filenames, has_compare_pcaps=args['--compare'])
+    pcap_dict = get_pcap_data(filenames, args['--compare'], args['--verbose'])
     draw_graph(pcap_dict, save_fmt=args['--format'])
 
 

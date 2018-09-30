@@ -56,21 +56,22 @@ def make_graph(pcap_times, save_fmt):
             similarity = ' (' + str(similarity_percent) + '%)'
         pcap_names.append(pcap + similarity)  # Add percentage if it exists
 
-    fig, axes = plt.subplots()
-
     begin = np.array(start_times)
     end = np.array(end_times)
     first = min(start_times)
     last = max(end_times)
 
+    fig, axes = plt.subplots()
     barlist = plt.barh(range(len(begin)), end - begin, left=begin)
     # Darker Metro UI color hex codes
-    colors = ['#2d89ef', '#603cba', '#2b5797', '#b91d47', '#99b433', '#da532c',
-              '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a']
+    colors = [
+        '#2d89ef', '#603cba', '#2b5797', '#b91d47', '#99b433', '#da532c',
+        '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a'
+    ]
     color_count = len(colors)
-    for i, bar in enumerate(barlist):
+    for i, hbar in enumerate(barlist):
         color = colors[i % color_count]
-        bar.set_color(color)
+        hbar.set_color(color)
 
     step = (last - first) / 9
     x_ticks = [first]
@@ -79,8 +80,8 @@ def make_graph(pcap_times, save_fmt):
 
     # xticks will look like 'Dec-31   23:59:59'
     for i in range(10):
-        x_ticks[i] = datetime.datetime.fromtimestamp(x_ticks[i]).strftime(
-            '%b-%d   %H:%M:%S')
+        x_ticks[i] = datetime.datetime.fromtimestamp(
+            x_ticks[i]).strftime('%b-%d   %H:%M:%S')
 
     # Print all x labels that aren't at the lower corners
     plt.xticks(rotation=45)
@@ -98,9 +99,10 @@ def make_graph(pcap_times, save_fmt):
     if save_fmt:
         this_folder = os.getcwd()
         pivot_file = pcap_names[0].split(' ')[0] + '.'
-        plt.savefig(this_folder + '\\pcap_graph-' + pivot_file + save_fmt,
-                    format=save_fmt,
-                    transparent=True)
+        plt.savefig(
+            this_folder + '\\pcap_graph-' + pivot_file + save_fmt,
+            format=save_fmt,
+            transparent=True)
         print(save_fmt, "file successfully created!")
     else:
         # Show text in stdout because this is show mode.
@@ -117,14 +119,14 @@ def make_text_not_war(pcap_times):
     result_string = 'PCAP NAME           DATE 0  DATE $     TIME 0    ' \
                     'TIME $       UTC 0' + 14*' ' + 'UTC $'
     for pcap in sorted(pcap_times.keys()):
-        pcap_pretty_startdate = datetime.datetime.fromtimestamp(pcap_times[
-            pcap]['pcap_starttime']).strftime('%b-%d')
-        pcap_pretty_enddate = datetime.datetime.fromtimestamp(pcap_times[pcap][
-            'pcap_endtime']).strftime('%b-%d')
-        pcap_pretty_starttime = datetime.datetime.fromtimestamp(pcap_times[
-            pcap]['pcap_starttime']).strftime('%H:%M:%S')
-        pcap_pretty_endtime = datetime.datetime.fromtimestamp(pcap_times[pcap][
-            'pcap_endtime']).strftime('%H:%M:%S')
+        pcap_pretty_startdate = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_starttime']).strftime('%b-%d')
+        pcap_pretty_enddate = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_endtime']).strftime('%b-%d')
+        pcap_pretty_starttime = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_starttime']).strftime('%H:%M:%S')
+        pcap_pretty_endtime = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_endtime']).strftime('%H:%M:%S')
         if pcap_times[pcap]['pivot_similarity']:
             pcap_name_string = '(' + "{: >3}".format(
                 str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
@@ -141,6 +143,7 @@ def make_text_not_war(pcap_times):
             pcap_pretty_starttime,
             pcap_pretty_endtime,
             pcap_times[pcap]['pcap_starttime'],
-            pcap_times[pcap]['pcap_endtime'], )
+            pcap_times[pcap]['pcap_endtime'],
+        )
 
     return result_string

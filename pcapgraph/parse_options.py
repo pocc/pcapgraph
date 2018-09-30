@@ -39,8 +39,18 @@ def parse_cli_args(args):
         sys.exit()
 
     filesizes = []
+    cwd = os.getcwd()
+    for directory in args['--directory']:
+        dir_string = cwd + '/' + directory
+        if not os.path.isdir(dir_string):
+            print("ERROR:", directory, "not found!")
+            sys.exit()
+        for file in os.listdir(dir_string):
+            for pcap_ext in pcap_extensions:
+                if file.endswith(pcap_ext):
+                    args['<file>'].append(directory + '/' + file)
     for filename in args['<file>']:
-        if not os.path.isfile(filename):
+        if not os.path.isfile(cwd + '/' + filename):
             print("ERROR:", filename, "not found!")
             sys.exit()
         file_ext = os.path.splitext(filename)[1]
@@ -84,12 +94,13 @@ def get_tshark_status():
         sys.exit()
 
 
-def get_pcap_data(filenames, has_compare_pcaps):
+def get_pcap_data(filenames, has_compare_pcaps, verbosity):
     """Return a dict with names of pcap files and their start/stop times.
 
     Args:
         filenames (list): A list of filepaths.
         has_compare_pcaps (bool): Has the user has provided the '-c' option.
+        verbosity (bool): Whether to provide user with additional context.
     Return:
         (dict): A dict with all of the data that graph functions need.
     """
@@ -102,14 +113,17 @@ def get_pcap_data(filenames, has_compare_pcaps):
         packet_count_cmds = [*tshark_cmds, '-r', filename, '-2']
         pcap_text_raw = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
         pcap_text = decode_stdout(pcap_text_raw)
-        packet_count = pcap_text.count('\n')  # Each line of output is a packet.
+        packet_count = pcap_text.count('\n')  # Each line of output is a packet
 
-        start_unixtime_cmds = [*tshark_cmds, '-r', filename,
-                               '-2', '-Y', 'frame.number==1',
-                               '-T', 'fields', '-e', 'frame.time_epoch']
-        end_unixtime_cmds = [*tshark_cmds, '-r', filename,
-                             '-2', '-Y', 'frame.number==' + str(packet_count),
-                             '-T', 'fields', '-e', 'frame.time_epoch']
+        start_unixtime_cmds = [
+            *tshark_cmds, '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
+            'fields', '-e', 'frame.time_epoch'
+        ]
+        end_unixtime_cmds = [
+            *tshark_cmds, '-r', filename, '-2', '-Y',
+            'frame.number==' + str(packet_count), '-T', 'fields', '-e',
+            'frame.time_epoch'
+        ]
         pcap_start_raw = sp.Popen(start_unixtime_cmds, stdout=sp.PIPE)
         pcap_end_raw = sp.Popen(end_unixtime_cmds, stdout=sp.PIPE)
         pcap_start = decode_stdout(pcap_start_raw)
@@ -117,7 +131,8 @@ def get_pcap_data(filenames, has_compare_pcaps):
 
         filename_sans_path = os.path.splitext(os.path.basename(filename))[0]
         if has_compare_pcaps:
-            pivot_file_similarity = get_pcap_similarity(pivot_pcap, filename)
+            pivot_file_similarity = \
+                get_pcap_similarity(pivot_pcap, filename, verbosity)
             if pivot_file_similarity == 0:
                 pivot_file_similarity = '0'  # So that a number% is shown.
         else:
@@ -141,11 +156,10 @@ def get_tshark_cmds():
     """Get OS-specific tshark commands. Assuming 64-bit Windows."""
     if sys.platform == 'win32':
         return ['cmd', '/c', 'C:\\"Program Files"\\Wireshark\\tshark']
-    else:
-        return ['tshark']
+    return ['tshark']
 
 
-def get_pcap_similarity(pivot_pcap, other_pcap):
+def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
     """Compare the pivot pcap to another file.
 
     Take two packet captures and then compare each packet in one to each
@@ -159,16 +173,19 @@ def get_pcap_similarity(pivot_pcap, other_pcap):
     Args:
         pivot_pcap (string): Filename of the pivot pcap (argv[1])
         other_pcap (string): Filename of the pcap to compare to the privot pcap
+        verbosity (bool): Whether to provide more info to the user.
     Return:
         (int) 1-3 digit percentage similarity between the two files
     """
-    # Iterate over all packets with the given frame number.
-    pcap_starttime = time.time()
-    print("--compare percent similar starting for", other_pcap + "... ")
+    if verbosity:
+        # Iterate over all packets with the given frame number.
+        pcap_starttime = time.time()
+        print("--compare percent similar starting for", other_pcap + "... ")
     tshark_cmds = get_tshark_cmds()
     tshark_filters = [
         '-2', '-Y', 'ip', '-T', 'fields', '-e', 'ip.id', '-e', 'ip.src', '-e',
-        'ip.dst', '-e', 'tcp.ack', '-e', 'tcp.seq', '-e', 'udp.srcport']
+        'ip.dst', '-e', 'tcp.ack', '-e', 'tcp.seq', '-e', 'udp.srcport'
+    ]
     pivot_cmds = [*tshark_cmds, '-r', pivot_pcap, *tshark_filters]
     other_cmds = [*tshark_cmds, '-r', other_pcap, *tshark_filters]
     pivot_raw_output = sp.Popen(pivot_cmds, stdout=sp.PIPE)
@@ -180,6 +197,8 @@ def get_pcap_similarity(pivot_pcap, other_pcap):
     same_pkts = set(pivot_pkts).intersection(other_pkts)
     similarity_count = len(same_pkts)
     percent_same = round(100 * (similarity_count / total_count))
-    print("\tand it took", time.time() - pcap_starttime, 'seconds.')
+
+    if verbosity:
+        print("\tand it took", time.time() - pcap_starttime, 'seconds.')
 
     return percent_same
