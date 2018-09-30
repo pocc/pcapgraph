@@ -29,29 +29,57 @@ def parse_cli_args(args):
     Return:
         (list): List of filepaths
     """
-    filenames = []
-    pcap_extensions = [
-        '.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0', '.TRC1', '.enc',
-        '.trc', '.fdc', '.syc', '.bfr', '.tr1', '.snoop'
-    ]
     if args['--version']:
         print('PcapGraph v1.0.0\nLicense: Apache 2')
         sys.exit()
 
-    filesizes = []
-    cwd = os.getcwd()
-    for directory in args['--directory']:
-        dir_string = cwd + '/' + directory
+    filenames = get_filenames_from_directories(args['--dir'])
+    filenames.extend(get_filenames(args['<file>']))
+    estimated_time = get_est_computation_time(filenames, args['--compare'])
+    if estimated_time > 10:
+        print("\nEstimated time to complete is greater than 10 seconds "
+              "(i.e. grab a cup of coffee).\n")
+
+    return filenames
+
+
+def get_filenames_from_directories(directories):
+    """Get all the files from all provided directories."""
+    pcap_extensions = [
+        '.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0', '.TRC1', '.enc',
+        '.trc', '.fdc', '.syc', '.bfr', '.tr1', '.snoop'
+    ]
+    cwd = os.getcwd() + '/'
+    filenames = []
+    for directory in directories:
+        dir_string = directory
+        if "C:\\" not in directory:
+            dir_string = cwd + directory
         if not os.path.isdir(dir_string):
-            print("ERROR:", directory, "not found!")
+            print("ERROR: Directory", dir_string, "not found!")
             sys.exit()
         for file in os.listdir(dir_string):
             for pcap_ext in pcap_extensions:
                 if file.endswith(pcap_ext):
-                    args['<file>'].append(directory + '/' + file)
-    for filename in args['<file>']:
-        if not os.path.isfile(cwd + '/' + filename):
-            print("ERROR:", filename, "not found!")
+                    filenames.append(directory + '/' + file)
+
+    return filenames
+
+
+def get_filenames(files):
+    """Return a list of filenames."""
+    pcap_extensions = [
+        '.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0', '.TRC1', '.enc',
+        '.trc', '.fdc', '.syc', '.bfr', '.tr1', '.snoop'
+    ]
+    cwd = os.getcwd() + '/'
+    filenames = []
+    for filename in files:
+        file_string = filename
+        if "C:\\" not in filename:
+            file_string = cwd + filename
+        if not os.path.isfile(file_string):
+            print("ERROR: File", file_string, "not found!")
             sys.exit()
         file_ext = os.path.splitext(filename)[1]
         if file_ext not in pcap_extensions:
@@ -59,23 +87,32 @@ def parse_cli_args(args):
             print("Valid packet capture extensions:", pcap_extensions)
             sys.exit()
         filenames.append(filename)
-        # Save size in MB
-        filesizes.append(os.stat(filename).st_size / 10**6)
-
-    if args['<file>']:
-        # A 100MB file is ~ 100K packets. Lazy math indicates that
-        # a billion packet-by-packet comparisons takes ~10s. If we reach an
-        # expected 1 billion packet comparisons, let the user know.
-        est_time = 0
-        for filesize in filesizes:
-            est_time += filesizes[0] * filesize
-        if args['--compare']:  # Compare will double processing time.
-            est_time *= 2
-        if est_time > 1000:
-            print("\nEstimated time to complete is greater than 10 seconds "
-                  "(i.e. grab a cup of coffee).\n")
 
     return filenames
+
+
+def get_est_computation_time(filenames, has_campare):
+    """Guess whether this process will take more than 10 seconds.
+
+    A 100MB file is ~ 100K packets. Lazy math indicates that
+    a billion packet-by-packet comparisons takes ~10s. If we reach an
+    expected 1 billion packet comparisons, let the user know.
+
+    Args:
+        filenames (list): List of the names of files.
+        has_campare (bool): Compare option is used (usually doubles time).
+    Returns:
+        (int): Seconds that this should take (largely a wild guess).
+    """
+    # Save size in MB
+    filesizes = [os.stat(file).st_size / 10**6 for file in filenames]
+    est_time = 0
+    for filesize in filesizes:
+        est_time += filesizes[0] * filesize
+    if has_campare:  # Compare will double processing time.
+        est_time *= 2
+
+    return est_time / 100  # should return est time in seconds
 
 
 def get_tshark_status():
@@ -94,7 +131,7 @@ def get_tshark_status():
         sys.exit()
 
 
-def get_pcap_data(filenames, has_compare_pcaps, verbosity):
+def get_pcap_dict(filenames, has_compare_pcaps, verbosity):
     """Return a dict with names of pcap files and their start/stop times.
 
     Args:
@@ -107,27 +144,10 @@ def get_pcap_data(filenames, has_compare_pcaps, verbosity):
     pcap_data = {}
     # The pivot is compared against to see how much traffic is the same.
     pivot_pcap = filenames[0]
-    tshark_cmds = get_tshark_cmds()
 
     for filename in filenames:
-        packet_count_cmds = [*tshark_cmds, '-r', filename, '-2']
-        pcap_text_raw = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
-        pcap_text = decode_stdout(pcap_text_raw)
-        packet_count = pcap_text.count('\n')  # Each line of output is a packet
-
-        start_unixtime_cmds = [
-            *tshark_cmds, '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
-            'fields', '-e', 'frame.time_epoch'
-        ]
-        end_unixtime_cmds = [
-            *tshark_cmds, '-r', filename, '-2', '-Y',
-            'frame.number==' + str(packet_count), '-T', 'fields', '-e',
-            'frame.time_epoch'
-        ]
-        pcap_start_raw = sp.Popen(start_unixtime_cmds, stdout=sp.PIPE)
-        pcap_end_raw = sp.Popen(end_unixtime_cmds, stdout=sp.PIPE)
-        pcap_start = decode_stdout(pcap_start_raw)
-        pcap_end = decode_stdout(pcap_end_raw)
+        print(filename)
+        packet_count, pcap_start, pcap_end = get_pcap_vars(filename)
 
         filename_sans_path = os.path.splitext(os.path.basename(filename))[0]
         if has_compare_pcaps:
@@ -150,6 +170,39 @@ def get_pcap_data(filenames, has_compare_pcaps, verbosity):
 def decode_stdout(stdout):
     """Given stdout, return the string."""
     return stdout.communicate()[0].decode('utf-8')
+
+
+def get_pcap_vars(filename):
+    """Get vars given filename (see Returns).
+
+    Args:
+        filename (string): Name of the file to get data from.
+    Returns:
+        packet_count (int): Number of packets in a packet capture
+        pcap_start (float): Unix time when this packet capture stared.
+        pcap_end (float): Unix time when this packet capture ended.
+    """
+    tshark_cmds = get_tshark_cmds()
+    packet_count_cmds = [*tshark_cmds, '-r', filename, '-2']
+    pcap_text_raw = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
+    pcap_text = decode_stdout(pcap_text_raw)
+    packet_count = pcap_text.count('\n')  # Each line of output is a packet
+
+    start_unixtime_cmds = [
+        *tshark_cmds, '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
+        'fields', '-e', 'frame.time_epoch'
+    ]
+    end_unixtime_cmds = [
+        *tshark_cmds, '-r', filename, '-2', '-Y',
+        'frame.number==' + str(packet_count), '-T', 'fields', '-e',
+        'frame.time_epoch'
+    ]
+    pcap_start_raw = sp.Popen(start_unixtime_cmds, stdout=sp.PIPE)
+    pcap_end_raw = sp.Popen(end_unixtime_cmds, stdout=sp.PIPE)
+    pcap_start = decode_stdout(pcap_start_raw)
+    pcap_end = decode_stdout(pcap_end_raw)
+
+    return packet_count, pcap_start, pcap_end
 
 
 def get_tshark_cmds():
@@ -181,16 +234,16 @@ def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
         # Iterate over all packets with the given frame number.
         pcap_starttime = time.time()
         print("--compare percent similar starting for", other_pcap + "... ")
-    tshark_cmds = get_tshark_cmds()
+    tshark = get_tshark_cmds()
     tshark_filters = [
         '-2', '-Y', 'ip', '-T', 'fields', '-e', 'ip.id', '-e', 'ip.src', '-e',
         'ip.dst', '-e', 'tcp.ack', '-e', 'tcp.seq', '-e', 'udp.srcport'
     ]
-    pivot_cmds = [*tshark_cmds, '-r', pivot_pcap, *tshark_filters]
-    other_cmds = [*tshark_cmds, '-r', other_pcap, *tshark_filters]
-    pivot_raw_output = sp.Popen(pivot_cmds, stdout=sp.PIPE)
+    pivot_raw_output = \
+        sp.Popen([*tshark, '-r', pivot_pcap, *tshark_filters], stdout=sp.PIPE)
     pivot_pkts = set(decode_stdout(pivot_raw_output).split('\n'))
-    other_raw_output = sp.Popen(other_cmds, stdout=sp.PIPE)
+    other_raw_output = \
+        sp.Popen([*tshark, '-r', other_pcap, *tshark_filters], stdout=sp.PIPE)
     other_pkts = set(decode_stdout(other_raw_output).split('\n'))
     total_count = len(pivot_pkts)
     # Use python's set functions to find the fastest intersection of packets.

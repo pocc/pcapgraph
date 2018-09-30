@@ -39,11 +39,18 @@ def draw_graph(pcap_times, save_fmt):
             file.close()
         print("Text file successfully created!")
     else:
-        make_graph(pcap_times, save_fmt)
+        start_times, end_times, pcap_names = setup_graph_vars(pcap_times)
+
+        generate_graph(pcap_names, start_times, end_times)
+        export_graph(pcap_times, pcap_names, save_fmt)
 
 
-def make_graph(pcap_times, save_fmt):
-    """Generate the matplotlib graph."""
+def setup_graph_vars(pcap_times):
+    """Setup graph variables
+
+    Args:
+        pcap_times (dict): Packet capture names and start/stop timestamps.
+    """
     start_times = []
     end_times = []
     pcap_names = []
@@ -56,32 +63,29 @@ def make_graph(pcap_times, save_fmt):
             similarity = ' (' + str(similarity_percent) + '%)'
         pcap_names.append(pcap + similarity)  # Add percentage if it exists
 
-    begin = np.array(start_times)
-    end = np.array(end_times)
+    start_times_array = np.array(start_times)
+    end_times_array = np.array(end_times)
+
+    return start_times_array, end_times_array, pcap_names
+
+
+def generate_graph(pcap_names, start_times, end_times):
+    """Generate the matplotlib graph.
+
+    Args:
+        pcap_names
+    """
+    # first and last are the first and last timestamp of all pcaps.
     first = min(start_times)
     last = max(end_times)
 
     fig, axes = plt.subplots()
-    barlist = plt.barh(range(len(begin)), end - begin, left=begin)
-    # Darker Metro UI color hex codes
-    colors = [
-        '#2d89ef', '#603cba', '#2b5797', '#b91d47', '#99b433', '#da532c',
-        '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a'
-    ]
-    color_count = len(colors)
-    for i, hbar in enumerate(barlist):
-        color = colors[i % color_count]
-        hbar.set_color(color)
+    barlist = plt.barh(
+        range(len(start_times)), end_times - start_times, left=start_times)
 
-    step = (last - first) / 9
-    x_ticks = [first]
-    for i in range(9):
-        x_ticks.append(x_ticks[i] + step)
-
+    set_horiz_bar_colors(barlist)
     # xticks will look like 'Dec-31   23:59:59'
-    for i in range(10):
-        x_ticks[i] = datetime.datetime.fromtimestamp(
-            x_ticks[i]).strftime('%b-%d   %H:%M:%S')
+    x_ticks = set_xticks(first, last)
 
     # Print all x labels that aren't at the lower corners
     plt.xticks(rotation=45)
@@ -96,6 +100,50 @@ def make_graph(pcap_times, save_fmt):
     fig.suptitle('Pcap Time Analysis', fontsize=20)
     # Use 0.95 for top because tight_layout does not consider suptitle
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+
+
+def set_horiz_bar_colors(barlist):
+    """Set the horizontal bar colors.
+
+    Color theme is Metro UI, with an emphasis on darker colors. If there are
+    more horiz bars than in the color array, loop and continue to set colors.
+
+    Args:
+        barlist
+    """
+    colors = [
+        '#2d89ef', '#603cba', '#2b5797', '#b91d47', '#99b433', '#da532c',
+        '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a'
+    ]
+    color_count = len(colors)
+    for i, hbar in enumerate(barlist):
+        color = colors[i % color_count]
+        hbar.set_color(color)
+
+
+def set_xticks(first, last):
+    """Generate the x ticks and return a list of them.
+
+    Args:
+        first:
+    Returns:
+        ()
+    """
+    # 10 x ticks chosen for aesthetic reasons.
+    xticks_qty = 10
+    x_ticks = xticks_qty * ['']
+    offset = first
+    step = (last - first) / (xticks_qty - 1)
+    for i in range(xticks_qty):
+        x_ticks[i] = datetime.datetime.fromtimestamp(offset).strftime(
+            '%b-%d   %H:%M:%S')
+        offset += step
+
+    return x_ticks
+
+
+def export_graph(pcap_times, pcap_names, save_fmt):
+    """Exports the graph to the screen or to a file."""
     if save_fmt:
         this_folder = os.getcwd()
         pivot_file = pcap_names[0].split(' ')[0] + '.'
@@ -105,15 +153,17 @@ def make_graph(pcap_times, save_fmt):
             transparent=True)
         print(save_fmt, "file successfully created!")
     else:
-        # Show text in stdout because this is show mode.
+        # Print text version because it's possible.
         print(make_text_not_war(pcap_times))
         plt.show()
 
 
 def make_text_not_war(pcap_times):
-    """Make text given pcap times.
+    """Make useful text given pcap times.
 
-    Return:
+    Args:
+        pcap_times (dict): Packet capture names and start/stop timestamps.
+    Returns:
         (string): Full textstring of text to written to file/stdout
     """
     result_string = 'PCAP NAME           DATE 0  DATE $     TIME 0    ' \

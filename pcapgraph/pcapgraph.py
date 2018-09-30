@@ -15,16 +15,16 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-s] [-c] [-V] [--format <format>]
-    (--directory <dir>... | <file>...)
+  pcapgraph [-s] [-c] [-V] [--format <format>] (--dir <dir>... | <file>...)
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
 
 Options:
+  <file>...             Any number of packet captures to analyze.
   -c, --compare         Compare all files to the first file by ip.id and
                         ip.checksum to find the percent of packets that
                         match exactly. (See About for more details).
-  -d, --directory <dir> Specify a directory instead of/addition to files.
+  -d, --dir <dir>       Specify directories to add pcaps from.
                         Can be used multiple times.
   -h, --help            Show this screen.
   -f, --format <format> Output results as a file instead of a popup.
@@ -35,6 +35,16 @@ About:
   PcapGraph is used to determine when packet captures were taken using the
   wireshark filter 'frame.time_epoch' and creates a graph with those times.
 
+Input requirements
+  Packet captures are required for this program to function. They can be
+  specified either individually as files, as a directory, or any combination
+  of the two. When -d/--dir is used, this program will search a directory for
+  valid packet capture types (essentially any format that Wireshark supports).
+  The following packet capture extensions are supported by Wireshark:
+    .pcapng, .pcap, .cap, .dmp, .5vw, .TRC0, .TRC1, .enc,
+    .trc, .fdc, .syc, .bfr, .tr1, .snoop
+
+Packet comparisons:
   The first packet capture argument to pcapgraph will be used as a pivot to
   compare to other packet captures to compute fraction similar if -c is
   specified This is useful in determining overlap of pcaps; however,
@@ -57,7 +67,7 @@ import docopt
 
 from parse_options import parse_cli_args
 from parse_options import get_tshark_status
-from parse_options import get_pcap_data
+from parse_options import get_pcap_dict
 from draw_graph import draw_graph
 
 
@@ -66,7 +76,7 @@ def main():
     args = docopt.docopt(__doc__)
     filenames = parse_cli_args(args)
     get_tshark_status()  # PcapGraph requires tshark, so quit if not installed
-    pcap_dict = get_pcap_data(filenames, args['--compare'], args['--verbose'])
+    pcap_dict = get_pcap_dict(filenames, args['--compare'], args['--verbose'])
     draw_graph(pcap_dict, save_fmt=args['--format'])
 
 

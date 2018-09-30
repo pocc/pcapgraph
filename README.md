@@ -4,7 +4,8 @@ of python or later.*
 
 PcapGraph takes packet captures and creates a bar graph out of the start/end
 timestamps. If the --compare option is used, packet captures are compared 
-packet by packet to find what percentage of traffic is the same.  
+packet by packet to find what percentage of traffic is the same. A list of 
+files, directories, and any combination thereof can be specified.
 ## Use case
 ### Scenario
 * You have a bunch of packet captures all from multiple interfaces on a 
@@ -33,13 +34,11 @@ per second.
 
 pcap_graph.png was generated with 
 
-    python3 pcapgraph.py examples/simul1.pcap examples/simul2.pcap 
-        examples/simul3.pcap --format png --compare
+    pcapgraph -c --format png --dir examples
 
 pcap_graph.txt was generated with 
 
-    python3 pcapgraph.py examples/simul1.pcap examples/simul2.pcap 
-        examples/simul3.pcap --format txt --compare
+    pcapgraph -c --format txt --dir examples
 
 ## License
 Apache 2. See LICENSE for more details.
