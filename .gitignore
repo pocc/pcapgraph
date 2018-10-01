@@ -108,3 +108,7 @@ venv.bak/
 
 # Safety
 **/cred*
+
+# Pipenv
+Pipfile
+Pipfile.lock
