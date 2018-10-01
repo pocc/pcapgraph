@@ -24,26 +24,24 @@ def generate_example_pcaps():
     starting at 0s, 20s, 40s. After 100s, this script will stop. Packet
     capture 0s should have 66% in common with pcap 20s and 33% in common
     with pcap 40s. Indeed, this is what we see in the graph.
-
-    Shell must be true so that Popen sends these processes to the background.
     """
     second_ct = 0
-    tshark_cmd = 'tshark -n -f "icmp or port 53" -a duration:60 '
+    tshark_cmd = ['tshark', '-n', '-f', "icmp or port 53", '-a', 'duration:60']
 
     if sys.platform == 'win32':
-        ping_once_flag = '-n 1'
+        ping_once_flag = '-n'
     else:
-        ping_once_flag = '-c 1'
+        ping_once_flag = '-c'
 
     while second_ct < 100:
         print('On second ' + str(second_ct + 1) + '/100')
-        subprocess.Popen(['ping 8.8.8.8 ' + ping_once_flag], shell=True)
-        subprocess.Popen(['nslookup amazon.com'], shell=True)
+        subprocess.Popen(['ping', '8.8.8.8', ping_once_flag, '1'])
+        subprocess.Popen(['nslookup', 'amazon.com'])
         if second_ct == 0:
-            subprocess.Popen([tshark_cmd + '-w simul1.pcap'], shell=True)
+            subprocess.Popen([*tshark_cmd, '-w', 'simul1.pcap'])
         if second_ct == 20:
-            subprocess.Popen([tshark_cmd + '-w simul2.pcap'], shell=True)
+            subprocess.Popen([*tshark_cmd, '-w', 'simul2.pcap'])
         if second_ct == 40:
-            subprocess.Popen([tshark_cmd + '-w simul3.pcap'], shell=True)
+            subprocess.Popen([*tshark_cmd, '-w', 'simul3.pcap'])
         time.sleep(1)
         second_ct += 1

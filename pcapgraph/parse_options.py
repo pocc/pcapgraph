@@ -21,6 +21,7 @@ import webbrowser
 import subprocess as sp
 
 from .generate_example_pcaps import generate_example_pcaps
+from . import __version__
 
 
 def parse_cli_args(args):
@@ -32,7 +33,7 @@ def parse_cli_args(args):
         (list): List of filepaths
     """
     if args['--version']:
-        print('PcapGraph v1.0.0\nLicense: Apache 2')
+        print(__version__)
         sys.exit()
 
     if args['--generate-pcaps']:
@@ -108,9 +109,10 @@ def get_filenames(files):
 def get_est_computation_time(filenames, has_campare):
     """Guess whether this process will take more than 10 seconds.
 
-    A 100MB file is ~ 100K packets. Lazy math indicates that
+    A 10MB file is ~ 10K packets. Based on a few completion times, roughly
     a billion packet-by-packet comparisons takes ~10s. If we reach an
-    expected 1 billion packet comparisons, let the user know.
+    expected 1 billion packet comparisons, let the user know. This is extremely
+    inaccurate and is used for ballpark estimation.
 
     Args:
         filenames (list): List of the names of files.

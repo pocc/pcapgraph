@@ -33,7 +33,6 @@ setup(name='PcapGraph',
       license='Apache 2.0',
       packages=['pcapgraph'],
       python_requires='>=3.6',
-      zip_safe=False,
       provides=['pcapgraph'],
       classifiers=[
           'Development Status :: 4 - Beta',
