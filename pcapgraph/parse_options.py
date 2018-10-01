@@ -18,6 +18,7 @@ import sys
 import os
 import time
 import webbrowser
+import shlex
 import subprocess as sp
 
 
@@ -49,11 +50,17 @@ def get_filenames_from_directories(directories):
         '.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0', '.TRC1', '.enc',
         '.trc', '.fdc', '.syc', '.bfr', '.tr1', '.snoop'
     ]
+    system = sys.platform
     cwd = os.getcwd() + '/'
     filenames = []
     for directory in directories:
+        # Tilde expansion on unix systems.
+        if directory[0] in '~':
+            directory = os.path.expanduser(directory)
         dir_string = directory
-        if "C:\\" not in directory:
+        # If the provided path is relative.
+        if system == 'win32' and "C:\\" not in directory \
+                or directory[0] not in '/':
             dir_string = cwd + directory
         if not os.path.isdir(dir_string):
             print("ERROR: Directory", dir_string, "not found!")
@@ -164,12 +171,14 @@ def get_pcap_dict(filenames, has_compare_pcaps, verbosity):
             'pivot_similarity': pivot_file_similarity
         }
 
+    if verbosity:
+        print("Data loaded. Now drawing graph...")
     return pcap_data
 
 
 def decode_stdout(stdout):
     """Given stdout, return the string."""
-    return stdout.communicate()[0].decode('utf-8')
+    return stdout.communicate()[0].decode('utf-8').strip()
 
 
 def get_pcap_vars(filename):
@@ -183,11 +192,13 @@ def get_pcap_vars(filename):
         pcap_end (float): Unix time when this packet capture ended.
     """
     tshark_cmds = get_tshark_cmds()
-    packet_count_cmds = [*tshark_cmds, '-r', filename, '-2']
-    pcap_text_raw = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
+    packet_count_cmds = ['-r', filename, '-2']
+    pcap_text_raw = sp.Popen([*tshark_cmds, *packet_count_cmds],
+                             stdout=sp.PIPE)
     pcap_text = decode_stdout(pcap_text_raw)
     packet_count = pcap_text.count('\n')  # Each line of output is a packet
 
+    print(packet_count)
     start_unixtime_cmds = [
         *tshark_cmds, '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
         'fields', '-e', 'frame.time_epoch'
@@ -199,8 +210,8 @@ def get_pcap_vars(filename):
     ]
     pcap_start_raw = sp.Popen(start_unixtime_cmds, stdout=sp.PIPE)
     pcap_end_raw = sp.Popen(end_unixtime_cmds, stdout=sp.PIPE)
-    pcap_start = decode_stdout(pcap_start_raw)
-    pcap_end = decode_stdout(pcap_end_raw)
+    pcap_start = float(decode_stdout(pcap_start_raw))
+    pcap_end = float(decode_stdout(pcap_end_raw))
 
     return packet_count, pcap_start, pcap_end
 
@@ -230,6 +241,7 @@ def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
     Return:
         (int) 1-3 digit percentage similarity between the two files
     """
+    pcap_starttime = 0
     if verbosity:
         # Iterate over all packets with the given frame number.
         pcap_starttime = time.time()

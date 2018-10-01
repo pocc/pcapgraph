@@ -1,6 +1,6 @@
 # PcapGraph
-*This has been tested on python3.5. It would be prudent to use this version 
-of python or later.*
+*This requires features from **python3.6**. It would be prudent to use this 
+version of python or later.*
 
 PcapGraph takes packet captures and creates a bar graph out of the start/end
 timestamps. If the --compare option is used, packet captures are compared 
@@ -39,6 +39,9 @@ pcap_graph.png was generated with
 pcap_graph.txt was generated with 
 
     pcapgraph -c --format txt --dir examples
+    
+***Note**: On ubuntu, you may need to install the `python3.6-tk` package to 
+use the tkinter parts of matplotlib.*
 
 ## License
 Apache 2. See LICENSE for more details.

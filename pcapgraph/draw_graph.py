@@ -54,7 +54,10 @@ def setup_graph_vars(pcap_times):
     start_times = []
     end_times = []
     pcap_names = []
-    for pcap in sorted(pcap_times.keys()):
+    # Sorted by first timestamp so that graph looks like a staircase.
+    sorted_pcap_names = sorted(pcap_times,
+                               key=lambda x: pcap_times[x]['pcap_starttime'])
+    for pcap in sorted_pcap_names:
         start_times.append(pcap_times[pcap]['pcap_starttime'])
         end_times.append(pcap_times[pcap]['pcap_endtime'])
         similarity = ''
@@ -76,8 +79,12 @@ def generate_graph(pcap_names, start_times, end_times):
         pcap_names
     """
     # first and last are the first and last timestamp of all pcaps.
-    first = min(start_times)
-    last = max(end_times)
+    first_time = min(start_times)
+    last_time = max(end_times)
+    # Force padding on left and right sides
+    graph_one_percent_width = (last_time - first_time) / 100
+    first = first_time - graph_one_percent_width
+    last = last_time + graph_one_percent_width
 
     fig, axes = plt.subplots()
     barlist = plt.barh(
@@ -86,7 +93,7 @@ def generate_graph(pcap_names, start_times, end_times):
     set_horiz_bar_colors(barlist)
     # xticks will look like 'Dec-31   23:59:59'
     x_ticks = set_xticks(first, last)
-
+    #    plt.tight_layout(
     # Print all x labels that aren't at the lower corners
     plt.xticks(rotation=45)
     axes.set_xticks(np.round(np.linspace(first, last, 10)))

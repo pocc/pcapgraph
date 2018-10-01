@@ -25,6 +25,7 @@ setup(name='PcapGraph',
       url='https://www.github.com/pocc/pcapgraph/',
       license='Apache 2',
       packages=['pcapgraph'],
+      python_requires='>=3.6',
       entry_points={
           'console_scripts':
               ['pcapgraph = pcapgraph.pcapgraph:main']}
