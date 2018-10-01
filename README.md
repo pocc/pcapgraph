@@ -1,5 +1,5 @@
 # PcapGraph
-PcapGraph creates bar graphs out packet capture timestamps.
+Creates bar graphs out of packet capture timestamps.
 
 ![Alt text](https://github.com/pocc/pcapgraph/blob/master/examples/pcap_graph.png?raw=true "An example graph.")
 
@@ -65,7 +65,7 @@ pcap_graph.txt was generated with
     pcapgraph -c --format txt --dir .
 
 ## License
-Apache 2. See LICENSE for more details.
+Apache 2.0. See LICENSE for more details.
 
 ## Acknowledgements
 Praise be Stack Overflow!

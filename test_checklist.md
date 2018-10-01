@@ -4,7 +4,7 @@ depending on the option.
 
 1. pcapgraph --help
 2. pcapgraph --version
-3. pcapgraph --generate-pcaps
+3. pcapgraph --generate-pcaps --int <interface>
 4. pcapgraph --dir examples -c
 5. pcapgraph --dir examples -c --format txt
 6. pcapgraph --dir examples -c --format png

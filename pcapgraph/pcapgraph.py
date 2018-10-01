@@ -16,7 +16,7 @@
 
 Usage:
   pcapgraph [-scV] [--format <format>] (--dir <dir>... | <file>...)
-  pcapgraph (-g | --generate)
+  pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
 
@@ -29,6 +29,9 @@ Options:
                         Can be used multiple times.
   -g, --generate-pcaps  Generate 3 example packet captures (see Generation).
   -h, --help            Show this screen.
+      --int <interface> Specify the interface to capture on. Requires -g. You
+                        should open Wireshark to find the active interface with
+                        traffic passing if you are not sure which to specify.
   -f, --format <format> Output results as a file instead of a popup.
   -v, --version         Show PcapGraph's version.
   -V, --verbose         Provide more context to what pcapgraph is doing.

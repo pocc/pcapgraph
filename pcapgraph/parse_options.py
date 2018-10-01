@@ -38,7 +38,8 @@ def parse_cli_args(args):
 
     if args['--generate-pcaps']:
         print('Generating pcaps...')
-        generate_example_pcaps()
+        print(args)
+        generate_example_pcaps(interface=args['--int'])
         print('Pcaps sucessfully generated!')
         sys.exit()
 
