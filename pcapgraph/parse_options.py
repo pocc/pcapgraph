@@ -58,8 +58,8 @@ def get_filenames_from_directories(directories):
             directory = os.path.expanduser(directory)
         dir_string = directory
         # If the provided path is relative.
-        if system == 'win32' and "C:\\" not in directory \
-                or directory[0] not in '/':
+        if (system == 'win32' and "C:\\" not in directory.upper()) \
+                or (system != 'win32' and directory[0] not in '/'):
             dir_string = cwd + directory
         if not os.path.isdir(dir_string):
             print("ERROR: Directory", dir_string, "not found!")
@@ -82,7 +82,7 @@ def get_filenames(files):
     filenames = []
     for filename in files:
         file_string = filename
-        if "C:\\" not in filename:
+        if "C:\\" not in filename.upper():
             file_string = cwd + filename
         if not os.path.isfile(file_string):
             print("ERROR: File", file_string, "not found!")
@@ -122,15 +122,23 @@ def get_est_computation_time(filenames, has_campare):
 
 
 def get_tshark_status():
-    """Errors and quits if tshark is not installed."""
+    """Errors and quits if tshark is not installed.
+
+    On Windows, tshark may not be recognized by cmd even if Wireshark is
+    installed. On Windows, this function will add the Wireshark folder to path
+    so `tshark` can be called.
+
+    Changing os.environ will only affect the cmd shell this program is using
+    (tested). Not using setx here as that could be potentially destructive.
+    """
     try:
-        # tshark is not necessarily on path in Windows, even if installed.
-        tshark = get_tshark_cmds()
-        sp.Popen([*tshark, '-v'], stdout=sp.PIPE)
+        if sys.platform == 'win32':
+            os.environ["PATH"] += os.pathsep + os.pathsep.join(
+                ["C:\\Program Files\\Wireshark"])
+        sp.Popen(['tshark', '-v'], stdout=sp.PIPE, stderr=sp.PIPE)
     except FileNotFoundError as err:
-        print(err,
-              "\nERROR: Requirement tshark from Wireshark is not satisfied!",
-              "\n       Please download Wireshark and try again.",
+        print(err, "\nERROR: Requirement tshark from Wireshark not found!",
+              "\n       Please install Wireshark or add tshark to your PATH.",
               "\n\nOpening Wireshark download page...")
         time.sleep(2)
         webbrowser.open('https://www.wireshark.org/download.html')
@@ -146,6 +154,8 @@ def get_pcap_dict(filenames, has_compare_pcaps, verbosity):
         verbosity (bool): Whether to provide user with additional context.
     Return:
         (dict): A dict with all of the data that graph functions need.
+    Raises:
+        IOError: Raise if there are no valid packet captures provided.
     """
     pcap_data = {}
     # The pivot is compared against to see how much traffic is the same.
@@ -154,21 +164,27 @@ def get_pcap_dict(filenames, has_compare_pcaps, verbosity):
     for filename in filenames:
         packet_count, pcap_start, pcap_end = get_pcap_vars(filename)
 
-        filename_sans_path = os.path.splitext(os.path.basename(filename))[0]
-        if has_compare_pcaps:
-            pivot_file_similarity = \
-                get_pcap_similarity(pivot_pcap, filename, verbosity)
-            if pivot_file_similarity == 0:
-                pivot_file_similarity = '0'  # So that a number% is shown.
-        else:
-            pivot_file_similarity = None
-        pcap_data[filename_sans_path] = {
-            'packet_count': packet_count,
-            'pcap_starttime': float(pcap_start),
-            'pcap_endtime': float(pcap_end),
-            'pivot_similarity': pivot_file_similarity
-        }
+        if packet_count:  # If there are packets in the pcap, we care
+            file_basename = os.path.splitext(os.path.basename(filename))[0]
+            if has_compare_pcaps:
+                pivot_file_similarity = \
+                    get_pcap_similarity(pivot_pcap, filename, verbosity)
+                if pivot_file_similarity == 0:
+                    pivot_file_similarity = '0'  # So that a number% is shown.
+            else:
+                pivot_file_similarity = None
+            pcap_data[file_basename] = {
+                'packet_count': packet_count,
+                'pcap_starttime': float(pcap_start),
+                'pcap_endtime': float(pcap_end),
+                'pivot_similarity': pivot_file_similarity
+            }
 
+    if not pcap_data:
+        raise IOError("ERROR:No valid packet captures found!\nAt least one "
+                      "packet capture should have packets in it.\nThis may "
+                      "also mean that there are special characters in the "
+                      "filename of a packet capture.")
     if verbosity:
         print("Data loaded. Now drawing graph...")
     return pcap_data
@@ -189,35 +205,38 @@ def get_pcap_vars(filename):
         pcap_start (float): Unix time when this packet capture stared.
         pcap_end (float): Unix time when this packet capture ended.
     """
-    tshark_cmds = get_tshark_cmds()
     packet_count_cmds = ['-r', filename, '-2']
-    pcap_text_raw = sp.Popen(
-        [*tshark_cmds, *packet_count_cmds], stdout=sp.PIPE)
+
+    pcap_text_raw = sp.Popen(['tshark', *packet_count_cmds],
+                             stdout=sp.PIPE,
+                             stderr=sp.PIPE)
     pcap_text = decode_stdout(pcap_text_raw)
     packet_count = pcap_text.count('\n')  # Each line of output is a packet
 
-    start_unixtime_cmds = [
-        *tshark_cmds, '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
-        'fields', '-e', 'frame.time_epoch'
-    ]
-    end_unixtime_cmds = [
-        *tshark_cmds, '-r', filename, '-2', '-Y',
-        'frame.number==' + str(packet_count), '-T', 'fields', '-e',
-        'frame.time_epoch'
-    ]
-    pcap_start_raw = sp.Popen(start_unixtime_cmds, stdout=sp.PIPE)
-    pcap_end_raw = sp.Popen(end_unixtime_cmds, stdout=sp.PIPE)
-    pcap_start = float(decode_stdout(pcap_start_raw))
-    pcap_end = float(decode_stdout(pcap_end_raw))
+    if packet_count:
+        start_unixtime_cmds = [
+            'tshark', '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
+            'fields', '-e', 'frame.time_epoch'
+        ]
+        end_unixtime_cmds = [
+            'tshark', '-r', filename, '-2', '-Y',
+            'frame.number==' + str(packet_count), '-T', 'fields', '-e',
+            'frame.time_epoch'
+        ]
+        pcap_start_raw = sp.Popen(
+            start_unixtime_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
+        pcap_end_raw = sp.Popen(
+            end_unixtime_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
+        pcap_start = float(decode_stdout(pcap_start_raw))
+        pcap_end = float(decode_stdout(pcap_end_raw))
 
-    return packet_count, pcap_start, pcap_end
+        return packet_count, pcap_start, pcap_end
 
-
-def get_tshark_cmds():
-    """Get OS-specific tshark commands. Assuming 64-bit Windows."""
-    if sys.platform == 'win32':
-        return ['cmd', '/c', 'C:\\"Program Files"\\Wireshark\\tshark']
-    return ['tshark']
+    # (else) May need to raise an exception for this as it means input is bad.
+    print(
+        "!!! ERROR: Packet capture", filename, " has no packets or "
+        "cannot be read!\n!!! Excluding from results.\n\n")
+    return packet_count, 0, 0
 
 
 def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
@@ -243,16 +262,17 @@ def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
         # Iterate over all packets with the given frame number.
         pcap_starttime = time.time()
         print("--compare percent similar starting for", other_pcap + "... ")
-    tshark = get_tshark_cmds()
     tshark_filters = [
         '-2', '-Y', 'ip', '-T', 'fields', '-e', 'ip.id', '-e', 'ip.src', '-e',
         'ip.dst', '-e', 'tcp.ack', '-e', 'tcp.seq', '-e', 'udp.srcport'
     ]
     pivot_raw_output = \
-        sp.Popen([*tshark, '-r', pivot_pcap, *tshark_filters], stdout=sp.PIPE)
+        sp.Popen(['tshark', '-r', pivot_pcap, *tshark_filters],
+                 stdout=sp.PIPE, stderr=sp.PIPE)
     pivot_pkts = set(decode_stdout(pivot_raw_output).split('\n'))
     other_raw_output = \
-        sp.Popen([*tshark, '-r', other_pcap, *tshark_filters], stdout=sp.PIPE)
+        sp.Popen(['tshark', '-r', other_pcap, *tshark_filters],
+                 stdout=sp.PIPE, stderr=sp.PIPE)
     other_pkts = set(decode_stdout(other_raw_output).split('\n'))
     total_count = len(pivot_pkts)
     # Use python's set functions to find the fastest intersection of packets.
