@@ -18,7 +18,6 @@ import sys
 import os
 import time
 import webbrowser
-import shlex
 import subprocess as sp
 
 
@@ -153,7 +152,6 @@ def get_pcap_dict(filenames, has_compare_pcaps, verbosity):
     pivot_pcap = filenames[0]
 
     for filename in filenames:
-        print(filename)
         packet_count, pcap_start, pcap_end = get_pcap_vars(filename)
 
         filename_sans_path = os.path.splitext(os.path.basename(filename))[0]
@@ -193,12 +191,11 @@ def get_pcap_vars(filename):
     """
     tshark_cmds = get_tshark_cmds()
     packet_count_cmds = ['-r', filename, '-2']
-    pcap_text_raw = sp.Popen([*tshark_cmds, *packet_count_cmds],
-                             stdout=sp.PIPE)
+    pcap_text_raw = sp.Popen(
+        [*tshark_cmds, *packet_count_cmds], stdout=sp.PIPE)
     pcap_text = decode_stdout(pcap_text_raw)
     packet_count = pcap_text.count('\n')  # Each line of output is a packet
 
-    print(packet_count)
     start_unixtime_cmds = [
         *tshark_cmds, '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
         'fields', '-e', 'frame.time_epoch'
