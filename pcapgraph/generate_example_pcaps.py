@@ -24,6 +24,8 @@ def generate_example_pcaps():
     starting at 0s, 20s, 40s. After 100s, this script will stop. Packet
     capture 0s should have 66% in common with pcap 20s and 33% in common
     with pcap 40s. Indeed, this is what we see in the graph.
+
+    Shell must be true so that Popen sends these processes to the background.
     """
     second_ct = 0
     tshark_cmd = 'tshark -n -f "icmp or port 53" -a duration:60 '

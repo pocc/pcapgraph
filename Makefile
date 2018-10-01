@@ -14,13 +14,28 @@
 
 # Creating this so I don't need to memorize PyPI commands.
 
+
+
 .DEFAULT: clean
-.PHONY: clean make
+.PHONY: clean install testpypi installtest pypi
+VERSION := 1.1.2
 
 clean:
 	$(RM) -r dist/ build/
 
-upload: clean
-	@echo "If this fails, increase __version__"
+# Install locally to dist/
+install:
 	python3.6 setup.py sdist
+
+# Use this first before uploading to pypi to verify that it uploaded correctly.
+testpypi: clean install
+	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+# After testpypi, verify that it installs and runs correctly
+installtest:
+	python3.6 -m pip install -U --user --index-url https://test.pypi.org/simple/ pcapgraph
+
+# Use this when you are sure that the test upload (above) looks good.
+pypi: clean install
+	@echo "If this fails, increase __version__"
 	twine upload dist/*

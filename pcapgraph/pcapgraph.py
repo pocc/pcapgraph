@@ -15,7 +15,8 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-s] [-c] [-V] [--format <format>] (--dir <dir>... | <file>...)
+  pcapgraph [-scV] [--format <format>] (--dir <dir>... | <file>...)
+  pcapgraph (-g | --generate)
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
 
@@ -26,6 +27,7 @@ Options:
                         match exactly. (See About for more details).
   -d, --dir <dir>       Specify directories to add pcaps from.
                         Can be used multiple times.
+  -g, --generate        Generate 3 example packet captures (see Generation).
   -h, --help            Show this screen.
   -f, --format <format> Output results as a file instead of a popup.
   -v, --version         Show PcapGraph's version.
@@ -43,6 +45,13 @@ Input requirements
   The following packet capture extensions are supported by Wireshark:
     .pcapng, .pcap, .cap, .dmp, .5vw, .TRC0, .TRC1, .enc,
     .trc, .fdc, .syc, .bfr, .tr1, .snoop
+
+Generation of example packet captures
+  --generate creates 3 packet captures with a ping + nslookup sent every second
+  for 100s. The graph from these pcaps should match the png file in examples/.
+
+  Pcap1 stars at 0s, Pcap2 starts at 20s, Pcap3 starts at 40s.
+  Pcap1 should match Pcap1 100%, Pcap2 66%, and Pcap3 33% (with -c used).
 
 Packet comparisons:
   The first packet capture argument to pcapgraph will be used as a pivot to
@@ -65,13 +74,13 @@ Formats:
 """
 import docopt
 
-from parse_options import parse_cli_args
-from parse_options import get_tshark_status
-from parse_options import get_pcap_dict
-from draw_graph import draw_graph
+from .parse_options import parse_cli_args
+from .parse_options import get_tshark_status
+from .parse_options import get_pcap_dict
+from .draw_graph import draw_graph
 
 
-def main():
+def run():
     """Main function."""
     args = docopt.docopt(__doc__)
     filenames = parse_cli_args(args)
@@ -81,4 +90,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    run()

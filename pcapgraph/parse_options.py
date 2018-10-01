@@ -20,6 +20,8 @@ import time
 import webbrowser
 import subprocess as sp
 
+from .generate_example_pcaps import generate_example_pcaps
+
 
 def parse_cli_args(args):
     """Parse args with docopt. Return a list of filenames
@@ -31,6 +33,12 @@ def parse_cli_args(args):
     """
     if args['--version']:
         print('PcapGraph v1.0.0\nLicense: Apache 2')
+        sys.exit()
+
+    if args['--generate']:
+        print('Generating pcaps...')
+        generate_example_pcaps()
+        print('Pcaps sucessfully generated!')
         sys.exit()
 
     filenames = get_filenames_from_directories(args['--dir'])
