@@ -41,10 +41,10 @@ non-3.6 version of python, you may need to reinstall both.
     python3.6 -m pip install --user numpy matplotlib
 
 ## Examples
-![Alt text](/examples/pcap_graph.png?raw=true "An example graph.")
+![Alt text](https://github.com/pocc/pcapgraph/blob/master/examples/pcap_graph.png?raw=true "An example graph.")
 
-examples/*.pcap generated with a [script](/pcapgraph/generate_example_pcaps.py)
- that pings and nslookups once per second. 
+examples/*.pcap were generated with a [script](/pcapgraph/generate_example_pcaps.py)
+ that pings and nslookups once per second like so: 
 
     pcapgraph --generate
 

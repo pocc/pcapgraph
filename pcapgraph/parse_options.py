@@ -35,7 +35,7 @@ def parse_cli_args(args):
         print('PcapGraph v1.0.0\nLicense: Apache 2')
         sys.exit()
 
-    if args['--generate']:
+    if args['--generate-pcaps']:
         print('Generating pcaps...')
         generate_example_pcaps()
         print('Pcaps sucessfully generated!')
@@ -215,9 +215,8 @@ def get_pcap_vars(filename):
     """
     packet_count_cmds = ['-r', filename, '-2']
 
-    pcap_text_raw = sp.Popen(['tshark', *packet_count_cmds],
-                             stdout=sp.PIPE,
-                             stderr=sp.PIPE)
+    pcap_text_raw = sp.Popen(
+        ['tshark', *packet_count_cmds], stdout=sp.PIPE, stderr=sp.PIPE)
     pcap_text = decode_stdout(pcap_text_raw)
     packet_count = pcap_text.count('\n')  # Each line of output is a packet
 
@@ -241,9 +240,8 @@ def get_pcap_vars(filename):
         return packet_count, pcap_start, pcap_end
 
     # (else) May need to raise an exception for this as it means input is bad.
-    print(
-        "!!! ERROR: Packet capture", filename, " has no packets or "
-        "cannot be read!\n!!! Excluding from results.\n\n")
+    print("!!! ERROR: Packet capture", filename, " has no packets or "
+          "cannot be read!\n!!! Excluding from results.\n\n")
     return packet_count, 0, 0
 
 

@@ -27,7 +27,7 @@ Options:
                         match exactly. (See About for more details).
   -d, --dir <dir>       Specify directories to add pcaps from.
                         Can be used multiple times.
-  -g, --generate        Generate 3 example packet captures (see Generation).
+  -g, --generate-pcaps  Generate 3 example packet captures (see Generation).
   -h, --help            Show this screen.
   -f, --format <format> Output results as a file instead of a popup.
   -v, --version         Show PcapGraph's version.
@@ -47,8 +47,10 @@ Input requirements
     .trc, .fdc, .syc, .bfr, .tr1, .snoop
 
 Generation of example packet captures
-  --generate creates 3 packet captures with a ping + nslookup sent every second
-  for 100s. The graph from these pcaps should match the png file in examples/.
+  Creates 3 packet captures with a ping + nslookup sent every second for 100s.
+  The graph from these pcaps should match the png file in examples/. When
+  using this command, you may need to use sudo depending on whether you have
+  configured wireshark to allow unprivileged users to take packet captures.
 
   Pcap1 stars at 0s, Pcap2 starts at 20s, Pcap3 starts at 40s.
   Pcap1 should match Pcap1 100%, Pcap2 66%, and Pcap3 33% (with -c used).

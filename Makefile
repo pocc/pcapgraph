@@ -18,7 +18,6 @@
 
 .DEFAULT: clean
 .PHONY: clean install testpypi installtest pypi
-VERSION := 1.1.2
 
 clean:
 	$(RM) -r dist/ build/

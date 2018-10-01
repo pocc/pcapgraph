@@ -178,10 +178,10 @@ def export_graph(pcap_times, pcap_names, save_fmt):
         this_folder = os.getcwd()
         pivot_file = pcap_names[0].split(' ')[0] + '.'
         plt.savefig(
-            this_folder + '\\pcap_graph-' + pivot_file + save_fmt,
+            'pcap_graph-' + pivot_file + save_fmt,
             format=save_fmt,
             transparent=True)
-        print(save_fmt, "file successfully created!")
+        print(save_fmt, "file successfully created in ", this_folder, "!")
     else:
         # Print text version because it's possible.
         print(make_text_not_war(pcap_times))
@@ -199,16 +199,16 @@ def make_text_not_war(pcap_times):
     result_string = 'PCAP NAME           YEAR  DATE 0  DATE $' \
                     '     TIME 0    TIME $       UTC 0' + 14*' ' + 'UTC $'
     for pcap in sorted(pcap_times.keys()):
-        pcap_year = datetime.datetime.fromtimestamp(
-            pcap_times[pcap]['pcap_starttime']).strftime('%Y')
-        pcap_pretty_startdate = datetime.datetime.fromtimestamp(
-            pcap_times[pcap]['pcap_starttime']).strftime('%b-%d')
-        pcap_pretty_enddate = datetime.datetime.fromtimestamp(
-            pcap_times[pcap]['pcap_endtime']).strftime('%b-%d')
-        pcap_pretty_starttime = datetime.datetime.fromtimestamp(
-            pcap_times[pcap]['pcap_starttime']).strftime('%H:%M:%S')
-        pcap_pretty_endtime = datetime.datetime.fromtimestamp(
-            pcap_times[pcap]['pcap_endtime']).strftime('%H:%M:%S')
+        pcap_year = datetime.datetime.fromtimestamp(pcap_times[pcap][
+            'pcap_starttime']).strftime('%Y')
+        pcap_pretty_startdate = datetime.datetime.fromtimestamp(pcap_times[
+            pcap]['pcap_starttime']).strftime('%b-%d')
+        pcap_pretty_enddate = datetime.datetime.fromtimestamp(pcap_times[pcap][
+            'pcap_endtime']).strftime('%b-%d')
+        pcap_pretty_starttime = datetime.datetime.fromtimestamp(pcap_times[
+            pcap]['pcap_starttime']).strftime('%H:%M:%S')
+        pcap_pretty_endtime = datetime.datetime.fromtimestamp(pcap_times[pcap][
+            'pcap_endtime']).strftime('%H:%M:%S')
         if pcap_times[pcap]['pivot_similarity']:
             pcap_name_string = '(' + "{: >3}".format(
                 str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
@@ -226,7 +226,6 @@ def make_text_not_war(pcap_times):
             pcap_pretty_starttime,
             pcap_pretty_endtime,
             pcap_times[pcap]['pcap_starttime'],
-            pcap_times[pcap]['pcap_endtime'],
-        )
+            pcap_times[pcap]['pcap_endtime'], )
 
     return result_string
