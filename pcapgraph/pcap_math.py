@@ -144,6 +144,26 @@ def framed_pcap_intersector(pcap1, pcap2, has_temporal_intersection):
         for pcap in (pcap1, pcap2):
             sp.Popen(framed_pcap_cmds[pcap])
     else:
+        """
+        The logic that needs to go here:
+        A dict that has this info on each packet:
+            - protocols > find bpf 
+            - ip.ids 
+            - ip.checksum
+            - ip.src
+            - ip.dst
+            - tcp.ack
+            - tcp.seq
+            - srcport 
+            - dstport  
+            - udp.checksum > find bpf
+            - tcp.checksum > find bpf
+            
+        1. Add all packet data to one dict per pcap
+        2. Get the intersection set() of both dicts 
+        3. From pcap1, filter for exactly what's left in the dict and 
+            save it as the intersection
+        """
         outname = pcap1_name + '-' + pcap2_name + '_intersection.pcap'
         intersection_commands
         # Write one intersection
