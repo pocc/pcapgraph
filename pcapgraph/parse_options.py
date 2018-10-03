@@ -19,6 +19,7 @@ import os
 import time
 import webbrowser
 import subprocess as sp
+import random
 
 from .generate_example_pcaps import generate_example_pcaps
 from . import __version__
@@ -156,13 +157,15 @@ def get_tshark_status():
         sys.exit()
 
 
-def get_pcap_dict(filenames, has_compare_pcaps, verbosity):
+def get_pcap_dict(filenames, has_compare_pcaps, verbosity, is_anon):
     """Return a dict with names of pcap files and their start/stop times.
 
     Args:
         filenames (list): A list of filepaths.
         has_compare_pcaps (bool): Has the user has provided the '-c' option.
         verbosity (bool): Whether to provide user with additional context.
+        packet_intersect (bool): Whether to output packet intersection pcap.
+        is_anon (bool): Whether to anonymize packet capture names.
     Return:
         (dict): A dict with all of the data that graph functions need.
     Raises:
@@ -176,7 +179,10 @@ def get_pcap_dict(filenames, has_compare_pcaps, verbosity):
         packet_count, pcap_start, pcap_end = get_pcap_vars(filename)
 
         if packet_count:  # If there are packets in the pcap, we care
-            file_basename = os.path.splitext(os.path.basename(filename))[0]
+            if is_anon:
+                file_basename = anonymous_pcap_name()
+            else:
+                file_basename = os.path.splitext(os.path.basename(filename))[0]
             if has_compare_pcaps:
                 pivot_file_similarity = \
                     get_pcap_similarity(pivot_pcap, filename, verbosity)
@@ -190,15 +196,40 @@ def get_pcap_dict(filenames, has_compare_pcaps, verbosity):
                 'pcap_endtime': float(pcap_end),
                 'pivot_similarity': pivot_file_similarity
             }
-
     if not pcap_data:
-        raise IOError("ERROR:No valid packet captures found!\nAt least one "
-                      "packet capture should have packets in it.\nThis may "
-                      "also mean that there are special characters in the "
-                      "filename of a packet capture.")
+        raise FileNotFoundError("ERROR: All packet captures are empty!")
     if verbosity:
         print("Data loaded. Now drawing graph...")
     return pcap_data
+
+
+def anonymous_pcap_name():
+    """Anonymize pcap names.
+
+    Funny pcap names like switch_wireless is intendeded behavior.
+
+    Returns:
+        (string): Fake pcap name
+    """
+    fake_city_names = [
+        'Hogwarts', 'Quahog', 'Lake Wobegon', 'Narnia', 'Ankh-Morpork',
+        'Gotham City', 'Asgard', 'Neverland', 'The Shire', 'Rivendell',
+        'Diagon Alley', 'King\'s Landing', 'Cooper Station', 'Dragonstone',
+        'El Dorado', 'Atlantis', 'Pallet Town', 'Shangri-La', 'Mos Eisley']
+    fake_device_names = [
+        'firewall', 'router', 'access point', 'switch', 'bridge', 'repeater',
+        'dial-up modem', 'proxy server', 'hub', 'tokenring mau', 'gateway',
+        'turbo encabulator', 'L3 switch', 'HIDS', 'load balancer',
+        'packet shaper', 'vpn concentrator', 'content filter', 'CSU/DSU']
+    """
+    interfaces = ['eth0', 'uplink', 'LAN', 'WAN', 'loopback', 'VMnet8',
+                  'p2p', 'mpls', 'vpn', 'tr0', 'wlan3', 'wwan', 'saint NIC',
+                  'G0/0/2', 'port3', 'G0/1/3', 'F0/5', 'F0/8', 'wan0.5']
+    fake_int = random.choice(interfaces)"""
+    fake_place = random.choice(fake_city_names)
+    fake_device = random.choice(fake_device_names)
+
+    return fake_place + '-' + fake_device
 
 
 def decode_stdout(stdout):
@@ -216,13 +247,9 @@ def get_pcap_vars(filename):
         pcap_start (float): Unix time when this packet capture stared.
         pcap_end (float): Unix time when this packet capture ended.
     """
-    packet_count_cmds = ['-r', filename, '-2']
+    packet_count = get_packet_count(filename)
 
-    pcap_text_raw = sp.Popen(
-        ['tshark', *packet_count_cmds], stdout=sp.PIPE, stderr=sp.PIPE)
-    pcap_text = decode_stdout(pcap_text_raw)
-    packet_count = pcap_text.count('\n')  # Each line of output is a packet
-
+    print(filename)
     if packet_count:
         start_unixtime_cmds = [
             'tshark', '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
@@ -240,12 +267,35 @@ def get_pcap_vars(filename):
         pcap_start = float(decode_stdout(pcap_start_raw))
         pcap_end = float(decode_stdout(pcap_end_raw))
 
+        tcpdump_release_time = 946684800
+        if pcap_start < tcpdump_release_time or pcap_end < tcpdump_release_time:
+            print("!!! Packets from ", filename, " must have traveled via"
+                  " a flux capacitor because they're in the past or the future!"
+                  "\n!!! Timestamps predate the release of tcpdump or "
+                  "are negative.\n!!! Excluding from results.\n")
+            return 0, 0, 0
+
+        print(packet_count, pcap_start, pcap_end)
         return packet_count, pcap_start, pcap_end
 
     # (else) May need to raise an exception for this as it means input is bad.
     print("!!! ERROR: Packet capture", filename, " has no packets or "
-          "cannot be read!\n!!! Excluding from results.\n\n")
-    return packet_count, 0, 0
+          "cannot be read!\n!!! Excluding from results.\n")
+    return 0, 0, 0
+
+
+def get_packet_count(filename):
+    """Given a file, get the packet count."""
+    packet_count_cmds = ['-r', filename, '-2']
+
+    pcap_text_raw = sp.Popen(
+        ['tshark', *packet_count_cmds], stdout=sp.PIPE, stderr=sp.PIPE)
+    pcap_text = decode_stdout(pcap_text_raw)
+    # Split text like so in order that we capture 1-line text with no newline
+    packet_list = pcap_text.split('\n')
+    # Filter out any packets that are the empty string
+    packet_count = len(list(filter(None, packet_list)))
+    return packet_count
 
 
 def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
@@ -293,3 +343,15 @@ def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
         print("\tand it took", time.time() - pcap_starttime, 'seconds.')
 
     return percent_same
+
+
+def save_pcap_intersection(filenames):
+    """Save the pcap intersection as a pcap.
+
+    Given that the intersection returns a packet capture
+    """
+    pivot = filenames[0]
+    pivot_raw_output = \
+        sp.Popen(['tshark', '-r', pivot_pcap, *tshark_filters],
+                 stdout=sp.PIPE, stderr=sp.PIPE)
+    pivot_pkts = set(decode_stdout(pivot_raw_output).split('\n'))

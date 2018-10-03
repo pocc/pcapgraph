@@ -15,24 +15,31 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-scV] [--format <format>] (--dir <dir>... | <file>...)
+  pcapgraph [-acV] [-i | --output <format>] (--dir <dir>... | <file>...)
   pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
 
 Options:
   <file>...             Any number of packet captures to analyze.
+  -a, --anonymize       Anonymize packet capture file names with fictional place
+                        names, devices, and interfaces.
   -c, --compare         Compare all files to the first file by ip.id and
                         ip.checksum to find the percent of packets that
                         match exactly. (See About for more details).
   -d, --dir <dir>       Specify directories to add pcaps from.
                         Can be used multiple times.
+  -f, --filter <filter> Prefilter packets with a wireshark filter. Can be
+                        specified multiple times, once per filter.
+                        Filtering for target traffic decreases processing time.
   -g, --generate-pcaps  Generate 3 example packet captures (see Generation).
   -h, --help            Show this screen.
+  -i, --intersection    Find the common packets between the positionally first
+                        (pivot) packet capture and all others and save as pcap.
       --int <interface> Specify the interface to capture on. Requires -g. You
                         should open Wireshark to find the active interface with
                         traffic passing if you are not sure which to specify.
-  -f, --format <format> Output results as a file instead of a popup.
+  -o, --output <format> Output results as a file instead of a popup.
   -v, --version         Show PcapGraph's version.
   -V, --verbose         Provide more context to what pcapgraph is doing.
 
@@ -55,7 +62,7 @@ Generation of example packet captures
   using this command, you may need to use sudo depending on whether you have
   configured wireshark to allow unprivileged users to take packet captures.
 
-  Pcap1 stars at 0s, Pcap2 starts at 20s, Pcap3 starts at 40s.
+  Pcap1 starts at 0s, Pcap2 starts at 20s, Pcap3 starts at 40s.
   Pcap1 should match Pcap1 100%, Pcap2 66%, and Pcap3 33% (with -c used).
 
 Packet comparisons:
@@ -71,7 +78,7 @@ Packet comparisons:
 
 Formats:
   Export formats are dependent on OS capabilities. Formats may include:
-  eps, jpeg, jpg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
+  eps, jpeg, jpg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff, txt
 
   More information on format can be found in matplotlib's online documentation:
   https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
@@ -82,7 +89,9 @@ import docopt
 from .parse_options import parse_cli_args
 from .parse_options import get_tshark_status
 from .parse_options import get_pcap_dict
+# from .parse_options import save_intersection_pcap
 from .draw_graph import draw_graph
+import pickle
 
 
 def run():
@@ -90,8 +99,11 @@ def run():
     args = docopt.docopt(__doc__)
     filenames = parse_cli_args(args)
     get_tshark_status()  # PcapGraph requires tshark, so quit if not installed
-    pcap_dict = get_pcap_dict(filenames, args['--compare'], args['--verbose'])
-    draw_graph(pcap_dict, save_fmt=args['--format'])
+    #if args['--intersection']:
+    #    save_intersection_pcap(filenames)
+    pcap_dict = get_pcap_dict(filenames, args['--compare'],
+                              args['--verbose'], args['--anonymize'])
+    draw_graph(pcap_dict, save_fmt=args['--output'])
 
 
 if __name__ == '__main__':

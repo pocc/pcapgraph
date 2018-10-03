@@ -39,13 +39,13 @@ def draw_graph(pcap_times, save_fmt):
             file.close()
         print("Text file successfully created!")
     else:
-        start_times, end_times, pcap_names = setup_graph_vars(pcap_times)
+        start_times, end_times, pcap_names = get_graph_vars(pcap_times)
 
         generate_graph(pcap_names, start_times, end_times)
         export_graph(pcap_times, pcap_names, save_fmt)
 
 
-def setup_graph_vars(pcap_times):
+def get_graph_vars(pcap_times):
     """Setup graph variables.
 
     This function exists to decrease the complexity of generate graph.
@@ -107,11 +107,23 @@ def generate_graph(pcap_names, start_times, end_times):
     # Print all x labels that aren't at the lower corners
     plt.xticks(rotation=45)
     axes.set_xticks(np.round(np.linspace(first, last, 10)))
+    axes.tick_params(axis='y', labelsize=12)     # Set ytick fontsize to 10
     axes.set_xticklabels(x_ticks)
     for tick in axes.xaxis.get_majorticklabels():
         tick.set_horizontalalignment("right")
+    # Each line has text that is 12 point high; 72 point = 1 inch, so for each
+    # additional pcap, add 1/6 inch. Default graph is 3 in high, so y tick text
+    # should start overlapping at 18 lines.
+    # If number of pcaps is greater than 18, remove the names
+    if len(pcap_names) > 18:
+        pcap_names = len(pcap_names) * ['']
+    #adjusted_height = (len(pcap_names) - 18) * 2
+    #fig.set_figheight(5.5 + adjusted_height)
+    # If there's more than 18 packet captures, don't show the names.
+    #pcap_names = len(pcap_names) * ['']
     # Pcap names as y ticks. Position them halfway up the bar.
     plt.yticks(np.arange(len(pcap_names), step=1), pcap_names)
+    axes.set_ylim(-0.5, len(pcap_names) - 0.5)
     # xlabel will be 'Time' if different years, and 'Time (YYYY)' if same year.
     axes.set_xlabel(xlabel, fontsize=16)
     axes.set_ylabel('Pcap Name', fontsize=16)
