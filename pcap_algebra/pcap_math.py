@@ -23,7 +23,7 @@ from pcapgraph.parse_options import get_tshark_status, decode_stdout
 from pcapgraph.parse_options import get_packet_count
 
 
-def pcap_intersector(pcap_names):
+def intersect_pcap(*pcaps):
     """Save pcap intersection. First filename is pivot packet capture.
 
     Assume all traffic is seen at A and parts of A's traffic are seen at
@@ -46,9 +46,41 @@ def pcap_intersector(pcap_names):
     Percentages indicate what percentage of BCD's packets are the same as A's.
     Files starting with 'diff' are set differences of all packets to pivot A.
     """
+    pcap_dict = {}
+    frame_dict = {}
+    # Using packet text as dict key ensures no duplicate packets. The result
+    # of this for loop is a pcap_dict with all unique packets from all pcaps.
+    for pcap in pcaps:
+        pcap_dict[pcap] = {'raw_frames': [], 'num_packets': 0}
+        packet_dict = get_pcap_as_json(pcap)
+        pcap_dict[pcap]['num_packets'] = get_packet_count(pcap)
+        for packet in packet_dict:
+            raw_frame = packet['_source']['layers']['frame_raw']
+            frame_time_epoch = \
+                packet['_source']['layers']['frame']['frame.time_epoch']
+            pcap_dict[pcap]['raw_frames'].append(raw_frame)
+            frame_dict[raw_frame] = frame_time_epoch
+
+    raw_frame_list = [list(pcap_dict[pcap]['raw_frames'])
+                      for pcap in pcap_dict]
+    frame_intersection = set(raw_frame_list[0]).intersection(*raw_frame_list)
+    intersection_count = len(frame_intersection)
+    print("{: <12} {: <}".format('SAME %', 'PCAP NAME'))
+    for pcap in pcaps:
+        same_percent = str(round(
+            100 * (intersection_count / pcap_dict[pcap]['num_packets']))) + '%'
+        print("{: <12} {: <}".format(same_percent, pcap))
+    pcap_text = ''
+    for packet in frame_intersection:  # Only send in unique values.
+        frame_timestamp = frame_dict[packet]
+        pcap_text += convert_to_pcaptext(packet, frame_timestamp)
+    save_pcap_cmds = ['text2pcap', '-', 'intersection.pcap', '-t', '%s']
+    save_pcap = sp.Popen(save_pcap_cmds, stdin=sp.PIPE,
+                         stdout=sp.PIPE, stderr=sp.PIPE)
+    save_pcap.communicate(input=pcap_text.encode())
 
 
-def intersect_pcap(pcap1, pcap2, has_temporal_intersection):
+def bounded_intersect_pcap(pcap1, pcap2):
     """Create a packet capture intersection out of two files using ipids.
 
     Let 2 packet captures have the following packets and assume that traffic
@@ -88,7 +120,6 @@ def intersect_pcap(pcap1, pcap2, has_temporal_intersection):
     Args:
         pcap1 (string): Filename of packet capture 1.
         pcap2 (string): Filename of packet capture 2.
-        has_temporal_intersection (bool): Type of intesection (other is id).
     """
     # Init vars
     pcap_info = {
@@ -123,56 +154,29 @@ def intersect_pcap(pcap1, pcap2, has_temporal_intersection):
     pcap1_name = str(os.path.basename(pcap1).split('.pcap')[0])
     pcap2_name = str(os.path.basename(pcap2).split('.pcap')[0])
 
-    if has_temporal_intersection:
-        pcap1_outname = pcap1_name + '-framed_intersect_with-' + pcap2_name + \
-            '.pcap'
-        pcap2_outname = pcap2_name + '-framed_intersect_with-' + pcap1_name + \
-            '.pcap'
+    pcap1_outname = pcap1_name + '-framed_intersect_with-' + pcap2_name + \
+        '.pcap'
+    pcap2_outname = pcap2_name + '-framed_intersect_with-' + pcap1_name + \
+        '.pcap'
 
-        pcap1_intersect_cmds = [
-            'tshark', '-r', pcap1, '-Y', 'frame.number>=' + str(
-                pcap1_first_common_frame)
-            + ' and frame.number <= ' + str(pcap1_last_common_frame), '-w',
-            pcap1_outname]
-        pcap2_intersect_cmds = [
-            'tshark', '-r', pcap2, '-Y', 'frame.number>=' + str(
-                pcap2_first_common_frame) + ' and frame.number<=' + str(
-                pcap2_last_common_frame), '-w',
-            pcap2_outname]
+    pcap1_intersect_cmds = [
+        'tshark', '-r', pcap1, '-Y', 'frame.number>=' + str(
+            pcap1_first_common_frame)
+        + ' and frame.number <= ' + str(pcap1_last_common_frame), '-w',
+        pcap1_outname]
+    pcap2_intersect_cmds = [
+        'tshark', '-r', pcap2, '-Y', 'frame.number>=' + str(
+            pcap2_first_common_frame) + ' and frame.number<=' + str(
+            pcap2_last_common_frame), '-w',
+        pcap2_outname]
 
-        framed_pcap_cmds = {
-            pcap1: pcap1_intersect_cmds,
-            pcap2: pcap2_intersect_cmds
-        }
-        # Write both files
-        for pcap in (pcap1, pcap2):
-            sp.Popen(framed_pcap_cmds[pcap])
-    else:
-        """
-        The logic that needs to go here:
-        A dict that has this info on each packet:
-            - protocols > find bpf 
-            - ip.ids 
-            - ip.checksum
-            - ip.src
-            - ip.dst
-            - tcp.ack
-            - tcp.seq
-            - srcport 
-            - dstport  
-            - udp.checksum > find bpf
-            - tcp.checksum > find bpf
-            
-        1. Add all packet data to one dict per pcap
-        2. Get the intersection set() of both dicts 
-        3. From pcap1, filter for exactly what's left in the dict and 
-            save it as the intersection
-        """
-        outname = pcap1_name + '-' + pcap2_name + '_intersection.pcap'
-        intersection_commands
-        # Write one intersection
-        for pcap in (pcap1, pcap2):
-            sp.Popen(framed_pcap_cmds[pcap])
+    framed_pcap_cmds = {
+        pcap1: pcap1_intersect_cmds,
+        pcap2: pcap2_intersect_cmds
+    }
+    # Write both files
+    for pcap in (pcap1, pcap2):
+        sp.Popen(framed_pcap_cmds[pcap])
 
 
 def union_pcap(*pcaps):
@@ -190,9 +194,10 @@ def union_pcap(*pcaps):
           packets in diff pcaps with diff timestamps, but same content is the
           purpose of this function.
 
-    mergecap <file>... -w union.pcap
-        Merges multiple pcaps and saves them as union.pcap
-        (preserves timestamps).
+    Similar wireshark tool: mergecap <file>... -w union.pcap
+        Merges multiple pcaps and saves them as a union.pcap (preserves
+        timestamps). This method does the same thing without duplicates.\
+        mergecap is shipped with wireshark.
 
     Args:
         *pcaps (list(str)): List of pcap filenames.
@@ -211,16 +216,16 @@ def union_pcap(*pcaps):
     for packet in set(raw_packet_list):  # Only send in unique values.
         pcap_text += convert_to_pcaptext(packet)
     save_pcap_cmds = ['text2pcap', '-', 'union.pcap']
-    save_pcap = sp.Popen(save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE)
+    save_pcap = sp.Popen(save_pcap_cmds, stdin=sp.PIPE,
+                         stdout=sp.PIPE, stderr=sp.PIPE)
     save_pcap.communicate(input=pcap_text.encode())
-    print(os.getcwd())
 
 
 def difference_pcap(pcap1, pcap2):
     """Given sets A = (1, 2, 3), B = (2, 3, 4), A-B = (1).
 
-    This method will find the intersection using intersect_pcap() and then
-    remove those packets from A, and save with tshark.
+    This method will find the intersection using bounded_intersect_pcap() and
+    then remove those packets from A, and save with tshark.
     """
 
 
@@ -267,7 +272,7 @@ def get_pcap_as_json(pcap):
     return json.loads(pcap_json)
 
 
-def convert_to_pcaptext(raw_packet):
+def convert_to_pcaptext(raw_packet, timestamp=''):
     """Convert the raw pcap hex to a form that text2cap can read from stdin.
 
     `tshark -r <file> -T json -x` produces the "in" and text2pcap
@@ -293,6 +298,11 @@ def convert_to_pcaptext(raw_packet):
 
     NOTE: Output format doesn't need an extra \n between packets. So in the
     above example, the next line could be 0000  00 ... for the next packet.
+
+    Args:
+        raw_packet (string): The ASCII hexdump seen above in 'In'
+        timestamp (string): Unix epoch timestamp of packet. This is optional.
+            If one is passed in, it will precede the 0000 line of the packet.
     """
     # init vars
     formatted_string = ''
@@ -300,6 +310,8 @@ def convert_to_pcaptext(raw_packet):
     hex_chars_per_byte = 2
     num_chars = len(raw_packet)
 
+    if timestamp:
+        formatted_string += str(timestamp) + '\n'
     # Parse the string into lines and each line into space-delimited bytes.
     for line_sep in range(0, num_chars, hex_chars_per_line):
         raw_line = raw_packet[line_sep: line_sep + hex_chars_per_line]
@@ -313,5 +325,7 @@ def convert_to_pcaptext(raw_packet):
     return formatted_string
 
 
-union_pcap('examples/simul1.pcap', 'examples/simul2.pcap')
-
+#union_pcap('examples/simul1.pcap', 'examples/simul2.pcap',
+#           'examples/simul3.pcap')
+intersect_pcap('examples/simul1.pcap', 'examples/simul2.pcap',
+           'examples/simul3.pcap')
