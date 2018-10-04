@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Do algebraic operations on sets like union, intersect, """
+"""Do algebraic operations on sets like union, intersect, difference."""
 
 import subprocess as sp
 import os
@@ -196,12 +196,19 @@ def union_pcap(*pcaps):
     save_pcap(set(raw_packet_list), frame_dict, name='_union')
 
 
-def difference_pcap(pcap1, pcap2):
+def difference_pcap(*pcaps):
     """Given sets A = (1, 2, 3), B = (2, 3, 4), A-B = (1).
 
     This method will find the intersection using bounded_intersect_pcap() and
     then remove those packets from A, and save with tshark.
     """
+    minuend_name = pcaps[0]
+    _, minuend_frame_dict = parse_pcaps(minuend_name)
+    diffing_pcaps = pcaps[1:]
+    _, frame_dict = parse_pcaps(*diffing_pcaps)
+    packet_diff = set(minuend_frame_dict).difference(set(frame_dict))
+    save_pcap(frames=packet_diff, frame_dict=minuend_frame_dict,
+              name='_difference')
 
 
 def parse_pcaps(*pcaps):

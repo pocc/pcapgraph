@@ -65,7 +65,7 @@ def get_graph_vars(pcap_times):
     pcap_names = []
     # Sorted by first timestamp so that graph looks like a staircase.
     sorted_pcap_names = sorted(
-        pcap_times, key=lambda x: pcap_times[x]['pcap_starttime'])
+        pcap_times)
     for pcap in sorted_pcap_names:
         start_times.append(pcap_times[pcap]['pcap_starttime'])
         end_times.append(pcap_times[pcap]['pcap_endtime'])
@@ -142,8 +142,8 @@ def set_horiz_bar_colors(barlist):
         barlist
     """
     colors = [
-        '#2d89ef', '#603cba', '#2b5797', '#b91d47', '#7e3878', '#99b433',
-        '#00a300',  '#da532c', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a'
+        '#2d89ef', '#603cba', '#2b5797', '#7e3878', '#b91d47', '#9f00a7',
+        '#00a300', '#da532c', '#00aba9', '#1e7145', '#99b433', '#e3a21a'
     ]
     color_count = len(colors)
     for i, hbar in enumerate(barlist):
