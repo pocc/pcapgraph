@@ -248,7 +248,6 @@ def get_pcap_vars(filename):
     """
     packet_count = get_packet_count(filename)
 
-    print(filename)
     if packet_count:
         start_unixtime_cmds = [
             'tshark', '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
@@ -321,7 +320,22 @@ def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
         pcap_starttime = time.time()
         print("--compare percent similar starting for", other_pcap + "... ")
 
-
+    tshark_filters = [
+        '-2', '-Y', 'ip', '-T', 'fields', '-e', 'ip.id', '-e', 'ip.src', '-e',
+        'ip.dst', '-e', 'tcp.ack', '-e', 'tcp.seq', '-e', 'udp.srcport'
+    ]
+    pivot_raw_output = \
+        sp.Popen(['tshark', '-r', pivot_pcap, *tshark_filters],
+                 stdout=sp.PIPE, stderr=sp.PIPE)
+    pivot_pkts = set(decode_stdout(pivot_raw_output).split('\n'))
+    other_raw_output = \
+        sp.Popen(['tshark', '-r', other_pcap, *tshark_filters],
+                 stdout=sp.PIPE, stderr=sp.PIPE)
+    other_pkts = set(decode_stdout(other_raw_output).split('\n'))
+    total_count = len(pivot_pkts)
+    # Use python's set functions to find the fastest intersection of packets.
+    same_pkts = set(pivot_pkts).intersection(other_pkts)
+    similarity_count = len(same_pkts)
 
     percent_same = round(100 * (similarity_count / total_count))
 

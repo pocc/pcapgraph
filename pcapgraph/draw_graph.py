@@ -142,8 +142,8 @@ def set_horiz_bar_colors(barlist):
         barlist
     """
     colors = [
-        '#2d89ef', '#603cba', '#2b5797', '#b91d47', '#99b433', '#da532c',
-        '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a'
+        '#2d89ef', '#603cba', '#2b5797', '#b91d47', '#7e3878', '#99b433',
+        '#00a300',  '#da532c', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a'
     ]
     color_count = len(colors)
     for i, hbar in enumerate(barlist):
