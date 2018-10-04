@@ -208,12 +208,12 @@ def union_pcap(*pcaps):
 
     print("Packet statistics", collections.Counter(raw_packet_list))
     pcap_text = ''
-    for packet in raw_packet_list:
+    for packet in set(raw_packet_list):  # Only send in unique values.
         pcap_text += convert_to_pcaptext(packet)
-    print(pcap_text)
     save_pcap_cmds = ['text2pcap', '-', 'union.pcap']
     save_pcap = sp.Popen(save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE)
     save_pcap.communicate(input=pcap_text.encode())
+    print(os.getcwd())
 
 
 def difference_pcap(pcap1, pcap2):
