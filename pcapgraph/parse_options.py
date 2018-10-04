@@ -164,7 +164,6 @@ def get_pcap_dict(filenames, has_compare_pcaps, verbosity, is_anon):
         filenames (list): A list of filepaths.
         has_compare_pcaps (bool): Has the user has provided the '-c' option.
         verbosity (bool): Whether to provide user with additional context.
-        packet_intersect (bool): Whether to output packet intersection pcap.
         is_anon (bool): Whether to anonymize packet capture names.
     Return:
         (dict): A dict with all of the data that graph functions need.
@@ -268,14 +267,14 @@ def get_pcap_vars(filename):
         pcap_end = float(decode_stdout(pcap_end_raw))
 
         tcpdump_release_time = 946684800
-        if pcap_start < tcpdump_release_time or pcap_end < tcpdump_release_time:
-            print("!!! Packets from ", filename, " must have traveled via"
-                  " a flux capacitor because they're in the past or the future!"
+        if pcap_start < tcpdump_release_time or \
+                pcap_end < tcpdump_release_time:
+            print("!!! Packets from ", filename, " must have traveled via "
+                  "a flux capacitor because they're in the past or the future!"
                   "\n!!! Timestamps predate the release of tcpdump or "
                   "are negative.\n!!! Excluding from results.\n")
             return 0, 0, 0
 
-        print(packet_count, pcap_start, pcap_end)
         return packet_count, pcap_start, pcap_end
 
     # (else) May need to raise an exception for this as it means input is bad.
@@ -321,37 +320,12 @@ def get_pcap_similarity(pivot_pcap, other_pcap, verbosity):
         # Iterate over all packets with the given frame number.
         pcap_starttime = time.time()
         print("--compare percent similar starting for", other_pcap + "... ")
-    tshark_filters = [
-        '-2', '-Y', 'ip', '-T', 'fields', '-e', 'ip.id', '-e', 'ip.src', '-e',
-        'ip.dst', '-e', 'tcp.ack', '-e', 'tcp.seq', '-e', 'udp.srcport'
-    ]
-    pivot_raw_output = \
-        sp.Popen(['tshark', '-r', pivot_pcap, *tshark_filters],
-                 stdout=sp.PIPE, stderr=sp.PIPE)
-    pivot_pkts = set(decode_stdout(pivot_raw_output).split('\n'))
-    other_raw_output = \
-        sp.Popen(['tshark', '-r', other_pcap, *tshark_filters],
-                 stdout=sp.PIPE, stderr=sp.PIPE)
-    other_pkts = set(decode_stdout(other_raw_output).split('\n'))
-    total_count = len(pivot_pkts)
-    # Use python's set functions to find the fastest intersection of packets.
-    same_pkts = set(pivot_pkts).intersection(other_pkts)
-    similarity_count = len(same_pkts)
+
+
+
     percent_same = round(100 * (similarity_count / total_count))
 
     if verbosity:
         print("\tand it took", time.time() - pcap_starttime, 'seconds.')
 
     return percent_same
-
-
-def save_pcap_intersection(filenames):
-    """Save the pcap intersection as a pcap.
-
-    Given that the intersection returns a packet capture
-    """
-    pivot = filenames[0]
-    pivot_raw_output = \
-        sp.Popen(['tshark', '-r', pivot_pcap, *tshark_filters],
-                 stdout=sp.PIPE, stderr=sp.PIPE)
-    pivot_pkts = set(decode_stdout(pivot_raw_output).split('\n'))

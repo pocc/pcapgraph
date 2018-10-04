@@ -15,7 +15,8 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-acV] [-i | --output <format>] (--dir <dir>... | <file>...)
+  pcapgraph [-acV] [--output <format>] (--dir <dir>... | <file>...)
+  pcapgraph (diff | union | intersect) (--dir <dir>... | <file>...)
   pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
