@@ -214,17 +214,15 @@ def anonymous_pcap_name():
         'Hogwarts', 'Quahog', 'Lake Wobegon', 'Narnia', 'Ankh-Morpork',
         'Gotham City', 'Asgard', 'Neverland', 'The Shire', 'Rivendell',
         'Diagon Alley', 'King\'s Landing', 'Cooper Station', 'Dragonstone',
-        'El Dorado', 'Atlantis', 'Pallet Town', 'Shangri-La', 'Mos Eisley']
+        'El Dorado', 'Atlantis', 'Pallet Town', 'Shangri-La', 'Mos Eisley'
+    ]
     fake_device_names = [
         'firewall', 'router', 'access point', 'switch', 'bridge', 'repeater',
         'dial-up modem', 'proxy server', 'hub', 'tokenring mau', 'gateway',
         'turbo encabulator', 'L3 switch', 'HIDS', 'load balancer',
-        'packet shaper', 'vpn concentrator', 'content filter', 'CSU/DSU']
-    """
-    interfaces = ['eth0', 'uplink', 'LAN', 'WAN', 'loopback', 'VMnet8',
-                  'p2p', 'mpls', 'vpn', 'tr0', 'wlan3', 'wwan', 'saint NIC',
-                  'G0/0/2', 'port3', 'G0/1/3', 'F0/5', 'F0/8', 'wan0.5']
-    fake_int = random.choice(interfaces)"""
+        'packet shaper', 'vpn concentrator', 'content filter', 'CSU/DSU'
+    ]
+
     fake_place = random.choice(fake_city_names)
     fake_device = random.choice(fake_device_names)
 

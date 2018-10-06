@@ -23,8 +23,8 @@ Usage:
 
 Options:
   <file>...             Any number of packet captures to analyze.
-  -a, --anonymize       Anonymize packet capture file names with fictional place
-                        names, devices, and interfaces.
+  -a, --anonymize       Anonymize packet capture file names with fictional
+                        place names, devices, and interfaces.
   -c, --compare         Compare all files to the first file by ip.id and
                         ip.checksum to find the percent of packets that
                         match exactly. (See About for more details).
@@ -90,9 +90,7 @@ import docopt
 from .parse_options import parse_cli_args
 from .parse_options import get_tshark_status
 from .parse_options import get_pcap_dict
-# from .parse_options import save_intersection_pcap
 from .draw_graph import draw_graph
-import pickle
 
 
 def run():
@@ -100,10 +98,8 @@ def run():
     args = docopt.docopt(__doc__)
     filenames = parse_cli_args(args)
     get_tshark_status()  # PcapGraph requires tshark, so quit if not installed
-    #if args['--intersection']:
-    #    save_intersection_pcap(filenames)
-    pcap_dict = get_pcap_dict(filenames, args['--compare'],
-                              args['--verbose'], args['--anonymize'])
+    pcap_dict = get_pcap_dict(filenames, args['--compare'], args['--verbose'],
+                              args['--anonymize'])
     draw_graph(pcap_dict, save_fmt=args['--output'])
 
 

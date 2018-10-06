@@ -19,7 +19,7 @@ import os
 import json
 import collections
 
-from pcapgraph.parse_options import get_tshark_status, decode_stdout
+from pcapgraph.parse_options import get_tshark_status
 from pcapgraph.parse_options import get_packet_count
 
 
@@ -49,16 +49,18 @@ def intersect_pcap(*pcaps):
     pcap_dict, frame_dict = parse_pcaps(*pcaps)
 
     # Generate intersection set of frames
-    raw_frame_list = [list(pcap_dict[pcap]['raw_frames'])
-                      for pcap in pcap_dict]
+    raw_frame_list = [
+        list(pcap_dict[pcap]['raw_frames']) for pcap in pcap_dict
+    ]
     frame_intersection = set(raw_frame_list[0]).intersection(*raw_frame_list)
 
     # Print intersection output like in docstring
     intersection_count = len(frame_intersection)
     print("{: <12} {: <}".format('SAME %', 'PCAP NAME'))
     for pcap in pcaps:
-        same_percent = str(round(
-            100 * (intersection_count / pcap_dict[pcap]['num_packets']))) + '%'
+        same_percent = str(
+            round(100 * (intersection_count / pcap_dict[pcap]['num_packets']
+                         ))) + '%'
         print("{: <12} {: <}".format(same_percent, pcap))
 
     save_pcap(frame_intersection, frame_dict, name='_intersect')
@@ -181,8 +183,8 @@ def difference_pcap(*pcaps):
     diffing_pcaps = pcaps[1:]
     _, frame_dict = parse_pcaps(*diffing_pcaps)
     packet_diff = set(minuend_frame_dict).difference(set(frame_dict))
-    save_pcap(frames=packet_diff, frame_dict=minuend_frame_dict,
-              name='_difference')
+    save_pcap(
+        frames=packet_diff, frame_dict=minuend_frame_dict, name='_difference')
 
 
 def parse_pcaps(*pcaps):
@@ -192,7 +194,7 @@ def parse_pcaps(*pcaps):
         *pcaps (*list(string)): A list of pcap filenames
     Returns:
         pcap_dict (dict):
-            {<pcap>: {'raw_frames': [<frame>, ...], 'num_packets': 5}, ...}
+            {<pcap>: {'raw_frames': [<frame>, ...], 'num_packets': 1}, ...}
         frame_dict (dict):
             {<raw_frame>: <timestamp>, ...}
     """
@@ -217,11 +219,23 @@ def parse_pcaps(*pcaps):
 
 
 def get_minmax_common_frames(pcap_dict, frame_dict):
-    """Get the frames that are the beginning and end
+    """Get the frames that are at the beginning and end of intersection pcap.
 
-    write me"""
-    raw_frame_list = [list(pcap_dict[pcap]['raw_frames'])
-                      for pcap in pcap_dict]
+    Args:
+        pcap_dict (dict):
+            {<pcap>: {'raw_frames': [<frame>, ...], 'num_packets': 1}, ...}
+        frame_dict (dict):
+            {<raw_frame>: <timestamp>, ...}
+    Returns:
+        min_frame, max_frame (tuple(string)):
+            Packet strings of the packets that are at the beginning and end of
+            the intersection pcap based on timestamps.
+    Raises:
+        assert: If intersection is empty.
+    """
+    raw_frame_list = [
+        list(pcap_dict[pcap]['raw_frames']) for pcap in pcap_dict
+    ]
     frame_intersection = set(raw_frame_list[0]).intersection(*raw_frame_list)
 
     # Set may reorder packets, so search for first/last.
@@ -244,31 +258,6 @@ def get_minmax_common_frames(pcap_dict, frame_dict):
     assert min_frame != ''
 
     return min_frame, max_frame
-
-
-def search_for_common_frame(*frame_lists):
-    """Search for a common frame by iterating through list1 and then list2.
-
-    Default is to go in forward direction.
-    To search the both lists in reverse, pass in 2 reversed lists.
-
-    Args:
-        *frame_lists (list): List of ip_ids from pcap1
-    Returns:
-        (tuple(int)): Frame numbers of first found common frame.
-    """
-    for pcap in frame_lists:
-        for packet in pcap:
-            ip_id = packet['_source']['layers']['ip']['ip.id']
-
-    for pcap1_index, _ in enumerate(frame_lists[0]):
-        print(pcap1_index)
-        pcap1_packet_ip_id = frame_list1[pcap1_index]
-        for pcap2_index, _ in enumerate(frame_list2):
-            print(pcap2_index)
-            pcap2_packet_ip_id = frame_list2[pcap2_index]
-            if pcap1_packet_ip_id == pcap2_packet_ip_id:
-                return pcap1_index + 1, pcap2_index + 1
 
 
 def get_pcap_as_json(pcap):
@@ -336,10 +325,10 @@ def convert_to_pcaptext(raw_packet, timestamp=''):
         formatted_string += str(timestamp) + '\n'
     # Parse the string into lines and each line into space-delimited bytes.
     for line_sep in range(0, num_chars, hex_chars_per_line):
-        raw_line = raw_packet[line_sep: line_sep + hex_chars_per_line]
+        raw_line = raw_packet[line_sep:line_sep + hex_chars_per_line]
         line = ''
         for byte_sep in range(0, hex_chars_per_line, hex_chars_per_byte):
-            line += raw_line[byte_sep: byte_sep + hex_chars_per_byte] + ' '
+            line += raw_line[byte_sep:byte_sep + hex_chars_per_byte] + ' '
         line = line[:-1]  # get rid of trailing space
         line_sep_hex = line_sep // 32 * 10  # Offsets need to be in hex.
         formatted_string += '{:>04d}'.format(line_sep_hex) + '  ' + line + '\n'
@@ -375,7 +364,7 @@ def save_pcap(frames, frame_dict, name):
         frame_timestamp = frame_dict[packet]
         pcap_text += convert_to_pcaptext(packet, frame_timestamp)
     save_pcap_cmds = ['text2pcap', '-', name + '.pcap', '-t', '%s.']
-    save_pcap_sp = sp.Popen(save_pcap_cmds, stdin=sp.PIPE,
-                            stdout=sp.PIPE, stderr=sp.PIPE)
+    save_pcap_sp = sp.Popen(
+        save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     save_pcap_sp.communicate(input=pcap_text.encode())
     reorder_packets(name + '.pcap')

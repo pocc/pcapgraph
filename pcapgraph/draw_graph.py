@@ -64,8 +64,7 @@ def get_graph_vars(pcap_times):
     end_times = []
     pcap_names = []
     # Sorted by first timestamp so that graph looks like a staircase.
-    sorted_pcap_names = sorted(
-        pcap_times)
+    sorted_pcap_names = sorted(pcap_times)
     for pcap in sorted_pcap_names:
         start_times.append(pcap_times[pcap]['pcap_starttime'])
         end_times.append(pcap_times[pcap]['pcap_endtime'])
@@ -107,7 +106,7 @@ def generate_graph(pcap_names, start_times, end_times):
     # Print all x labels that aren't at the lower corners
     plt.xticks(rotation=45)
     axes.set_xticks(np.round(np.linspace(first, last, 10)))
-    axes.tick_params(axis='y', labelsize=12)     # Set ytick fontsize to 10
+    axes.tick_params(axis='y', labelsize=12)  # Set ytick fontsize to 10
     axes.set_xticklabels(x_ticks)
     for tick in axes.xaxis.get_majorticklabels():
         tick.set_horizontalalignment("right")
@@ -117,10 +116,10 @@ def generate_graph(pcap_names, start_times, end_times):
     # If number of pcaps is greater than 18, remove the names
     if len(pcap_names) > 18:
         pcap_names = len(pcap_names) * ['']
-    #adjusted_height = (len(pcap_names) - 18) * 2
-    #fig.set_figheight(5.5 + adjusted_height)
+    # adjusted_height = (len(pcap_names) - 18) * 2
+    # fig.set_figheight(5.5 + adjusted_height)
     # If there's more than 18 packet captures, don't show the names.
-    #pcap_names = len(pcap_names) * ['']
+    # pcap_names = len(pcap_names) * ['']
     # Pcap names as y ticks. Position them halfway up the bar.
     plt.yticks(np.arange(len(pcap_names), step=1), pcap_names)
     axes.set_ylim(-0.5, len(pcap_names) - 0.5)
