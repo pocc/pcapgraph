@@ -64,8 +64,8 @@ def intersect_pcap(*pcaps):
     save_pcap(frame_intersection, frame_dict, name='_intersect')
 
 
-def bounded_intersect_pcap(pcap1, pcap2):
-    """Create a packet capture intersection out of two files using ipids.
+def bounded_intersect_pcap(*pcaps):
+    """Create a packet capture intersection out of two files using ip.ids.
 
     Let 2 packet captures have the following packets and assume that traffic
     originates behind the device that Pcap1 is capturing on:
@@ -102,65 +102,39 @@ def bounded_intersect_pcap(pcap1, pcap2):
 
 
     Args:
-        pcap1 (string): Filename of packet capture 1.
-        pcap2 (string): Filename of packet capture 2.
+        *pcaps (*list(string)): Filenames of packet captures passed in.
     """
     # Init vars
-    pcap_info = {
-        pcap1: [],
-        pcap2: []
-    }
-    get_tshark_status()
+    get_tshark_status()  # Set tshark environmental vars as necessary
+    pcap_dict, frame_dict = parse_pcaps(*pcaps)
 
-    # Get a list of sequential ip ids from both packet captures
-    for pcap in (pcap1, pcap2):
-        get_pcap1_ipids = ['tshark', '-r', pcap, '-T', 'fields',
-                           '-e', 'frame.number', '-e', 'ip.id']
-        pcap_raw = sp.Popen(get_pcap1_ipids, stdout=sp.PIPE, stderr=sp.PIPE)
-        # output should be of the form "frame.number\tip.id\r\n" per packet.
-        pcap_output = pcap_raw.communicate()[0].decode('utf8')
-        # Split by newline and remove last value, which will be ''
-        pcap_packet_list = pcap_output.split('\r\n')[:-1]
-        for packet in pcap_packet_list:
-            frame_num, ip_id = packet.split('\t')
-            # Every frame num should be present as we iterate through packets
-            pcap_info[pcap].append(ip_id)
+    min_frame, max_frame = get_minmax_common_frames(pcap_dict, frame_dict)
 
-    # Using index instead of dictionary element because in Python 3.6,
-    # dict element order is not guaranteed to be the same as insertion order.
-    pcap1_first_common_frame, pcap2_first_common_frame = \
-        search_for_common_frame(pcap_info[pcap1], pcap_info[pcap2])
-    pcap1_last_frame, pcap2_last_frame = search_for_common_frame(
-        list(reversed(pcap_info[pcap1])), list(reversed(pcap_info[pcap2])))
-    pcap1_last_common_frame = len(pcap_info[pcap1]) - pcap1_last_frame + 1
-    pcap2_last_common_frame = len(pcap_info[pcap2]) - pcap2_last_frame + 1
+    # Create a bounding box around each packet capture where the bounds are
+    # the min and max packets in the intersection.
+    for pcap in pcap_dict:
+        min_frame_index = -1
+        max_frame_index = -1
+        for frame in pcap_dict[pcap]['raw_frames']:
+            if frame == min_frame:
+                min_frame_index = pcap_dict[pcap]['raw_frames'].index(frame)
+                break
+        if min_frame_index == -1:
+            print("ERROR: Bounding minimum packet not found!")
+            raise IndexError
+        for frame in reversed(pcap_dict[pcap]['raw_frames']):
+            if frame == max_frame:
+                max_frame_index = pcap_dict[pcap]['raw_frames'].index(frame)
+                break
+        if max_frame_index == -1:
+            print("ERROR: Bounding maximum packet not found!")
+            raise IndexError
 
-    pcap1_name = str(os.path.basename(pcap1).split('.pcap')[0])
-    pcap2_name = str(os.path.basename(pcap2).split('.pcap')[0])
-
-    pcap1_outname = pcap1_name + '-framed_intersect_with-' + pcap2_name + \
-        '.pcap'
-    pcap2_outname = pcap2_name + '-framed_intersect_with-' + pcap1_name + \
-        '.pcap'
-
-    pcap1_intersect_cmds = [
-        'tshark', '-r', pcap1, '-Y', 'frame.number>=' + str(
-            pcap1_first_common_frame)
-        + ' and frame.number <= ' + str(pcap1_last_common_frame), '-w',
-        pcap1_outname]
-    pcap2_intersect_cmds = [
-        'tshark', '-r', pcap2, '-Y', 'frame.number>=' + str(
-            pcap2_first_common_frame) + ' and frame.number<=' + str(
-            pcap2_last_common_frame), '-w',
-        pcap2_outname]
-
-    framed_pcap_cmds = {
-        pcap1: pcap1_intersect_cmds,
-        pcap2: pcap2_intersect_cmds
-    }
-    # Write both files
-    for pcap in (pcap1, pcap2):
-        sp.Popen(framed_pcap_cmds[pcap])
+        bounded_pcap = \
+            pcap_dict[pcap]['raw_frames'][min_frame_index:max_frame_index + 1]
+        # Split off file path and extension
+        filename = os.path.splitext(os.path.basename(pcap))[0]
+        save_pcap(bounded_pcap, frame_dict, '_bounded_intersect-' + filename)
 
 
 def union_pcap(*pcaps):
@@ -197,7 +171,7 @@ def union_pcap(*pcaps):
 
 
 def difference_pcap(*pcaps):
-    """Given sets A = (1, 2, 3), B = (2, 3, 4), A-B = (1).
+    """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
 
     This method will find the intersection using bounded_intersect_pcap() and
     then remove those packets from A, and save with tshark.
@@ -217,8 +191,10 @@ def parse_pcaps(*pcaps):
     Args:
         *pcaps (*list(string)): A list of pcap filenames
     Returns:
-        pcap_dict (dict): {<pcap>: {'raw_frames': <frame>, 'num_packets': 0 ...
-        frame_dict (dict): {<raw_frame>: <timestamp>, ...}
+        pcap_dict (dict):
+            {<pcap>: {'raw_frames': [<frame>, ...], 'num_packets': 5}, ...}
+        frame_dict (dict):
+            {<raw_frame>: <timestamp>, ...}
     """
     pcap_dict = {}
     frame_dict = {}
@@ -240,19 +216,52 @@ def parse_pcaps(*pcaps):
     return pcap_dict, frame_dict
 
 
-def search_for_common_frame(frame_list1, frame_list2):
+def get_minmax_common_frames(pcap_dict, frame_dict):
+    """Get the frames that are the beginning and end
+
+    write me"""
+    raw_frame_list = [list(pcap_dict[pcap]['raw_frames'])
+                      for pcap in pcap_dict]
+    frame_intersection = set(raw_frame_list[0]).intersection(*raw_frame_list)
+
+    # Set may reorder packets, so search for first/last.
+    unix_32bit_end_of_time = 4294967296
+    time_min = unix_32bit_end_of_time
+    time_max = 0
+    max_frame = ''
+    min_frame = ''
+    for frame in frame_intersection:
+        frame_time = float(frame_dict[frame])
+        if frame_time > time_max:
+            time_max = frame_time
+            max_frame = frame
+        if frame_time < time_min:
+            time_min = frame_time
+            min_frame = frame
+
+    # If min/max frames are '', that likely means the intersection is empty.
+    assert max_frame != ''
+    assert min_frame != ''
+
+    return min_frame, max_frame
+
+
+def search_for_common_frame(*frame_lists):
     """Search for a common frame by iterating through list1 and then list2.
 
     Default is to go in forward direction.
     To search the both lists in reverse, pass in 2 reversed lists.
 
     Args:
-        frame_list1 (list): List of ip_ids from pcap1
-        frame_list2 (list): List of ip_ids from pcap2
+        *frame_lists (list): List of ip_ids from pcap1
     Returns:
         (tuple(int)): Frame numbers of first found common frame.
     """
-    for pcap1_index, _ in enumerate(frame_list1):
+    for pcap in frame_lists:
+        for packet in pcap:
+            ip_id = packet['_source']['layers']['ip']['ip.id']
+
+    for pcap1_index, _ in enumerate(frame_lists[0]):
         print(pcap1_index)
         pcap1_packet_ip_id = frame_list1[pcap1_index]
         for pcap2_index, _ in enumerate(frame_list2):
@@ -279,8 +288,11 @@ def get_pcap_as_json(pcap):
         (dict): Dict of the pcap json provided by tshark.
     """
     get_json_cmds = ['tshark', '-r', pcap, '-x', '-T', 'json']
-    pcap_json = sp.Popen(get_json_cmds, stdout=sp.PIPE).communicate()[0]
-    return json.loads(pcap_json)
+    pcap_json_raw = sp.Popen(get_json_cmds, stdout=sp.PIPE).communicate()[0]
+    pcap_json = ''
+    if pcap_json_raw:  # Don't want json.loads to crash due to an empty string.
+        pcap_json = json.loads(pcap_json_raw)
+    return pcap_json
 
 
 def convert_to_pcaptext(raw_packet, timestamp=''):
@@ -298,14 +310,13 @@ def convert_to_pcaptext(raw_packet, timestamp=''):
         1d1e1f202122232425262728292a2b2c2d2e2f3031323334353637
 
     Out format:
-        0000  24 77 03 51 13 44 88 15 44 ab bf dd 08 00 45
-        0010  00 68 f9 75 40 00 40 11 99 4f 0a 80 80 80 0a
-        0020  12 90 00 35 8d ff 00 54 0c cb e2 df 81 80 00
-        0030  00 03 00 00 00 00 06 61 6d 61 7a 6f 6e 03 63
-        0040  6d 00 00 01 00 01 c0 0c 00 01 00 01 00 00 00
-        0050  00 04 b0 20 62 a6 c0 0c 00 01 00 01 00 00 00
-        0060  00 04 b0 20 67 cd c0 0c 00 01 00 01 00 00 00
-        0070  00 04 cd fb f2 67
+        0000  24 77 03 51 13 44 88 15 44 ab bf dd 08 00 45 20
+        0010  00 54 2b bc 00 00 79 01 e8 fd 08 08 08 08 0a 30
+        0020  12 90 00 00 82 a5 63 11 00 01 f9 30 ab 5b 00 00
+        0030  00 00 a9 e8 0d 00 00 00 00 00 10 11 12 13 14 15
+        0040  16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24 25
+        0050  26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35
+        0060  36 37
 
     NOTE: Output format doesn't need an extra \n between packets. So in the
     above example, the next line could be 0000  00 ... for the next packet.
