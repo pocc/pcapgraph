@@ -107,7 +107,6 @@ def bounded_intersect_pcap(*pcaps):
         *pcaps (*list(string)): Filenames of packet captures passed in.
     """
     # Init vars
-    get_tshark_status()  # Set tshark environmental vars as necessary
     pcap_dict, frame_dict = parse_pcaps(*pcaps)
 
     min_frame, max_frame = get_minmax_common_frames(pcap_dict, frame_dict)

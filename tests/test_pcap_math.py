@@ -23,9 +23,14 @@ from pcap_algebra.pcap_math import intersect_pcap
 from pcap_algebra.pcap_math import bounded_intersect_pcap
 from pcap_algebra.pcap_math import difference_pcap
 from pcap_algebra.pcap_math import convert_to_pcaptext
+from pcapgraph.parse_options import get_tshark_status
 
 
 class TestPcapMath(unittest.TestCase):
+    def setUp(self):
+        # Add the wireshark folder to PATH for this shell.
+        get_tshark_status()
+
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
         # This will generate union.pcap in tests/
