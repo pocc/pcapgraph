@@ -12,14 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# Filter gets a single-letter flag because it might be specified multiple times.
-# All other single-letter flags should not require an argument.
 """PcapGraph
 
 Usage:
-  pcapgraph [-acVt] [-d | -i | -u] [--output <format>] \
-[--math <operation>] (--dir <dir>... | <file>...)
+  pcapgraph [-acV] [--set <operation>...] [--output <format>...] \
+(--dir <dir>... | <file>...)
   pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
@@ -31,21 +28,20 @@ Options:
   -c, --compare         Compare all files to the first file by ip.id and
                         ip.checksum to find the percent of packets that
                         match exactly. (see Packet Comparisions).
-  -d, --difference      Set difference of packets (see Set Operations).
-      --dir <dir>       Specify directories to add pcaps from.
+  -d, --dir <dir>       Specify directories to add pcaps from.
                         Can be used multiple times.
   -f, --filter <filter> Prefilter packets with a wireshark filter. Can be
                         specified multiple times, once per filter.
                         Filtering for target traffic decreases processing time.
   -g, --generate-pcaps  Generate 3 example packet captures (see Generation).
   -h, --help            Show this screen.
-  -i, --intersection    Set intersection of packets (see Set Operations).
-      --int <interface> Specify the interface to capture on. Requires -g. Open
+  -i, --int <interface> Specify the interface to capture on. Requires -g. Open
                         Wireshark to find the active interface with traffic
                         passing if you are not sure which to specify.
   -o, --output <format> Output results as a file with format type.
-  -t, --time-intersect  Time intersection of packets (see Temporal Intersection)
-  -u, --union           Set union of packets (see Set Operations).
+  -s, --set <operation> Performs a set operation on frames. Valid operations are
+                        bounded, difference, intersection, and union.
+                        See Set Operations for more details.
   -v, --version         Show PcapGraph's version.
   -V, --verbose         Provide more context to what pcapgraph is doing.
 
@@ -53,6 +49,8 @@ About:
   PcapGraph is used to determine when packet captures were taken using the
   wireshark filter 'frame.time_epoch' and creates a graph with those times.
   The default behavior for output is a graph (hence the name).
+
+  NOTE: pcap is shorthand for packet capture and is used throughout this program
 
 Input requirements
   Packet captures are required for this program to function. They can be
@@ -78,11 +76,11 @@ Set Operations:
     3. Reencode the packets in a pcap using text2pcap.
   pcapgraph will only run the last set operation specified (of -ditu).
 
-  Difference: Remove all packets that are present in one pcap from another.
-  Intersection: Find all packets that two pcaps have in common.
-  Union: Find all unique packets found in all provided pcaps.
+  difference: Remove all packets that are present in one pcap from another.
+  intersection: Find all packets that two pcaps have in common.
+  union: Find all unique packets found in all provided pcaps.
 
-  Temporal Intersection:
+  bounded (intersection):
     Find the first and last frames in the frame intersection of all pcaps
     according to their timestamp Use these two frames as upper and lower
     limts to return all frames in each pcap that are between these two
@@ -111,20 +109,28 @@ Generation of example packet captures
 """
 import docopt
 
-from .parse_options import parse_cli_args
-from .parse_options import get_tshark_status
-from .parse_options import get_pcap_dict
-from .draw_graph import draw_graph
+from . import get_tshark_status
+import pcapgraph.manipulate_frames as mf
+import pcapgraph.get_filenames as gf
+import pcapgraph.draw_graph as dg
+import pcapgraph.pcap_math as pm
 
 
 def run():
-    """Main function."""
-    args = docopt.docopt(__doc__)
-    filenames = parse_cli_args(args)
+    """Main function that contain the major moving parts:
+
+    1. Verify tshark
+    2. Get filenames from CLI args
+    3. Get a per-pcap frame list to be graphed/exported
+           frame dict form: {<file/operation>: {frame: timestamp, ...}, ...}
+    4. Draw the graph/export files
+    """
     get_tshark_status()
-    pcap_dict = get_pcap_dict(filenames, args['--compare'],
-                              args['--verbose'], args['--anonymize'])
-    draw_graph(pcap_dict, save_fmt=args['--output'])
+    args = docopt.docopt(__doc__)
+    filenames = gf.parse_cli_args(args)
+    pcaps_frame_dict = mf.get_pcap_dict(filenames)
+    set_frame_dict = pm.parse_set_arg(filenames, args['--set'])
+    dg.draw_graph(pcaps_frame_dict, set_frame_dict, args['--output'])
 
 
 if __name__ == '__main__':

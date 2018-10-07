@@ -13,14 +13,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Do algebraic operations on sets like union, intersect, difference."""
-
-import subprocess as sp
-import os
-import json
 import collections
 
-from pcapgraph.parse_options import get_tshark_status
-from pcapgraph.parse_options import get_packet_count
+from pcapgraph.manipulate_frames import parse_pcaps, get_frame_dict
+
+
+def parse_set_arg(args, filenames):
+    """Call the appropriate method per CLI flags.
+
+    difference, union, intersect consist of {<op>: {frame: timestamp, ...}}
+    bounded_intersect consists of {pcap: {frame: timestamp, ...}, ...}
+    """
+    pcap_frames = {}
+    for arg in args:
+        if arg == 'difference':
+            pcap_frames = {**pcap_frames, **difference_pcap(filenames)}
+        elif arg == 'intersection':
+            pcap_frames = {**pcap_frames, **intersect_pcap(filenames)}
+        elif arg == 'union':
+            pcap_frames = {**pcap_frames, **union_pcap(filenames)}
+        elif arg == 'bounded':
+            pcap_frames = {**pcap_frames, **bounded_intersect_pcap(filenames)}
+        else:
+            raise SyntaxError("ERROR: Invalid set operation.\nValid set "
+                              "operations: Bounded, Difference, Intersection, "
+                              "Union.")
+
+    return pcap_frames
 
 
 def intersect_pcap(*pcaps):
@@ -45,6 +64,11 @@ def intersect_pcap(*pcaps):
 
     Percentages indicate what percentage of BCD's packets are the same as A's.
     Files starting with 'diff' are set differences of all packets to pivot A.
+
+    Args:
+
+    Returns:
+
     """
     pcap_dict, frame_dict = parse_pcaps(*pcaps)
 
@@ -63,7 +87,10 @@ def intersect_pcap(*pcaps):
                          ))) + '%'
         print("{: <12} {: <}".format(same_percent, pcap))
 
-    save_pcap(frame_intersection, frame_dict, name='_intersect')
+    intersect_frame_dict = {}
+    for frame in frame_intersection:
+        intersect_frame_dict[frame] = frame_dict[frame]
+    return {'intersect': intersect_frame_dict}
 
 
 def bounded_intersect_pcap(*pcaps):
@@ -107,8 +134,8 @@ def bounded_intersect_pcap(*pcaps):
         *pcaps (*list(string)): Filenames of packet captures passed in.
     """
     # Init vars
+    bounded_pcaps = []
     pcap_dict, frame_dict = parse_pcaps(*pcaps)
-
     min_frame, max_frame = get_minmax_common_frames(pcap_dict, frame_dict)
 
     # Create a bounding box around each packet capture where the bounds are
@@ -131,11 +158,14 @@ def bounded_intersect_pcap(*pcaps):
             print("ERROR: Bounding maximum packet not found!")
             raise IndexError
 
-        bounded_pcap = \
+        bounded_frame_list = \
             pcap_dict[pcap]['raw_frames'][min_frame_index:max_frame_index + 1]
-        # Split off file path and extension
-        filename = os.path.splitext(os.path.basename(pcap))[0]
-        save_pcap(bounded_pcap, frame_dict, '_bounded_intersect-' + filename)
+        bounded_pcap_with_timestamps = {}
+        for frame in bounded_frame_list:
+            bounded_pcap_with_timestamps[frame] = frame_dict[frame]
+        bounded_pcaps.append(bounded_pcap_with_timestamps)
+
+    return bounded_pcaps
 
 
 def union_pcap(*pcaps):
@@ -161,14 +191,19 @@ def union_pcap(*pcaps):
     Args:
         *pcaps (list(str)): List of pcap filenames.
     """
-    pcap_dict, frame_dict = parse_pcaps(*pcaps)
+    pcap_dict = parse_pcaps(*pcaps)
+    frame_dict = get_frame_dict(pcap_dict)
     raw_packet_list = []
     for pcap in pcap_dict:
-        for frame in pcap_dict[pcap]['raw_frames']:
-            raw_packet_list.append(frame)
+        for frame in pcap:
+            raw_packet_list.append(frame['_source']['layers']['frame_raw'][0])
 
     print("Packet statistics", collections.Counter(raw_packet_list))
-    save_pcap(set(raw_packet_list), frame_dict, name='_union')
+
+    union_frame_dict = {}
+    for frame in raw_packet_list:
+        union_frame_dict[frame] = frame_dict[frame]
+    return {'union': union_frame_dict}
 
 
 def difference_pcap(*pcaps):
@@ -182,39 +217,11 @@ def difference_pcap(*pcaps):
     diffing_pcaps = pcaps[1:]
     _, frame_dict = parse_pcaps(*diffing_pcaps)
     packet_diff = set(minuend_frame_dict).difference(set(frame_dict))
-    save_pcap(
-        frames=packet_diff, frame_dict=minuend_frame_dict, name='_difference')
 
-
-def parse_pcaps(*pcaps):
-    """Given *pcaps, return all frames and their timestamps.
-
-    Args:
-        *pcaps (*list(string)): A list of pcap filenames
-    Returns:
-        pcap_dict (dict):
-            {<pcap>: {'raw_frames': [<frame>, ...], 'num_packets': 1}, ...}
-        frame_dict (dict):
-            {<raw_frame>: <timestamp>, ...}
-    """
-    pcap_dict = {}
-    frame_dict = {}
-    # Using packet text as dict key ensures no duplicate packets. The result
-    # of this for loop is a pcap_dict with all unique packets from all pcaps.
-    for pcap in pcaps:
-        pcap_dict[pcap] = {'raw_frames': [], 'num_packets': 0}
-        packet_dict = get_pcap_as_json(pcap)
-        pcap_dict[pcap]['num_packets'] = get_packet_count(pcap)
-        for packet in packet_dict:
-            raw_frame = packet['_source']['layers']['frame_raw']
-            frame_time_epoch = \
-                packet['_source']['layers']['frame']['frame.time_epoch']
-            pcap_dict[pcap]['raw_frames'].append(raw_frame)
-            # frame_dict is separate from pcap_dict because one is dependent
-            # on the pcap and is not for the union operation
-            frame_dict[raw_frame] = frame_time_epoch
-
-    return pcap_dict, frame_dict
+    diff_frame_dict = {}
+    for frame in packet_diff:
+        diff_frame_dict[frame] = frame_dict[frame]
+    return {'difference': diff_frame_dict}
 
 
 def get_minmax_common_frames(pcap_dict, frame_dict):
@@ -257,113 +264,3 @@ def get_minmax_common_frames(pcap_dict, frame_dict):
     assert min_frame != ''
 
     return min_frame, max_frame
-
-
-def get_pcap_as_json(pcap):
-    """Given a pcap, return a json with `tshark -r <file> -x -T json`.
-
-    tshark -r <pcap> -w -
-        Pipes packet capture one packet per line to stdout
-    tshark -r -
-        Read file from stdin
-    tshark -r <in.pcap> -x | text2pcap - <out.pcap>
-        Prints hex of pcap to stdout and then resaves it as a pcap. This
-        WILL delete packet timestamps as that is not encoded in hex output.
-
-    Args:
-        pcap (string): File name.
-    Returns:
-        (dict): Dict of the pcap json provided by tshark.
-    """
-    get_json_cmds = ['tshark', '-r', pcap, '-x', '-T', 'json']
-    pcap_json_raw = sp.Popen(get_json_cmds, stdout=sp.PIPE).communicate()[0]
-    pcap_json = ''
-    if pcap_json_raw:  # Don't want json.loads to crash due to an empty string.
-        pcap_json = json.loads(pcap_json_raw)
-    return pcap_json
-
-
-def convert_to_pcaptext(raw_packet, timestamp=''):
-    """Convert the raw pcap hex to a form that text2cap can read from stdin.
-
-    `tshark -r <file> -T json -x` produces the "in" and text2pcap
-    requires the "out" formats as shown below:
-
-    Per Text2pcap documentation:
-    "Text2pcap understands a hexdump of the form generated by od -Ax -tx1 -v."
-
-    In format (newlines added for readability):
-        247703511344881544abbfdd0800452000542bbc00007901e8fd080808080a301290000
-        082a563110001f930ab5b00000000a9e80d0000000000101112131415161718191a1b1c
-        1d1e1f202122232425262728292a2b2c2d2e2f3031323334353637
-
-    Out format:
-        0000  24 77 03 51 13 44 88 15 44 ab bf dd 08 00 45 20
-        0010  00 54 2b bc 00 00 79 01 e8 fd 08 08 08 08 0a 30
-        0020  12 90 00 00 82 a5 63 11 00 01 f9 30 ab 5b 00 00
-        0030  00 00 a9 e8 0d 00 00 00 00 00 10 11 12 13 14 15
-        0040  16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24 25
-        0050  26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35
-        0060  36 37
-
-    NOTE: Output format doesn't need an extra \n between packets. So in the
-    above example, the next line could be 0000  00 ... for the next packet.
-
-    Args:
-        raw_packet (string): The ASCII hexdump seen above in 'In'
-        timestamp (string): Unix epoch timestamp of packet. This is optional.
-            If one is passed in, it will precede the 0000 line of the packet.
-    """
-    # init vars
-    formatted_string = ''
-    hex_chars_per_line = 32
-    hex_chars_per_byte = 2
-    num_chars = len(raw_packet)
-
-    if timestamp:
-        formatted_string += str(timestamp) + '\n'
-    # Parse the string into lines and each line into space-delimited bytes.
-    for line_sep in range(0, num_chars, hex_chars_per_line):
-        raw_line = raw_packet[line_sep:line_sep + hex_chars_per_line]
-        line = ''
-        for byte_sep in range(0, hex_chars_per_line, hex_chars_per_byte):
-            line += raw_line[byte_sep:byte_sep + hex_chars_per_byte] + ' '
-        line = line[:-1]  # get rid of trailing space
-        line_sep_hex = line_sep // 32 * 10  # Offsets need to be in hex.
-        formatted_string += '{:>04d}'.format(line_sep_hex) + '  ' + line + '\n'
-
-    return formatted_string
-
-
-def reorder_packets(pcap):
-    """Union causes packets to be ordered incorrectly, so reorder properly.
-
-    Reorder packets, save to 2nd file. After this is done, remove initial file.
-
-    Args:
-        pcap (str): Filename of packet capture. Should start with '_', which
-            can be stripped off so that we can reorder to a diff file.
-    """
-    reorder_packets_cmds = ['reordercap', pcap, pcap[1:]]
-    reorder_sp = sp.Popen(reorder_packets_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
-    reorder_sp.communicate()
-    os.remove(pcap)
-
-
-def save_pcap(frames, frame_dict, name):
-    """Save a packet capture given ASCII hexdump using `text2pcap`
-
-    Args:
-        frames (set): Set of ASCII hexdump-formatted frames
-        frame_dict (dict): Dict of frames to timestamps
-        name (str): Type of operation and name of savefile
-    """
-    pcap_text = ''
-    for packet in frames:  # Only send in unique values.
-        frame_timestamp = frame_dict[packet]
-        pcap_text += convert_to_pcaptext(packet, frame_timestamp)
-    save_pcap_cmds = ['text2pcap', '-', name + '.pcap', '-t', '%s.']
-    save_pcap_sp = sp.Popen(
-        save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
-    save_pcap_sp.communicate(input=pcap_text.encode())
-    reorder_packets(name + '.pcap')

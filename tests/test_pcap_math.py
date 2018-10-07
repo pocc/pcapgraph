@@ -18,12 +18,13 @@ import unittest
 import filecmp
 import os
 
-from pcap_algebra.pcap_math import union_pcap
-from pcap_algebra.pcap_math import intersect_pcap
-from pcap_algebra.pcap_math import bounded_intersect_pcap
-from pcap_algebra.pcap_math import difference_pcap
-from pcap_algebra.pcap_math import convert_to_pcaptext
-from pcapgraph.parse_options import get_tshark_status
+from pcapgraph.pcap_math import union_pcap
+from pcapgraph.pcap_math import intersect_pcap
+from pcapgraph.pcap_math import bounded_intersect_pcap
+from pcapgraph.pcap_math import difference_pcap
+from pcapgraph.save_file import convert_to_pcaptext
+from pcapgraph.save_file import save_pcaps
+from pcapgraph import get_tshark_status
 
 
 class TestPcapMath(unittest.TestCase):
@@ -34,9 +35,11 @@ class TestPcapMath(unittest.TestCase):
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
         # This will generate union.pcap in tests/
-        union_pcap('../examples/simul1.pcap',
-                   '../examples/simul2.pcap',
-                   '../examples/simul3.pcap')
+        frames = union_pcap('../examples/simul1.pcap',
+                            '../examples/simul2.pcap',
+                            '../examples/simul3.pcap')
+        save_pcaps(frames, name='_union')
+
         # The generated file should be the same as examples/union.pcap
         self.assertTrue(filecmp.cmp('union.pcap', '../examples/union.pcap'))
         os.remove('union.pcap')
@@ -44,9 +47,10 @@ class TestPcapMath(unittest.TestCase):
     def test_intersect_pcap(self):
         """Test union_pcap using the pcaps in examples."""
         # This will generate intersect.pcap in tests/
-        intersect_pcap('../examples/simul1.pcap',
-                       '../examples/simul2.pcap',
-                       '../examples/simul3.pcap')
+        frames = intersect_pcap('../examples/simul1.pcap',
+                                '../examples/simul2.pcap',
+                                '../examples/simul3.pcap')
+        save_pcaps(frames, name='_intersect')
         # The generated file should be the same as examples/union.pcap
         self.assertTrue(filecmp.cmp('intersect.pcap',
                                     '../examples/intersect.pcap'))
@@ -60,9 +64,10 @@ class TestPcapMath(unittest.TestCase):
 
     def test_bounded_interface_pcap(self):
         """Test the bounded_interface_pcap using pcaps in examples."""
-        bounded_intersect_pcap('../examples/simul1.pcap',
-                               '../examples/simul2.pcap',
-                               '../examples/simul3.pcap')
+        frames = bounded_intersect_pcap('../examples/simul1.pcap',
+                                        '../examples/simul2.pcap',
+                                        '../examples/simul3.pcap')
+        save_pcaps(frames, name='_intersect')
         # All 3 simul time-bound intersections should be the same and also
         # equal to the intersect.pcap. This is due to the traffic being the
         # same and there being no infixed traffic from other sources.
@@ -79,9 +84,10 @@ class TestPcapMath(unittest.TestCase):
     def test_difference_pcap(self):
         """Test the difference_pcap method with multiple pcaps."""
         # This will generate difference.pcap in tests/
-        difference_pcap('../examples/simul1.pcap',
-                        '../examples/simul2.pcap',
-                        '../examples/simul3.pcap')
+        frames = difference_pcap('../examples/simul1.pcap',
+                                 '../examples/simul2.pcap',
+                                 '../examples/simul3.pcap')
+        save_pcaps(frames, name='_difference')
         # The generated file should be the same as examples/union.pcap
         self.assertTrue(filecmp.cmp('difference.pcap',
                                     '../examples/diff_simul1-simul2.pcap'))
