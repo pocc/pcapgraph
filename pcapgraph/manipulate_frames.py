@@ -50,30 +50,50 @@ def parse_pcaps(*pcaps):
     Returns:
         pcap_dict (dict): All the packet data in json format.
     """
-    pcap_dict = []
+    pcap_json_list = []
     for pcap in pcaps:
-        pcap_dict.append(get_pcap_as_json(pcap))
+        pcap_json_list.append(get_pcap_as_json(pcap))
 
-    return pcap_dict
+    return pcap_json_list
 
 
-def get_frame_dict(pcap_dict):
-    """Given the pcap dict, return the frame dict.
+def get_flat_frame_dict(pcap_json_list):
+    """Given the pcap json list, return the frame dict.
 
     Args:
-        pcap_dict (dict): Dict of pcap data (see parse_pcaps for details).
+        pcap_json_list (list): List of pcap dicts (see parse_pcaps for details)
     Returns:
         frame_dict (dict): {<pcap>: {<frame>: <timestamp>, ...}, ...}
     """
     frame_dict = {}
-    for pcap in pcap_dict:
+    for pcap in pcap_json_list:
         for frame in pcap:
-            frame_raw = frame['_source']['layers']['frame_raw'][0]
+            frame_raw = frame['_source']['layers']['frame_raw']
+            # Some frames will have the frame string a layer deeper in a list.
+            if type(frame_raw) == "<type 'list'>":
+                frame_raw = frame_raw[0]
+
             frame_timestamp = \
                 frame['_source']['layers']['frame']['frame.time_epoch']
             frame_dict[frame_raw] = frame_timestamp
 
     return frame_dict
+
+
+def get_pcap_frame_dict(pcaps):
+    """Like get_flat_frame_dict, but with pcapname as key to each frame list
+
+    Args:
+        pcaps (list): List of pcap file names.
+    Returns:
+        (list): [{<frame>:<timestamp>, ...}, ...]
+    """
+    pcap_frame_list = []
+    for pcap in pcaps:
+        pcap_json = parse_pcaps(pcap)
+        pcap_frame_list.append(get_flat_frame_dict(pcap_json))
+
+    return pcap_frame_list
 
 
 def get_pcap_as_json(pcap):

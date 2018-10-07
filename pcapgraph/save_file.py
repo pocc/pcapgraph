@@ -12,10 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# Filter gets a single-letter flag because it might be specified multiple times.
-# All other single-letter flags should not require an argument.
-"""save file."""
+"""Save file."""
 
 import subprocess as sp
 import os
@@ -76,31 +73,31 @@ def convert_to_pcaptext(raw_packet, timestamp=''):
 def reorder_packets(pcap):
     """Union causes packets to be ordered incorrectly, so reorder properly.
 
-    Reorder packets, save to 2nd file. After this is done, remove initial file.
+    Reorder packets, save to 2nd file. After this is done, replace initial
+    file with reordered one. Prepend temporary file with '_'.
 
     Args:
         pcap (str): Filename of packet capture. Should start with '_', which
             can be stripped off so that we can reorder to a diff file.
     """
-    reorder_packets_cmds = ['reordercap', pcap, pcap[1:]]
+    reorder_packets_cmds = ['reordercap', pcap, '_' + pcap]
     reorder_sp = sp.Popen(reorder_packets_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
     reorder_sp.communicate()
-    os.remove(pcap)
+    os.replace('_' + pcap, pcap)
 
 
-def save_pcaps(frame_timestamp_dict, name):
+def save_pcap(pcap_dict, name):
     """Save a packet capture given ASCII hexdump using `text2pcap`
 
     Args:
-        frame_timestamp_dict (dict): Dict of frames to timestamps. Format:
-            {<pcap>: {<frame>: <timestamp>, ...}, ...}
+        pcap_dict (dict): List of pcaps of frames to timestamps. Format:
+            {<frame>: <timestamp>, ...}
         name (str): Type of operation and name of savefile
     """
     pcap_text = ''
-    for pcap in frame_timestamp_dict:
-        for packet in frame_timestamp_dict[pcap]:
-            frame_timestamp = frame_timestamp_dict[pcap][packet]
-            pcap_text += convert_to_pcaptext(packet, frame_timestamp)
+    for frame in pcap_dict:
+        frame_timestamp = pcap_dict[frame]
+        pcap_text += convert_to_pcaptext(frame, frame_timestamp)
     save_pcap_cmds = ['text2pcap', '-', name + '.pcap', '-t', '%s.']
     save_pcap_sp = sp.Popen(
         save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)

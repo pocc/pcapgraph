@@ -15,7 +15,10 @@
 """Do algebraic operations on sets like union, intersect, difference."""
 import collections
 
-from pcapgraph.manipulate_frames import parse_pcaps, get_frame_dict
+from pcapgraph.manipulate_frames import parse_pcaps
+from pcapgraph.manipulate_frames import get_flat_frame_dict
+from pcapgraph.manipulate_frames import get_pcap_frame_dict
+import pcapgraph.save_file as save_file
 
 
 def parse_set_arg(args, filenames):
@@ -40,6 +43,44 @@ def parse_set_arg(args, filenames):
                               "Union.")
 
     return pcap_frames
+
+
+def union_pcap(*pcaps):
+    """Given sets A = (1, 2, 3), B = (2, 3, 4), A + B = (1, 2, 3, 4).
+
+    About:
+        This method uses tshark to get identifying information on
+        pcaps and then mergepcap to save the combined pcap.
+
+    Use case:
+        * For a packet capture that contains a broadcast storm, this function
+          will find unique packets.
+        * For any other situation where you need to find all unique packets.
+        * This function can be lossy with timestamps because excluding
+          packets in diff pcaps with diff timestamps, but same content is the
+          purpose of this function.
+
+    Similar wireshark tool: mergecap <file>... -w union.pcap
+        Merges multiple pcaps and saves them as a union.pcap (preserves
+        timestamps). This method does the same thing without duplicates.\
+        mergecap is shipped with wireshark.
+
+    Args:
+        *pcaps (list(str)): List of pcap filenames.
+    """
+    pcap_dict = parse_pcaps(*pcaps)
+    frame_dict = get_flat_frame_dict(pcap_dict)
+    raw_packet_list = []
+    for pcap in pcap_dict:
+        for frame in pcap:
+            raw_packet_list.append(frame['_source']['layers']['frame_raw'])
+
+    print("Packet statistics", collections.Counter(raw_packet_list))
+
+    union_frame_dict = {}
+    for frame in raw_packet_list:
+        union_frame_dict[frame] = frame_dict[frame]
+    save_file.save_pcap(pcap_dict=union_frame_dict, name='union')
 
 
 def intersect_pcap(*pcaps):
@@ -70,27 +111,48 @@ def intersect_pcap(*pcaps):
     Returns:
 
     """
-    pcap_dict, frame_dict = parse_pcaps(*pcaps)
+    pcap_json_list = parse_pcaps(*pcaps)
+    frame_dict = get_flat_frame_dict(pcap_json_list)
 
     # Generate intersection set of frames
-    raw_frame_list = [
-        list(pcap_dict[pcap]['raw_frames']) for pcap in pcap_dict
-    ]
-    frame_intersection = set(raw_frame_list[0]).intersection(*raw_frame_list)
+    pcap_frame_list = get_pcap_frame_dict(*pcaps)
+    frame_intersection = set(pcap_frame_list[0]
+                             ).intersection(*pcap_frame_list[1:])
 
     # Print intersection output like in docstring
     intersection_count = len(frame_intersection)
-    print("{: <12} {: <}".format('SAME %', 'PCAP NAME'))
-    for pcap in pcaps:
+    print("{: <12} {: <}".format('\nSAME %', 'PCAP NAME'))
+    for index, pcap in enumerate(pcaps):
         same_percent = str(
-            round(100 * (intersection_count / pcap_dict[pcap]['num_packets']
-                         ))) + '%'
+            round(100 * (intersection_count /
+                         len(pcap_frame_list[index])))) + '%'
         print("{: <12} {: <}".format(same_percent, pcap))
 
     intersect_frame_dict = {}
     for frame in frame_intersection:
         intersect_frame_dict[frame] = frame_dict[frame]
-    return {'intersect': intersect_frame_dict}
+    save_file.save_pcap(pcap_dict=intersect_frame_dict, name='intersect')
+
+
+def difference_pcap(*pcaps):
+    """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
+
+    This method will find the intersection using bounded_intersect_pcap() and
+    then remove those packets from A, and save with tshark.
+    """
+    minuend_name = pcaps[0]
+    minuend_pcap_dict = parse_pcaps(minuend_name)
+    minuend_frame_dict = get_flat_frame_dict(minuend_pcap_dict)
+    diffing_pcaps = pcaps[1:]
+    diff_pcap_dict = parse_pcaps(*diffing_pcaps)
+    diff_frame_dict = get_flat_frame_dict(diff_pcap_dict)
+    packet_diff = set(minuend_frame_dict).difference(set(diff_frame_dict))
+
+    diff_frame_dict = {}
+    for frame in packet_diff:
+        # Minuend frame dict should have all values we care about.
+        diff_frame_dict[frame] = minuend_frame_dict[frame]
+    save_file.save_pcap(pcap_dict=diff_frame_dict, name='difference')
 
 
 def bounded_intersect_pcap(*pcaps):
@@ -135,101 +197,48 @@ def bounded_intersect_pcap(*pcaps):
     """
     # Init vars
     bounded_pcaps = []
-    pcap_dict, frame_dict = parse_pcaps(*pcaps)
-    min_frame, max_frame = get_minmax_common_frames(pcap_dict, frame_dict)
+    pcap_dict = parse_pcaps(*pcaps)
+    flat_frame_dict = get_flat_frame_dict(pcap_dict)
+    pcap_frame_dict = get_pcap_frame_dict([*pcaps])
+    min_frame, max_frame = get_minmax_common_frames([pcaps], flat_frame_dict)
 
     # Create a bounding box around each packet capture where the bounds are
     # the min and max packets in the intersection.
-    for pcap in pcap_dict:
+    for pcap in pcap_frame_dict:
         min_frame_index = -1
         max_frame_index = -1
-        for frame in pcap_dict[pcap]['raw_frames']:
+        frame_list = list(pcap)
+        for frame in frame_list:
             if frame == min_frame:
-                min_frame_index = pcap_dict[pcap]['raw_frames'].index(frame)
+                min_frame_index = frame_list.index(frame)
                 break
         if min_frame_index == -1:
             print("ERROR: Bounding minimum packet not found!")
             raise IndexError
-        for frame in reversed(pcap_dict[pcap]['raw_frames']):
+        for frame in reversed(frame_list):
             if frame == max_frame:
-                max_frame_index = pcap_dict[pcap]['raw_frames'].index(frame)
+                max_frame_index = frame_list.index(frame)
                 break
         if max_frame_index == -1:
             print("ERROR: Bounding maximum packet not found!")
             raise IndexError
 
-        bounded_frame_list = \
-            pcap_dict[pcap]['raw_frames'][min_frame_index:max_frame_index + 1]
+        bounded_frame_list = frame_list[min_frame_index:max_frame_index + 1]
         bounded_pcap_with_timestamps = {}
         for frame in bounded_frame_list:
-            bounded_pcap_with_timestamps[frame] = frame_dict[frame]
+            bounded_pcap_with_timestamps[frame] = flat_frame_dict[frame]
         bounded_pcaps.append(bounded_pcap_with_timestamps)
 
-    return bounded_pcaps
+    for index, pcap in enumerate(bounded_pcaps):
+        save_file.save_pcap(pcap_dict=bounded_pcaps[index],
+                            name='bounded_intersect-simul' + str(index+1))
 
 
-def union_pcap(*pcaps):
-    """Given sets A = (1, 2, 3), B = (2, 3, 4), A + B = (1, 2, 3, 4).
-
-    About:
-        This method uses tshark to get identifying information on
-        pcaps and then mergepcap to save the combined pcap.
-
-    Use case:
-        * For a packet capture that contains a broadcast storm, this function
-          will find unique packets.
-        * For any other situation where you need to find all unique packets.
-        * This function can be lossy with timestamps because excluding
-          packets in diff pcaps with diff timestamps, but same content is the
-          purpose of this function.
-
-    Similar wireshark tool: mergecap <file>... -w union.pcap
-        Merges multiple pcaps and saves them as a union.pcap (preserves
-        timestamps). This method does the same thing without duplicates.\
-        mergecap is shipped with wireshark.
-
-    Args:
-        *pcaps (list(str)): List of pcap filenames.
-    """
-    pcap_dict = parse_pcaps(*pcaps)
-    frame_dict = get_frame_dict(pcap_dict)
-    raw_packet_list = []
-    for pcap in pcap_dict:
-        for frame in pcap:
-            raw_packet_list.append(frame['_source']['layers']['frame_raw'][0])
-
-    print("Packet statistics", collections.Counter(raw_packet_list))
-
-    union_frame_dict = {}
-    for frame in raw_packet_list:
-        union_frame_dict[frame] = frame_dict[frame]
-    return {'union': union_frame_dict}
-
-
-def difference_pcap(*pcaps):
-    """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
-
-    This method will find the intersection using bounded_intersect_pcap() and
-    then remove those packets from A, and save with tshark.
-    """
-    minuend_name = pcaps[0]
-    _, minuend_frame_dict = parse_pcaps(minuend_name)
-    diffing_pcaps = pcaps[1:]
-    _, frame_dict = parse_pcaps(*diffing_pcaps)
-    packet_diff = set(minuend_frame_dict).difference(set(frame_dict))
-
-    diff_frame_dict = {}
-    for frame in packet_diff:
-        diff_frame_dict[frame] = frame_dict[frame]
-    return {'difference': diff_frame_dict}
-
-
-def get_minmax_common_frames(pcap_dict, frame_dict):
+def get_minmax_common_frames(pcaps, frame_dict):
     """Get the frames that are at the beginning and end of intersection pcap.
 
     Args:
-        pcap_dict (dict):
-            {<pcap>: {'raw_frames': [<frame>, ...], 'num_packets': 1}, ...}
+        pcaps (list): List of pcap names.
         frame_dict (dict):
             {<raw_frame>: <timestamp>, ...}
     Returns:
@@ -239,10 +248,10 @@ def get_minmax_common_frames(pcap_dict, frame_dict):
     Raises:
         assert: If intersection is empty.
     """
-    raw_frame_list = [
-        list(pcap_dict[pcap]['raw_frames']) for pcap in pcap_dict
-    ]
-    frame_intersection = set(raw_frame_list[0]).intersection(*raw_frame_list)
+    # Generate intersection set of frames
+    pcap_frame_list = get_pcap_frame_dict(*pcaps)
+    frame_intersection = set(pcap_frame_list[0]
+                             ).intersection(*pcap_frame_list[1:])
 
     # Set may reorder packets, so search for first/last.
     unix_32bit_end_of_time = 4294967296
