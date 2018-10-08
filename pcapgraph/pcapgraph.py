@@ -15,16 +15,15 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-acVditu] [--output <format>...] \
-(--dir <dir>... | <file>...)
+  pcapgraph [-acVditu] [--output <format>...] (--dir <dir>... | <file>...)
   pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
 
 Options:
   <file>...             Any number of packet captures to analyze.
-  -a, --anonymize       Anonymize packet capture file names with fictional place
-                        names, devices, and interfaces.
+  -a, --anonymize       Anonymize packet capture file names with fictional
+                        place names and devices.
   -c, --compare         Compare all files to the first file by ip.id and
                         ip.checksum to find the percent of packets that
                         match exactly. (see Packet Comparisions).
@@ -80,13 +79,12 @@ Set Operations:
     1. Find all unique packets by their ASCII hexdump value.
     2. Apply the operation and generate a list of packets.
     3. Reencode the packets in a pcap using text2pcap.
-  pcapgraph will only run the last set operation specified (of -ditu).
 
   difference: Remove all packets that are present in one pcap from another.
   intersection: Find all packets that two pcaps have in common.
   union: Find all unique packets found in all provided pcaps.
 
-  bounded (intersection):
+  bounded (time intersection):
     Find the first and last frames in the frame intersection of all pcaps
     according to their timestamp Use these two frames as upper and lower
     limts to return all frames in each pcap that are between these two
@@ -133,10 +131,11 @@ def run():
     """
     get_tshark_status()
     args = docopt.docopt(__doc__)
+    print(args)
     filenames = gf.parse_cli_args(args)
     filenames = pm.parse_set_arg(filenames, args)
     pcaps_frame_dict = mf.get_pcap_frame_dict(filenames)
-    dg.draw_graph(pcaps_frame_dict, args['--output'])
+    dg.draw_graph(pcaps_frame_dict, args['<file>'], args['--output'])
 
 
 if __name__ == '__main__':

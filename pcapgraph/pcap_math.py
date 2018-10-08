@@ -37,20 +37,21 @@ def parse_set_arg(filenames, args):
         'difference': args['--difference'],
         'time-intersect': args['--time-intersect']
     }
-
-    if set_args['union']:
-        generated_file = union_pcap(*filenames)
-        filenames.append(generated_file)
-    if set_args['intersection']:
-        generated_file = intersect_pcap(*filenames)
-        filenames.append(generated_file)
+    new_files = []
     if set_args['difference']:
         generated_file = difference_pcap(*filenames)
-        filenames.append(generated_file)
+        new_files.append(generated_file)
+    if set_args['intersection']:
+        generated_file = intersect_pcap(*filenames)
+        new_files.append(generated_file)
     if set_args['time-intersect']:
         generated_filelist = bounded_intersect_pcap(*filenames)
-        filenames.extend(generated_filelist)
+        new_files.extend(generated_filelist)
+    if set_args['union']:
+        generated_file = union_pcap(*filenames)
+        new_files.append(generated_file)
 
+    filenames.extend(new_files)
     return filenames
 
 
@@ -86,12 +87,12 @@ def union_pcap(*pcaps):
         for frame in pcap:
             raw_packet_list.append(frame['_source']['layers']['frame_raw'])
 
-    print("Packet statistics", collections.Counter(raw_packet_list))
+    print("\nPacket statistics", collections.Counter(raw_packet_list))
 
     union_frame_dict = {}
     for frame in raw_packet_list:
         union_frame_dict[frame] = frame_dict[frame]
-    save_file.save_pcap(pcap_dict=union_frame_dict, name='union')
+    save_file.save_pcap(pcap_dict=union_frame_dict, name='union.pcap')
 
     return 'union.pcap'
 
@@ -144,7 +145,7 @@ def intersect_pcap(*pcaps):
     intersect_frame_dict = {}
     for frame in frame_intersection:
         intersect_frame_dict[frame] = frame_dict[frame]
-    save_file.save_pcap(pcap_dict=intersect_frame_dict, name='intersect')
+    save_file.save_pcap(pcap_dict=intersect_frame_dict, name='intersect.pcap')
 
     return 'intersect.pcap'
 
@@ -172,7 +173,7 @@ def difference_pcap(*pcaps):
     for frame in packet_diff:
         # Minuend frame dict should have all values we care about.
         diff_frame_dict[frame] = minuend_frame_dict[frame]
-    save_file.save_pcap(pcap_dict=diff_frame_dict, name='difference')
+    save_file.save_pcap(pcap_dict=diff_frame_dict, name='difference.pcap')
 
     return 'difference.pcap'
 
@@ -256,7 +257,7 @@ def bounded_intersect_pcap(*pcaps):
 
     names = []  # Names of all generated pcaps
     for index, pcap in enumerate(bounded_pcaps):
-        names.append('bounded_intersect-simul' + str(index + 1))
+        names.append('bounded_intersect-simul' + str(index + 1) + '.pcap')
         save_file.save_pcap(pcap_dict=bounded_pcaps[index], name=names[index])
 
     return names

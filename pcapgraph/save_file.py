@@ -101,9 +101,9 @@ def save_pcap(pcap_dict, name):
     for frame in pcap_dict:
         frame_timestamp = pcap_dict[frame]
         pcap_text += convert_to_pcaptext(frame, frame_timestamp)
-    save_pcap_cmds = ['text2pcap', '-', name + '.pcap', '-t', '%s.']
+    save_pcap_cmds = ['text2pcap', '-', name, '-t', '%s.']
     save_pcap_sp = sp.Popen(
         save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     save_pcap_sp.communicate(input=pcap_text.encode())
     save_pcap_sp.kill()
-    reorder_packets(name + '.pcap')
+    reorder_packets(name)

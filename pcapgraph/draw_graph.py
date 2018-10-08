@@ -24,11 +24,12 @@ import numpy as np
 import pcapgraph.manipulate_frames as mf
 
 
-def draw_graph(pcap_packets, save_fmts):
+def draw_graph(pcap_packets, input_files, save_fmts):
     """Draw a graph using matplotlib and numpy.
 
     Args:
         pcap_packets (dict): All packets, where key is pcap filename/operation.
+        input_files (list): List of input files that shouldn't be deleted.
         save_fmts (str): The save file type. Supported formats are dependent
             on the capabilites of the system: [png, pdf, ps, eps, and svg]. See
             https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
@@ -61,6 +62,11 @@ def draw_graph(pcap_packets, save_fmts):
                 # Print text version because it's possible.
                 print(make_text_not_war(graph_vars))
                 plt.show()
+
+    if 'pcap' not in save_fmts:  # Delete temp files if not required.
+        new_files = set(pcap_filenames) - set(input_files)
+        for file in new_files:
+            os.remove(file)
 
 
 def get_graph_vars_from_file(filename):
