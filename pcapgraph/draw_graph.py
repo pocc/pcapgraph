@@ -30,15 +30,21 @@ def draw_graph(pcap_packets, input_files, save_fmts):
     Args:
         pcap_packets (dict): All packets, where key is pcap filename/operation.
         input_files (list): List of input files that shouldn't be deleted.
-        save_fmts (str): The save file type. Supported formats are dependent
+        save_fmts (list): The save file type. Supported formats are dependent
             on the capabilites of the system: [png, pdf, ps, eps, and svg]. See
             https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
             for more information.
     """
-    pcap_filenames = list(pcap_packets)
     # So that if no save format is specified, print to screen and stdout
     if not save_fmts:
         save_fmts = ['show']
+    pcap_filenames = list(pcap_packets)
+    if 'pcap' not in save_fmts:  # Delete temp files if not required.
+        new_files = set(pcap_filenames) - set(input_files)
+        for file in new_files:
+            os.remove(file)
+    else:
+        save_fmts.remove('pcap')
     for save_format in save_fmts:
         if save_format == 'txt':
             output_text = make_text_not_war(pcap_packets)
@@ -62,11 +68,6 @@ def draw_graph(pcap_packets, input_files, save_fmts):
                 # Print text version because it's possible.
                 print(make_text_not_war(graph_vars))
                 plt.show()
-
-    if 'pcap' not in save_fmts:  # Delete temp files if not required.
-        new_files = set(pcap_filenames) - set(input_files)
-        for file in new_files:
-            os.remove(file)
 
 
 def get_graph_vars_from_file(filename):

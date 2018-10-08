@@ -14,6 +14,7 @@
 # limitations under the License.
 """Do algebraic operations on sets like union, intersect, difference."""
 import collections
+import os
 
 from pcapgraph.manipulate_frames import parse_pcaps
 from pcapgraph.manipulate_frames import get_flat_frame_dict
@@ -35,7 +36,9 @@ def parse_set_arg(filenames, args):
         'union': args['--union'],
         'intersection': args['--intersection'],
         'difference': args['--difference'],
-        'time-intersect': args['--time-intersect']
+        'symmetric-difference': args['--symmetric-difference'],
+        'bounded-intersect': args['--bounded-intersection'],
+        'inverse-bounded': args['--inverse-bounded']
     }
     new_files = []
     if set_args['difference']:
@@ -44,12 +47,25 @@ def parse_set_arg(filenames, args):
     if set_args['intersection']:
         generated_file = intersect_pcap(*filenames)
         new_files.append(generated_file)
-    if set_args['time-intersect']:
-        generated_filelist = bounded_intersect_pcap(*filenames)
+    if set_args['symmetric-difference']:
+        generated_filelist = symmetric_difference_pcap(*filenames)
         new_files.extend(generated_filelist)
     if set_args['union']:
         generated_file = union_pcap(*filenames)
         new_files.append(generated_file)
+
+    if set_args['bounded-intersect']:
+        generated_filelist = bounded_intersect_pcap(*filenames)
+        new_files.extend(generated_filelist)
+    if set_args['inverse-bounded']:
+        # Inverse of bounded intersection = (bounded intersect) - (intersect)
+        generated_filelist = []
+        bounded_filelist = bounded_intersect_pcap(*filenames)
+        intersect_file = intersect_pcap(*filenames)
+        for bi_file in bounded_filelist:
+            generated_filelist.append(difference_pcap(bi_file, intersect_file))
+            os.remove(bi_file)
+        new_files.extend(generated_filelist)
 
     filenames.extend(new_files)
     return filenames
@@ -147,14 +163,14 @@ def intersect_pcap(*pcaps):
         intersect_frame_dict[frame] = frame_dict[frame]
     save_file.save_pcap(pcap_dict=intersect_frame_dict, name='intersect.pcap')
 
-    return 'intersect.pcap'
+    if frame_intersection:
+        return 'intersect.pcap'
+    print('WARNING! Intersection between ', *pcaps, ' contains no packets!')
+    return ''
 
 
 def difference_pcap(*pcaps):
     """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
-
-    This method will find the intersection using bounded_intersect_pcap() and
-    then remove those packets from A, and save with tshark.
 
     Args:
         *pcaps (*list): List of pcap filenames.
@@ -174,8 +190,35 @@ def difference_pcap(*pcaps):
         # Minuend frame dict should have all values we care about.
         diff_frame_dict[frame] = minuend_frame_dict[frame]
     save_file.save_pcap(pcap_dict=diff_frame_dict, name='difference.pcap')
+    if packet_diff:
+        return 'difference.pcap'
+    print('WARNING! ' + pcaps[0] + ' difference contains no packets!')
+    return ''
 
-    return 'difference.pcap'
+
+def symmetric_difference_pcap(*pcaps):
+    """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A△B△C = (1, 5)
+
+    For all pcaps, the symmetric difference produces a pcap that has the
+    packets that are unique to only that pcap (unlike above where only one
+    set is the result).
+
+    Args:
+        pcaps (*list): List of pcap filenames.
+    Returns:
+        (list(str)): Name of generated pcaps.
+    """
+    generated_filelist = []
+    for file in pcaps:
+        other_files = set(pcaps) - set([file])
+        # difference_pcap will generate files like difference-simul1.pcap
+        diff_filename = difference_pcap(file, *other_files)
+        if diff_filename:  # If diff file has packets.
+            symdiff_filename = 'symdiff_' + os.path.basename(file)
+            os.replace(diff_filename, symdiff_filename)
+            generated_filelist.append(symdiff_filename)
+
+    return generated_filelist
 
 
 def bounded_intersect_pcap(*pcaps):

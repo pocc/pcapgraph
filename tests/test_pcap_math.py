@@ -21,6 +21,7 @@ import os
 from pcapgraph.pcap_math import union_pcap
 from pcapgraph.pcap_math import intersect_pcap
 from pcapgraph.pcap_math import difference_pcap
+from pcapgraph.pcap_math import symmetric_difference_pcap
 from pcapgraph.pcap_math import bounded_intersect_pcap
 from pcapgraph.pcap_math import get_minmax_common_frames
 from pcapgraph import get_tshark_status
@@ -70,6 +71,19 @@ class TestPcapMath(unittest.TestCase):
         self.assertTrue(filecmp.cmp('difference.pcap',
                                     '../examples/diff_simul1-simul2.pcap'))
         os.remove('difference.pcap')
+
+    def test_symmetric_difference(self):
+        """Test the symmetric difference method with muliple pcaps."""
+        symmetric_difference_pcap('../examples/simul1.pcap',
+                                  '../examples/simul2.pcap',
+                                  '../examples/simul3.pcap')
+        # The generated file should be the same as examples/union.pcap
+        self.assertTrue(filecmp.cmp('symdiff_simul1.pcap',
+                                    '../examples/symdiff_simul1.pcap'))
+        self.assertTrue(filecmp.cmp('symdiff_simul3.pcap',
+                                    '../examples/symdiff_simul3.pcap'))
+        os.remove('symdiff_simul1.pcap')
+        os.remove('symdiff_simul3.pcap')
 
     def test_get_minmax_common_frames(self):
         """Test get_minmax_common frames."""
