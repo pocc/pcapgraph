@@ -129,7 +129,7 @@ def run():
     args = docopt.docopt(__doc__)
     filenames = gf.parse_cli_args(args)
     filenames = pm.parse_set_arg(filenames, args['--set'])
-    pcaps_frame_dict = mf.get_pcap_dict(filenames)
+    pcaps_frame_dict = mf.get_pcap_frame_dict(filenames)
     dg.draw_graph(pcaps_frame_dict, args['--output'])
 
 

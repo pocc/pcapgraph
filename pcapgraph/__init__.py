@@ -23,7 +23,9 @@ def get_tshark_status():
         if sys.platform == 'win32':
             os.environ["PATH"] += os.pathsep + os.pathsep.join(
                 ["C:\\Program Files\\Wireshark"])
-        sp.Popen(['tshark', '-v'], stdout=sp.PIPE, stderr=sp.PIPE)
+        tshark_cmds = ['tshark', '-v']
+        tshark_pipe = sp.Popen(tshark_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
+        tshark_pipe.kill()
     except FileNotFoundError as err:
         print(err, "\nERROR: Requirement tshark from Wireshark not found!",
               "\n       Please install Wireshark or add tshark to your PATH.",

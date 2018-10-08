@@ -110,7 +110,9 @@ def get_pcap_as_json(pcap):
         (dict): Dict of the pcap json provided by tshark.
     """
     get_json_cmds = ['tshark', '-r', pcap, '-x', '-T', 'json']
-    pcap_json_raw = sp.Popen(get_json_cmds, stdout=sp.PIPE).communicate()[0]
+    pcap_json_pipe = sp.Popen(get_json_cmds, stdout=sp.PIPE)
+    pcap_json_raw = pcap_json_pipe.communicate()[0]
+    pcap_json_pipe.kill()
     pcap_json = ''
     if pcap_json_raw:  # Don't want json.loads to crash due to an empty string.
         pcap_json = json.loads(pcap_json_raw)
@@ -149,59 +151,14 @@ def decode_stdout(stdout):
     return stdout.communicate()[0].decode('utf-8').strip()
 
 
-def get_pcap_vars(filename):
-    """Get vars given filename (see Returns).
-
-    Args:
-        filename (string): Name of the file to get data from.
-    Returns:
-        packet_count (int): Number of packets in a packet capture
-        pcap_start (float): Unix time when this packet capture stared.
-        pcap_end (float): Unix time when this packet capture ended.
-    """
-    packet_count = get_packet_count(filename)
-
-    if packet_count:
-        start_unixtime_cmds = [
-            'tshark', '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
-            'fields', '-e', 'frame.time_epoch'
-        ]
-        end_unixtime_cmds = [
-            'tshark', '-r', filename, '-2', '-Y',
-            'frame.number==' + str(packet_count), '-T', 'fields', '-e',
-            'frame.time_epoch'
-        ]
-        pcap_start_raw = sp.Popen(
-            start_unixtime_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
-        pcap_end_raw = sp.Popen(
-            end_unixtime_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
-        pcap_start = float(decode_stdout(pcap_start_raw))
-        pcap_end = float(decode_stdout(pcap_end_raw))
-
-        tcpdump_release_time = 946684800
-        if pcap_start < tcpdump_release_time or \
-                pcap_end < tcpdump_release_time:
-            print("!!! Packets from ", filename, " must have traveled via "
-                  "a flux capacitor because they're in the past or the future!"
-                  "\n!!! Timestamps predate the release of tcpdump or "
-                  "are negative.\n!!! Excluding from results.\n")
-            return 0, 0, 0
-
-        return packet_count, pcap_start, pcap_end
-
-    # (else) May need to raise an exception for this as it means input is bad.
-    print("!!! ERROR: Packet capture", filename, " has no packets or "
-          "cannot be read!\n!!! Excluding from results.\n")
-    return 0, 0, 0
-
-
 def get_packet_count(filename):
     """Given a file, get the packet count."""
     packet_count_cmds = ['-r', filename, '-2']
 
-    pcap_text_raw = sp.Popen(
+    pcap_text_pipe = sp.Popen(
         ['tshark', *packet_count_cmds], stdout=sp.PIPE, stderr=sp.PIPE)
-    pcap_text = decode_stdout(pcap_text_raw)
+    pcap_text = decode_stdout(pcap_text_pipe)
+    pcap_text_pipe.kill()
     # Split text like so in order that we capture 1-line text with no newline
     packet_list = pcap_text.split('\n')
     # Filter out any packets that are the empty string

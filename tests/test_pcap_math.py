@@ -39,7 +39,8 @@ class TestPcapMath(unittest.TestCase):
                    '../examples/simul2.pcap',
                    '../examples/simul3.pcap')
         # The generated file should be the same as examples/union.pcap
-        self.assertTrue(filecmp.cmp('union.pcap', '../examples/union.pcap'))
+        self.assertTrue(filecmp.cmp('union.pcap',
+                                    '../examples/simul_union.pcap'))
         os.remove('union.pcap')
 
     def test_intersect_pcap(self):
@@ -50,13 +51,13 @@ class TestPcapMath(unittest.TestCase):
                        '../examples/simul3.pcap')
         # The generated file should be the same as examples/union.pcap
         self.assertTrue(filecmp.cmp('intersect.pcap',
-                                    '../examples/intersect.pcap'))
+                                    '../examples/simul_intersect.pcap'))
         # examples/intersect.pcap is from all 3 simul pcaps, so using
         # 2 of 3 should fail as the generated intersection will be different.
         intersect_pcap('../examples/simul1.pcap',
                        '../examples/simul2.pcap')
         self.assertFalse(filecmp.cmp('intersect.pcap',
-                                     '../examples/intersect.pcap'))
+                                     '../examples/simul_intersect.pcap'))
         os.remove('intersect.pcap')
 
     def test_difference_pcap(self):
@@ -86,11 +87,11 @@ class TestPcapMath(unittest.TestCase):
         # equal to the intersect.pcap. This is due to the traffic being the
         # same and there being no infixed traffic from other sources.
         self.assertTrue(filecmp.cmp('bounded_intersect-simul1.pcap',
-                                    '../examples/intersect.pcap'))
+                                    '../examples/simul_intersect.pcap'))
         self.assertTrue(filecmp.cmp('bounded_intersect-simul2.pcap',
-                                    '../examples/intersect.pcap'))
+                                    '../examples/simul_intersect.pcap'))
         self.assertTrue(filecmp.cmp('bounded_intersect-simul3.pcap',
-                                    '../examples/intersect.pcap'))
+                                    '../examples/simul_intersect.pcap'))
         os.remove('bounded_intersect-simul1.pcap')
         os.remove('bounded_intersect-simul2.pcap')
         os.remove('bounded_intersect-simul3.pcap')

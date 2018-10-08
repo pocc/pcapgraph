@@ -83,6 +83,7 @@ def reorder_packets(pcap):
     reorder_packets_cmds = ['reordercap', pcap, '_' + pcap]
     reorder_sp = sp.Popen(reorder_packets_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
     reorder_sp.communicate()
+    reorder_sp.kill()
     os.replace('_' + pcap, pcap)
 
 
@@ -102,4 +103,5 @@ def save_pcap(pcap_dict, name):
     save_pcap_sp = sp.Popen(
         save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     save_pcap_sp.communicate(input=pcap_text.encode())
+    save_pcap_sp.kill()
     reorder_packets(name + '.pcap')
