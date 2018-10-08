@@ -15,7 +15,7 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-acV] [--set <operation>...] [--output <format>...] \
+  pcapgraph [-acVditu] [--output <format>...] \
 (--dir <dir>... | <file>...)
   pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
@@ -28,20 +28,21 @@ Options:
   -c, --compare         Compare all files to the first file by ip.id and
                         ip.checksum to find the percent of packets that
                         match exactly. (see Packet Comparisions).
-  -d, --dir <dir>       Specify directories to add pcaps from.
+  -d, --difference      Set difference of packets (see Set Operations).
+      --dir <dir>       Specify directories to add pcaps from.
                         Can be used multiple times.
   -f, --filter <filter> Prefilter packets with a wireshark filter. Can be
                         specified multiple times, once per filter.
                         Filtering for target traffic decreases processing time.
   -g, --generate-pcaps  Generate 3 example packet captures (see Generation).
   -h, --help            Show this screen.
-  -i, --int <interface> Specify the interface to capture on. Requires -g. Open
+  -i, --intersection    Set intersection of packets (see Set Operations).
+      --int <interface> Specify the interface to capture on. Requires -g. Open
                         Wireshark to find the active interface with traffic
                         passing if you are not sure which to specify.
   -o, --output <format> Output results as a file with format type.
-  -s, --set <operation> Performs a set operation on frames. Valid operations are
-                        bounded, difference, intersection, and union.
-                        See Set Operations for more details.
+  -t, --time-intersect  Bounded intersection of packets (see Set Operations).
+  -u, --union           Set union of packets (see Set Operations).
   -v, --version         Show PcapGraph's version.
   -V, --verbose         Provide more context to what pcapgraph is doing.
 
@@ -62,12 +63,17 @@ Input requirements
     .trc, .fdc, .syc, .bfr, .tr1, .snoop
 
 Output Formats:
-  Export formats are dependent on OS capabilities. Formats may include:
-    Image: eps, jpeg, jpg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
-    Other: txt, pcap
+  Export formats are dependent on OS capabilities. Matplotlib formats:
+    eps, jpeg, jpg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff
 
   More information on format can be found in matplotlib's online documentation:
   https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
+
+  Other formats: txt, pcap, bin
+    txt: Print results to text file
+    pcap: Save output as pcap. Requires a set operation.
+    bin: Raw packets that can be sent to wireshark CLI utilities.
+      Requires a set operation.
 
 Set Operations:
   All set operations require take packet captures and do the following:
@@ -128,7 +134,7 @@ def run():
     get_tshark_status()
     args = docopt.docopt(__doc__)
     filenames = gf.parse_cli_args(args)
-    filenames = pm.parse_set_arg(filenames, args['--set'])
+    filenames = pm.parse_set_arg(filenames, args)
     pcaps_frame_dict = mf.get_pcap_frame_dict(filenames)
     dg.draw_graph(pcaps_frame_dict, args['--output'])
 

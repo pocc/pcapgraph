@@ -21,7 +21,7 @@ from pcapgraph.manipulate_frames import get_pcap_frame_dict
 import pcapgraph.save_file as save_file
 
 
-def parse_set_arg(filenames, set_args):
+def parse_set_arg(filenames, args):
     """Call the appropriate method per CLI flags.
 
     difference, union, intersect consist of {<op>: {frame: timestamp, ...}}
@@ -29,25 +29,27 @@ def parse_set_arg(filenames, set_args):
 
     Args:
         filenames (list): List of filenames
-        set_args (list): List of set arguments.
+        args (dict): Dict of all arguments (including set args).
     """
-    for arg in set_args:
-        if arg == 'union':
-            generated_file = union_pcap(*filenames)
-            filenames.append(generated_file)
-        elif arg == 'intersection':
-            generated_file = intersect_pcap(*filenames)
-            filenames.append(generated_file)
-        elif arg == 'difference':
-            generated_file = difference_pcap(*filenames)
-            filenames.append(generated_file)
-        elif arg == 'bounded':
-            generated_filelist = bounded_intersect_pcap(*filenames)
-            filenames.extend(generated_filelist)
-        else:
-            raise SyntaxError("ERROR: Invalid set operation."
-                              "Valid set operations:"
-                              "union, intersection, difference, bounded.")
+    set_args = {
+        'union': args['--union'],
+        'intersection': args['--intersection'],
+        'difference': args['--difference'],
+        'time-intersect': args['--time-intersect']
+    }
+
+    if set_args['union']:
+        generated_file = union_pcap(*filenames)
+        filenames.append(generated_file)
+    if set_args['intersection']:
+        generated_file = intersect_pcap(*filenames)
+        filenames.append(generated_file)
+    if set_args['difference']:
+        generated_file = difference_pcap(*filenames)
+        filenames.append(generated_file)
+    if set_args['time-intersect']:
+        generated_filelist = bounded_intersect_pcap(*filenames)
+        filenames.extend(generated_filelist)
 
     return filenames
 

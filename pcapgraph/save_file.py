@@ -21,6 +21,8 @@ import os
 def convert_to_pcaptext(raw_packet, timestamp=''):
     """Convert the raw pcap hex to a form that text2cap can read from stdin.
 
+    hexdump and xxd can do this on *nix platforms, but not on Windows.
+
     `tshark -r <file> -T json -x` produces the "in" and text2pcap
     requires the "out" formats as shown below:
 

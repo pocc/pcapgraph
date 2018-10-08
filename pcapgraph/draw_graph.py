@@ -28,13 +28,16 @@ def draw_graph(pcap_packets, save_fmts):
     """Draw a graph using matplotlib and numpy.
 
     Args:
-        pcap_packets (dict): All packets, with key pcap filename/operation.
+        pcap_packets (dict): All packets, where key is pcap filename/operation.
         save_fmts (str): The save file type. Supported formats are dependent
             on the capabilites of the system: [png, pdf, ps, eps, and svg]. See
             https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
             for more information.
     """
     pcap_filenames = list(pcap_packets)
+    # So that if no save format is specified, print to screen and stdout
+    if not save_fmts:
+        save_fmts = ['show']
     for save_format in save_fmts:
         if save_format == 'txt':
             output_text = make_text_not_war(pcap_packets)
@@ -52,11 +55,11 @@ def draw_graph(pcap_packets, save_fmts):
                     graph_vars[filename] = graph_startstop_dict
 
             generate_graph(graph_vars)
-            if save_format:
+            if save_format != 'show':
                 export_graph(list(graph_vars), save_format)
             else:
                 # Print text version because it's possible.
-                print(make_text_not_war(pcap_packets))
+                print(make_text_not_war(graph_vars))
                 plt.show()
 
 
@@ -240,9 +243,9 @@ def make_text_not_war(pcap_times):
     Args:
         pcap_times (dict): Packet capture names and start/stop timestamps.
     Returns:
-        (string): Full textstring of text to written to file/stdout
+        (str): Full textstring of text to written to file/stdout
     """
-    result_string = 'PCAP NAME           YEAR  DATE 0  DATE $' \
+    result_string = '\nPCAP NAME           YEAR  DATE 0  DATE $' \
                     '     TIME 0    TIME $       UTC 0' + 14*' ' + 'UTC $'
     for pcap in sorted(pcap_times.keys()):
         pcap_year = datetime.datetime.fromtimestamp(pcap_times[pcap][
@@ -255,11 +258,12 @@ def make_text_not_war(pcap_times):
             pcap]['pcap_start']).strftime('%H:%M:%S')
         pcap_pretty_endtime = datetime.datetime.fromtimestamp(pcap_times[pcap][
             'pcap_end']).strftime('%H:%M:%S')
+        """
         if pcap_times[pcap]['pivot_similarity']:
             pcap_name_string = '(' + "{: >3}".format(
                 str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
-        else:
-            pcap_name_string = pcap[:17]  # Truncate if too long
+        else:"""
+        pcap_name_string = pcap[:17]  # Truncate if too long
 
         # Formatter creates a bunch of columns aligned left with num spacing.
         format_string = "\n{: <19} {: <5} {: <7} " \
