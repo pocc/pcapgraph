@@ -20,7 +20,7 @@ import pcapgraph.get_filenames as gf
 
 class TestGetFilenames(unittest.TestCase):
     def test_parse_cli_args(self):
-        """Test parse_cli_args, get_filenames_from_directories, get_filenams."""
+        """Test parse_cli_args,get_filenames_from_directories,get_filenames"""
         args = {
             '--version': True,
             '--generate-pcaps': False,

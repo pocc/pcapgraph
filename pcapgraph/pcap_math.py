@@ -21,28 +21,35 @@ from pcapgraph.manipulate_frames import get_pcap_frame_dict
 import pcapgraph.save_file as save_file
 
 
-def parse_set_arg(args, filenames):
+def parse_set_arg(filenames, set_args):
     """Call the appropriate method per CLI flags.
 
     difference, union, intersect consist of {<op>: {frame: timestamp, ...}}
     bounded_intersect consists of {pcap: {frame: timestamp, ...}, ...}
-    """
-    pcap_frames = {}
-    for arg in args:
-        if arg == 'difference':
-            pcap_frames = {**pcap_frames, **difference_pcap(filenames)}
-        elif arg == 'intersection':
-            pcap_frames = {**pcap_frames, **intersect_pcap(filenames)}
-        elif arg == 'union':
-            pcap_frames = {**pcap_frames, **union_pcap(filenames)}
-        elif arg == 'bounded':
-            pcap_frames = {**pcap_frames, **bounded_intersect_pcap(filenames)}
-        else:
-            raise SyntaxError("ERROR: Invalid set operation.\nValid set "
-                              "operations: Bounded, Difference, Intersection, "
-                              "Union.")
 
-    return pcap_frames
+    Args:
+        filenames (list): List of filenames
+        set_args (list): List of set arguments.
+    """
+    for arg in set_args:
+        if arg == 'union':
+            generated_file = union_pcap(*filenames)
+            filenames.append(generated_file)
+        elif arg == 'intersection':
+            generated_file = intersect_pcap(*filenames)
+            filenames.append(generated_file)
+        elif arg == 'difference':
+            generated_file = difference_pcap(*filenames)
+            filenames.append(generated_file)
+        elif arg == 'bounded':
+            generated_filelist = bounded_intersect_pcap(*filenames)
+            filenames.extend(generated_filelist)
+        else:
+            raise SyntaxError("ERROR: Invalid set operation."
+                              "Valid set operations:"
+                              "union, intersection, difference, bounded.")
+
+    return filenames
 
 
 def union_pcap(*pcaps):
@@ -66,9 +73,11 @@ def union_pcap(*pcaps):
         mergecap is shipped with wireshark.
 
     Args:
-        *pcaps (list(str)): List of pcap filenames.
+        *pcaps (*list): List of pcap filenames.
+    Returns:
+        (string): Name of generated pcap.
     """
-    pcap_dict = parse_pcaps(*pcaps)
+    pcap_dict = parse_pcaps(pcaps)
     frame_dict = get_flat_frame_dict(pcap_dict)
     raw_packet_list = []
     for pcap in pcap_dict:
@@ -81,6 +90,8 @@ def union_pcap(*pcaps):
     for frame in raw_packet_list:
         union_frame_dict[frame] = frame_dict[frame]
     save_file.save_pcap(pcap_dict=union_frame_dict, name='union')
+
+    return 'union.pcap'
 
 
 def intersect_pcap(*pcaps):
@@ -107,17 +118,17 @@ def intersect_pcap(*pcaps):
     Files starting with 'diff' are set differences of all packets to pivot A.
 
     Args:
-
+        *pcaps (*list): List of pcap filenames.
     Returns:
-
+        (string): Name of generated pcap.
     """
-    pcap_json_list = parse_pcaps(*pcaps)
+    pcap_json_list = parse_pcaps([*pcaps])
     frame_dict = get_flat_frame_dict(pcap_json_list)
-
     # Generate intersection set of frames
-    pcap_frame_list = get_pcap_frame_dict(*pcaps)
-    frame_intersection = set(pcap_frame_list[0]
-                             ).intersection(*pcap_frame_list[1:])
+    pcap_frame_list = get_pcap_frame_dict([*pcaps])
+    frame_list = [pcap_frame_list[i] for i in pcap_frame_list]
+    frame_intersection = set(frame_list[0]
+                             ).intersection(*frame_list[1:])
 
     # Print intersection output like in docstring
     intersection_count = len(frame_intersection)
@@ -125,7 +136,7 @@ def intersect_pcap(*pcaps):
     for index, pcap in enumerate(pcaps):
         same_percent = str(
             round(100 * (intersection_count /
-                         len(pcap_frame_list[index])))) + '%'
+                         len(frame_list[0])))) + '%'
         print("{: <12} {: <}".format(same_percent, pcap))
 
     intersect_frame_dict = {}
@@ -133,18 +144,25 @@ def intersect_pcap(*pcaps):
         intersect_frame_dict[frame] = frame_dict[frame]
     save_file.save_pcap(pcap_dict=intersect_frame_dict, name='intersect')
 
+    return 'intersect.pcap'
+
 
 def difference_pcap(*pcaps):
     """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
 
     This method will find the intersection using bounded_intersect_pcap() and
     then remove those packets from A, and save with tshark.
+
+    Args:
+        *pcaps (*list): List of pcap filenames.
+    Returns:
+        (string): Name of generated pcap.
     """
     minuend_name = pcaps[0]
-    minuend_pcap_dict = parse_pcaps(minuend_name)
+    minuend_pcap_dict = parse_pcaps([minuend_name])
     minuend_frame_dict = get_flat_frame_dict(minuend_pcap_dict)
     diffing_pcaps = pcaps[1:]
-    diff_pcap_dict = parse_pcaps(*diffing_pcaps)
+    diff_pcap_dict = parse_pcaps(diffing_pcaps)
     diff_frame_dict = get_flat_frame_dict(diff_pcap_dict)
     packet_diff = set(minuend_frame_dict).difference(set(diff_frame_dict))
 
@@ -153,6 +171,8 @@ def difference_pcap(*pcaps):
         # Minuend frame dict should have all values we care about.
         diff_frame_dict[frame] = minuend_frame_dict[frame]
     save_file.save_pcap(pcap_dict=diff_frame_dict, name='difference')
+
+    return 'difference.pcap'
 
 
 def bounded_intersect_pcap(*pcaps):
@@ -193,21 +213,24 @@ def bounded_intersect_pcap(*pcaps):
 
 
     Args:
-        *pcaps (*list(string)): Filenames of packet captures passed in.
+        *pcaps (*list): List of pcap filenames.
+    Returns:
+        (list(string)): List of generated pcaps.
     """
     # Init vars
     bounded_pcaps = []
-    pcap_dict = parse_pcaps(*pcaps)
+    pcap_dict = parse_pcaps(list(pcaps))
     flat_frame_dict = get_flat_frame_dict(pcap_dict)
-    pcap_frame_dict = get_pcap_frame_dict([*pcaps])
-    min_frame, max_frame = get_minmax_common_frames([pcaps], flat_frame_dict)
+    pcap_frame_dict = get_pcap_frame_dict(list(pcaps))
+    min_frame, max_frame = get_minmax_common_frames(list(pcaps),
+                                                    flat_frame_dict)
 
     # Create a bounding box around each packet capture where the bounds are
     # the min and max packets in the intersection.
     for pcap in pcap_frame_dict:
         min_frame_index = -1
         max_frame_index = -1
-        frame_list = list(pcap)
+        frame_list = list(pcap_frame_dict[pcap])
         for frame in frame_list:
             if frame == min_frame:
                 min_frame_index = frame_list.index(frame)
@@ -229,9 +252,12 @@ def bounded_intersect_pcap(*pcaps):
             bounded_pcap_with_timestamps[frame] = flat_frame_dict[frame]
         bounded_pcaps.append(bounded_pcap_with_timestamps)
 
+    names = []  # Names of all generated pcaps
     for index, pcap in enumerate(bounded_pcaps):
-        save_file.save_pcap(pcap_dict=bounded_pcaps[index],
-                            name='bounded_intersect-simul' + str(index+1))
+        names.append('bounded_intersect-simul' + str(index + 1))
+        save_file.save_pcap(pcap_dict=bounded_pcaps[index], name=names[index])
+
+    return names
 
 
 def get_minmax_common_frames(pcaps, frame_dict):
@@ -249,9 +275,10 @@ def get_minmax_common_frames(pcaps, frame_dict):
         assert: If intersection is empty.
     """
     # Generate intersection set of frames
-    pcap_frame_list = get_pcap_frame_dict(*pcaps)
-    frame_intersection = set(pcap_frame_list[0]
-                             ).intersection(*pcap_frame_list[1:])
+    pcap_frame_list = get_pcap_frame_dict(list(pcaps))
+    frame_list = [list(pcap_frame_list[i]) for i in pcap_frame_list]
+    frame_intersection = set(frame_list[0]
+                             ).intersection(*frame_list[1:])
 
     # Set may reorder packets, so search for first/last.
     unix_32bit_end_of_time = 4294967296

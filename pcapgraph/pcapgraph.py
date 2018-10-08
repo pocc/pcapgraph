@@ -128,9 +128,9 @@ def run():
     get_tshark_status()
     args = docopt.docopt(__doc__)
     filenames = gf.parse_cli_args(args)
+    filenames = pm.parse_set_arg(filenames, args['--set'])
     pcaps_frame_dict = mf.get_pcap_dict(filenames)
-    set_frame_dict = pm.parse_set_arg(filenames, args['--set'])
-    dg.draw_graph(pcaps_frame_dict, set_frame_dict, args['--output'])
+    dg.draw_graph(pcaps_frame_dict, args['--output'])
 
 
 if __name__ == '__main__':

@@ -12,9 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# Filter gets a single-letter flag because it might be specified multiple times.
-# All other single-letter flags should not require an argument.
 """Parse the frames from files based upon options."""
 
 import time
@@ -35,20 +32,20 @@ def get_pcap_dict(filenames):
     Raises:
         IOError: Raise if there are no valid packet captures provided.
     """
-    pcap_dict = parse_pcaps(filenames)
+    pcap_dict = parse_pcaps(list(filenames))
 
     if not pcap_dict:
         raise FileNotFoundError("ERROR: All packet captures are empty!")
     return pcap_dict
 
 
-def parse_pcaps(*pcaps):
-    """Given *pcaps, return all frames and their timestamps.
+def parse_pcaps(pcaps):
+    """Given pcaps, return all frames and their timestamps.
 
     Args:
-        *pcaps (*list(string)): A list of pcap filenames
+        pcaps (list(string)): A list of pcap filenames
     Returns:
-        pcap_dict (dict): All the packet data in json format.
+        pcap_dict (list): All the packet data in json format.
     """
     pcap_json_list = []
     for pcap in pcaps:
@@ -63,7 +60,7 @@ def get_flat_frame_dict(pcap_json_list):
     Args:
         pcap_json_list (list): List of pcap dicts (see parse_pcaps for details)
     Returns:
-        frame_dict (dict): {<pcap>: {<frame>: <timestamp>, ...}, ...}
+        frame_list (list): [{<frame>: <timestamp>, ...}, ...]
     """
     frame_dict = {}
     for pcap in pcap_json_list:
@@ -86,12 +83,12 @@ def get_pcap_frame_dict(pcaps):
     Args:
         pcaps (list): List of pcap file names.
     Returns:
-        (list): [{<frame>:<timestamp>, ...}, ...]
+        (dict): {<pcap>: {<frame>:<timestamp>, ...}, ...}
     """
-    pcap_frame_list = []
+    pcap_frame_list = {}
     for pcap in pcaps:
-        pcap_json = parse_pcaps(pcap)
-        pcap_frame_list.append(get_flat_frame_dict(pcap_json))
+        pcap_json_list = parse_pcaps([pcap])
+        pcap_frame_list[pcap] = get_flat_frame_dict(pcap_json_list)
 
     return pcap_frame_list
 
