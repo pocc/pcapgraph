@@ -31,58 +31,67 @@ class TestDrawGraph(unittest.TestCase):
         examples/simul2.pcap examples/simul3.pcap --output png"""
         args = {
             '--anonymize': False,
-            '--compare': False,
+            '--bounded-intersection': False,
             '--difference': False,
-            '--dir': [],
+            '--dir': ['examples'],
+            '--filter': None,
             '--generate-pcaps': False,
             '--help': False,
-            '--int': None,
+            '--int': False,
             '--intersection': False,
+            '--inverse-bounded': False,
             '--output': ['png'],
-            '--time-intersect': False,
+            '--symmetric-difference': False,
             '--union': False,
             '--verbose': False,
             '--version': False,
-            '<file>': [
-                '../examples/simul1.pcap',
-                '../examples/simul2.pcap',
-                '../examples/simul3.pcap'
-            ],
+            '<interface>': None,
+            '<file>': []
         }
         self.mock_main(args)
         self.assertTrue(filecmp.cmp('pcap_graph-simul1.png',
-                                    '../examples/pcap_graph.png'))
+                                    'examples/pcap_graph.png'))
         os.remove('pcap_graph-simul1.png')
 
     def test_draw_all(self):
         """Verifies that specific args create the exact same image as expected.
 
+        Use existing files in set_ops to avoid expensive set operations.
+
         Equivalent to `pcapgraph -ditu examples/simul1.pcap
         examples/simul2.pcap examples/simul3.pcap --output png"""
         args = {
             '--anonymize': False,
-            '--compare': False,
-            '--difference': True,
+            '--bounded-intersection': False,
+            '--difference': False,
             '--dir': [],
+            '--filter': None,
             '--generate-pcaps': False,
             '--help': False,
-            '--int': None,
-            '--intersection': True,
+            '--int': False,
+            '--intersection': False,
+            '--inverse-bounded': False,
             '--output': ['png'],
-            '--time-intersect': True,
-            '--union': True,
+            '--symmetric-difference': False,
+            '--union': False,
             '--verbose': False,
             '--version': False,
-            '<file>': [
-                '../examples/simul1.pcap',
-                '../examples/simul2.pcap',
-                '../examples/simul3.pcap'
-            ],
+            '<interface>': None,
+            '<file>': ['examples/set_ops/union.pcap',
+                       'examples/simul1.pcap',
+                       'examples/simul2.pcap',
+                       'examples/simul3.pcap',
+                       'examples/set_ops/diff_simul1-simul3.pcap',
+                       'examples/set_ops/intersect.pcap',
+                       'examples/set_ops/symdiff_simul1.pcap',
+                       'examples/set_ops/symdiff_simul3.pcap'
+                       ],
         }
         self.mock_main(args)
-        self.assertTrue(filecmp.cmp('pcap_graph-simul1.png',
-                                    '../examples/pcap_graph_all.png'))
-        os.remove('pcap_graph-simul1.png')
+        # Alphabetically first file will be union.pcap per list
+        self.assertTrue(filecmp.cmp('pcap_graph-union.png',
+                                    'examples/set_ops/pcap_graph_all.png'))
+        os.remove('pcap_graph-union.png')
 
     @staticmethod
     def mock_main(args):
@@ -90,4 +99,4 @@ class TestDrawGraph(unittest.TestCase):
         filenames = gf.parse_cli_args(args)
         filenames = pm.parse_set_arg(filenames, args)
         pcaps_frame_dict = mf.get_pcap_frame_dict(filenames)
-        dg.draw_graph(pcaps_frame_dict, args['<file>'], args['--output'])
+        dg.draw_graph(pcaps_frame_dict, filenames, args['--output'])

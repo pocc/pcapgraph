@@ -36,7 +36,8 @@ class TestGetFilenames(unittest.TestCase):
         # the default interface is the one that traffic is going through.
 
         # --dir and <files> should be properly parsed.
-        args['--dir'] = ['files/test_dir']
-        args['<file>'] = ['files/test.pcap']
-        expected_results = ['files/test_dir/test_dir.pcap', 'files/test.pcap']
+        args['--dir'] = ['tests/files/test_dir']
+        args['<file>'] = ['tests/files/test.pcap']
+        expected_results = ['tests/files/test_dir/test_dir.pcap',
+                            'tests/files/test.pcap']
         self.assertEqual(expected_results, gf.parse_cli_args(args))

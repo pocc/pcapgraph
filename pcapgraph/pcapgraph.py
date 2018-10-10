@@ -15,7 +15,7 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-abcdeisuV] [--filter <filter>] [--output <format>...] \
+  pcapgraph [-abdeisuV] [--filter <filter>] [--output <format>...] \
 (--dir <dir>... | <file>...)
   pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
@@ -27,12 +27,9 @@ Options:
                         place names and devices.
   -b, --bounded-intersection
                         Bounded intersection of packets (see Set Operations).
-  -c, --compare         Compare all files to the first file by ip.id and
-                        ip.checksum to find the percent of packets that
-                        match exactly. (see Packet Comparisions).
   -d, --difference      First packet capture minus packets in all succeeding
                         packet captures. (see Set Operations > difference).
-      --dir <dir>       Specify directories to add pcaps from.
+      --dir <dir>       Specify directories to add pcaps from (not recursive).
                         Can be used multiple times.
   -e, --inverse-bounded
                         Shortcut for applying `-b` to a group of pcaps and then
@@ -49,10 +46,14 @@ Options:
                         Wireshark to find the active interface with traffic
                         passing if you are not sure which to specify.
   -o, --output <fmt>    Output results as a file with format type.
+  -p, --pivot-intersection
+                        Instead of the shared intersection between multiple
+                        packet captures, this will be the intersection between
+                        one packet capture and every other.
   -s, --symmetric-difference
                         Packets unique to each packet capture.
                         (see Set Operations > symmetric difference).
-  -u, --union           All unique packets.
+  -u, --union           All unique packets across all pcaket captures.
                         (see Set Operations > union).
   -v, --version         Show PcapGraph's version.
   -V, --verbose         Provide more context to what pcapgraph is doing.
@@ -147,7 +148,7 @@ def run():
     filenames = gf.parse_cli_args(args)
     filenames = pm.parse_set_arg(filenames, args)
     pcaps_frame_dict = mf.get_pcap_frame_dict(filenames)
-    dg.draw_graph(pcaps_frame_dict, args['<file>'], args['--output'])
+    dg.draw_graph(pcaps_frame_dict, filenames, args['--output'])
 
 
 if __name__ == '__main__':

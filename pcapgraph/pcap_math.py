@@ -19,6 +19,7 @@ import os
 from pcapgraph.manipulate_frames import parse_pcaps
 from pcapgraph.manipulate_frames import get_flat_frame_dict
 from pcapgraph.manipulate_frames import get_pcap_frame_dict
+from pcapgraph.manipulate_frames import get_frame_from_json
 import pcapgraph.save_file as save_file
 
 
@@ -43,7 +44,8 @@ def parse_set_arg(filenames, args):
     new_files = []
     if set_args['difference']:
         generated_file = difference_pcap(*filenames)
-        new_files.append(generated_file)
+        if generated_file:  # As long as the difference exists.
+            new_files.append(generated_file)
     if set_args['intersection']:
         generated_file = intersect_pcap(*filenames)
         new_files.append(generated_file)
@@ -101,7 +103,8 @@ def union_pcap(*pcaps):
     raw_packet_list = []
     for pcap in pcap_dict:
         for frame in pcap:
-            raw_packet_list.append(frame['_source']['layers']['frame_raw'])
+            raw_frame = get_frame_from_json(frame)
+            raw_packet_list.append(raw_frame)
 
     print("\nPacket statistics", collections.Counter(raw_packet_list))
 
@@ -210,7 +213,8 @@ def symmetric_difference_pcap(*pcaps):
     """
     generated_filelist = []
     for file in pcaps:
-        other_files = set(pcaps) - set([file])
+        file_in_list = [file]
+        other_files = set(pcaps) - set(file_in_list)
         # difference_pcap will generate files like difference-simul1.pcap
         diff_filename = difference_pcap(file, *other_files)
         if diff_filename:  # If diff file has packets.

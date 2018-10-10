@@ -17,7 +17,7 @@
 
 
 .DEFAULT: clean
-.PHONY: clean install testpypi installtest pypi
+.PHONY: clean install test lint testpypi installtestpypi pypi
 
 clean:
 	$(RM) -r dist/ build/
@@ -26,12 +26,22 @@ clean:
 install:
 	python3.6 setup.py sdist
 
+# Run all tests in test directory
+test:
+	python -m pytest
+
+# Lint using flake8, pylint, yapf
+lint:
+	flake8
+	pylint
+	yapf -pri
+
 # Use this first before uploading to pypi to verify that it uploaded correctly.
 testpypi: clean install
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 # After testpypi, verify that it installs and runs correctly
-installtest:
+installtestpypi:
 	python3.6 -m pip install -U --user --index-url https://test.pypi.org/simple/ pcapgraph
 
 # Use this when you are sure that the test upload (above) looks good.

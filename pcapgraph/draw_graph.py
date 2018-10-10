@@ -39,12 +39,10 @@ def draw_graph(pcap_packets, input_files, save_fmts):
     if not save_fmts:
         save_fmts = ['show']
     pcap_filenames = list(pcap_packets)
-    if 'pcap' not in save_fmts:  # Delete temp files if not required.
-        new_files = set(pcap_filenames) - set(input_files)
-        for file in new_files:
-            os.remove(file)
-    else:
+    delete_pcaps = True
+    if 'pcap' in save_fmts:
         save_fmts.remove('pcap')
+        delete_pcaps = False
     for save_format in save_fmts:
         if save_format == 'txt':
             output_text = make_text_not_war(pcap_packets)
@@ -68,6 +66,11 @@ def draw_graph(pcap_packets, input_files, save_fmts):
                 # Print text version because it's possible.
                 print(make_text_not_war(graph_vars))
                 plt.show()
+    if delete_pcaps:
+        # Delete temp files if not required.
+        new_files = set(pcap_filenames) - set(input_files)
+        for file in new_files:
+            os.remove(file)
 
 
 def get_graph_vars_from_file(filename):
@@ -191,8 +194,8 @@ def set_horiz_bar_colors(barlist):
         barlist
     """
     colors = [
-        '#2d89ef', '#603cba', '#2b5797', '#7e3878', '#b91d47', '#9f00a7',
-        '#00a300', '#da532c', '#00aba9', '#1e7145', '#99b433', '#e3a21a'
+        '#2d89ef', '#603cba', '#2b5797', '#008B8B', '#3145b4', '#36648B',
+        '#38b0de', '#4d4dff', '#3299cc', '#7f00ff', '#03b4c8', '#5959ab',
     ]
     color_count = len(colors)
     for i, hbar in enumerate(barlist):
