@@ -19,6 +19,8 @@ import pcapgraph.get_filenames as gf
 
 
 class TestGetFilenames(unittest.TestCase):
+    """Test get_filenames.py."""
+
     def test_parse_cli_args(self):
         """Test parse_cli_args,get_filenames_from_directories,get_filenames"""
         args = {
@@ -38,6 +40,7 @@ class TestGetFilenames(unittest.TestCase):
         # --dir and <files> should be properly parsed.
         args['--dir'] = ['tests/files/test_dir']
         args['<file>'] = ['tests/files/test.pcap']
-        expected_results = ['tests/files/test_dir/test_dir.pcap',
-                            'tests/files/test.pcap']
+        expected_results = [
+            'tests/files/test_dir/test_dir.pcap', 'tests/files/test.pcap'
+        ]
         self.assertEqual(expected_results, gf.parse_cli_args(args))

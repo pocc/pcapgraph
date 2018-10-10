@@ -127,11 +127,11 @@ Generation of example packet captures
 """
 import docopt
 
-from . import get_tshark_status
 import pcapgraph.manipulate_frames as mf
 import pcapgraph.get_filenames as gf
 import pcapgraph.draw_graph as dg
 import pcapgraph.pcap_math as pm
+from . import get_tshark_status
 
 
 def run():

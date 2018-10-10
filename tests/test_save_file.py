@@ -21,6 +21,8 @@ from pcapgraph import get_tshark_status
 
 
 class TestSaveFile(unittest.TestCase):
+    """Test save_file.py"""
+
     def setUp(self):
         """Make sure that tshark is in PATH."""
         # Add the wireshark folder to PATH for this shell.

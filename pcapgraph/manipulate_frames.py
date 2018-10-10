@@ -166,8 +166,9 @@ def get_packet_count(filename):
     """Given a file, get the packet count."""
     packet_count_cmds = ['-r', filename, '-2']
 
-    pcap_text_pipe = sp.Popen(
-        ['tshark', *packet_count_cmds], stdout=sp.PIPE, stderr=sp.PIPE)
+    pcap_text_pipe = sp.Popen(['tshark', *packet_count_cmds],
+                              stdout=sp.PIPE,
+                              stderr=sp.PIPE)
     pcap_text = decode_stdout(pcap_text_pipe)
     pcap_text_pipe.kill()
     # Split text like so in order that we capture 1-line text with no newline

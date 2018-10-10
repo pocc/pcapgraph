@@ -100,10 +100,9 @@ def get_graph_vars_from_file(filename):
             'frame.number==' + str(packet_count), '-T', 'fields', '-e',
             'frame.time_epoch'
         ]
-        pcap_start_pipe = sp.Popen(start_time_cmds,
-                                   stdout=sp.PIPE, stderr=sp.PIPE)
-        pcap_end_pipe = sp.Popen(end_time_cmds,
-                                 stdout=sp.PIPE, stderr=sp.PIPE)
+        pcap_start_pipe = sp.Popen(
+            start_time_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
+        pcap_end_pipe = sp.Popen(end_time_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
         pcap_start = float(mf.decode_stdout(pcap_start_pipe))
         pcap_end = float(mf.decode_stdout(pcap_end_pipe))
         pcap_start_pipe.kill()
@@ -112,17 +111,15 @@ def get_graph_vars_from_file(filename):
         tcpdump_release_time = 946684800
         if pcap_start < tcpdump_release_time or \
                 pcap_end < tcpdump_release_time:
-            print("!!! Packets from ", filename,
-                  " must have traveled via a flux capacitor because they're in"
-                  " the past or the future!\n!!! Timestamps predate the "
-                  "release of tcpdump or are negative."
-                  "\n!!! Excluding from results.\n")
+            print(
+                "!!! Packets from ", filename,
+                " must have traveled via a flux capacitor because they're in"
+                " the past or the future!\n!!! Timestamps predate the "
+                "release of tcpdump or are negative."
+                "\n!!! Excluding from results.\n")
             return {}
 
-        return {
-            'pcap_start': pcap_start,
-            'pcap_end': pcap_end
-        }
+        return {'pcap_start': pcap_start, 'pcap_end': pcap_end}
     # (else) May need to raise an exception for this as it means input is bad.
     print("!!! ERROR: Packet capture", filename,
           " has no packets or cannot be read!\n!!! Excluding from results.\n")
@@ -138,10 +135,9 @@ def generate_graph(pcap_vars):
     """
     # first and last are the first and last timestamp of all pcaps.
     pcap_names = list(pcap_vars)
-    start_time_list = [pcap_vars[pcap]['pcap_start'] for pcap in pcap_vars]
-    end_time_list = [pcap_vars[pcap]['pcap_end'] for pcap in pcap_vars]
-    start_times = np.array(start_time_list)
-    end_times = np.array(end_time_list)
+    start_times = np.array(
+        [pcap_vars[pcap]['pcap_start'] for pcap in pcap_vars])
+    end_times = np.array([pcap_vars[pcap]['pcap_end'] for pcap in pcap_vars])
     first_time = min(start_times)
     last_time = max(end_times)
     # Force padding on left and right sides
@@ -194,8 +190,18 @@ def set_horiz_bar_colors(barlist):
         barlist
     """
     colors = [
-        '#2d89ef', '#603cba', '#2b5797', '#008B8B', '#3145b4', '#36648B',
-        '#38b0de', '#4d4dff', '#3299cc', '#7f00ff', '#03b4c8', '#5959ab',
+        '#2d89ef',
+        '#603cba',
+        '#2b5797',
+        '#008B8B',
+        '#3145b4',
+        '#36648B',
+        '#38b0de',
+        '#4d4dff',
+        '#3299cc',
+        '#7f00ff',
+        '#03b4c8',
+        '#5959ab',
     ]
     color_count = len(colors)
     for i, hbar in enumerate(barlist):
@@ -254,25 +260,25 @@ def make_text_not_war(pcap_times):
         pcap_times (dict): Packet capture names and start/stop timestamps.
     Returns:
         (str): Full textstring of text to written to file/stdout
+
+        if pcap_times[pcap]['pivot_similarity']:
+            pcap_name_string = '(' + "{: >3}".format(
+                str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
+        else:
     """
     result_string = '\nPCAP NAME           YEAR  DATE 0  DATE $' \
                     '     TIME 0    TIME $       UTC 0' + 14*' ' + 'UTC $'
     for pcap in sorted(pcap_times.keys()):
-        pcap_year = datetime.datetime.fromtimestamp(pcap_times[pcap][
-            'pcap_start']).strftime('%Y')
-        pcap_pretty_startdate = datetime.datetime.fromtimestamp(pcap_times[
-            pcap]['pcap_start']).strftime('%b-%d')
-        pcap_pretty_enddate = datetime.datetime.fromtimestamp(pcap_times[pcap][
-            'pcap_end']).strftime('%b-%d')
-        pcap_pretty_starttime = datetime.datetime.fromtimestamp(pcap_times[
-            pcap]['pcap_start']).strftime('%H:%M:%S')
-        pcap_pretty_endtime = datetime.datetime.fromtimestamp(pcap_times[pcap][
-            'pcap_end']).strftime('%H:%M:%S')
-        """
-        if pcap_times[pcap]['pivot_similarity']:
-            pcap_name_string = '(' + "{: >3}".format(
-                str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
-        else:"""
+        pcap_year = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_start']).strftime('%Y')
+        pcap_pretty_startdate = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_start']).strftime('%b-%d')
+        pcap_pretty_enddate = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_end']).strftime('%b-%d')
+        pcap_pretty_starttime = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_start']).strftime('%H:%M:%S')
+        pcap_pretty_endtime = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_end']).strftime('%H:%M:%S')
         pcap_name_string = pcap[:17]  # Truncate if too long
 
         # Formatter creates a bunch of columns aligned left with num spacing.
@@ -286,6 +292,7 @@ def make_text_not_war(pcap_times):
             pcap_pretty_starttime,
             pcap_pretty_endtime,
             pcap_times[pcap]['pcap_start'],
-            pcap_times[pcap]['pcap_end'], )
+            pcap_times[pcap]['pcap_end'],
+        )
 
     return result_string
