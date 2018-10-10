@@ -34,9 +34,6 @@ Options:
   -e, --inverse-bounded
                         Shortcut for applying `-b` to a group of pcaps and then
                         subtracting the intersection from each.
-  -f, --filter <str>    Prefilter packets with a wireshark filter. Can be
-                        specified multiple times, once per filter.
-                        Filtering for target traffic decreases processing time.
   -g, --generate-pcaps  Generate 3 example packet captures (see Generation).
   -h, --help            Show this screen.
   -i, --intersection    All packets that are shared by all packet captures
@@ -46,10 +43,6 @@ Options:
                         Wireshark to find the active interface with traffic
                         passing if you are not sure which to specify.
   -o, --output <fmt>    Output results as a file with format type.
-  -p, --pivot-intersection
-                        Instead of the shared intersection between multiple
-                        packet captures, this will be the intersection between
-                        one packet capture and every other.
   -s, --symmetric-difference
                         Packets unique to each packet capture.
                         (see Set Operations > symmetric difference).

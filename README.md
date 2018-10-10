@@ -15,6 +15,8 @@ timestamps. If the --compare option is used, packet captures are compared
 packet by packet to find what percentage of traffic is the same. A list of 
 files, directories, and any combination thereof can be specified.
 
+Official Documentation can be found at 
+[Read the Docs](https://pcapgraph.readthedocs.io/en/latest/).
 ## Use case
 ### Scenario
 * You have a bunch of packet captures all from multiple interfaces on a 
