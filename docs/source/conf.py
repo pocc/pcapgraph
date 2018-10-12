@@ -16,6 +16,7 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import pcapgraph
 
 # -- Project information -----------------------------------------------------
 
@@ -23,11 +24,10 @@ project = 'PcapGraph'
 copyright = '2018, Ross Jacobs'
 author = 'Ross Jacobs'
 
-# The short X.Y version
-version = ''
+# The short X.Y version (split off .Z)
+version = pcapgraph.__version__.rsplit('.', 1)
 # The full version, including alpha/beta/rc tags
-release = '1.2.0'
-
+release = pcapgraph.__version__
 
 # -- General configuration ---------------------------------------------------
 
@@ -69,9 +69,15 @@ language = None
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+# If true, '()' will be appended to :func: etc. cross-reference text.
+add_function_parentheses = False
 
+# If true, the current module name will be prepended to all description
+# unit titles (such as .. function::).
+add_module_names = True
+
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = 'flask_theme_support.FlaskyStyle'
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -83,8 +89,17 @@ html_theme = 'alabaster'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {}
+
+html_theme_options = {
+    'show_powered_by': False,
+    'github_user': 'pocc',
+    'github_repo': 'pcapgraph',
+    'github_banner': True,
+    'description': 'Make graphs from packet captures',
+    'logo': 'img/pcapgraph_logo.png',
+    'show_related': False,
+    'note_bg': '#FFF59C'
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -98,15 +113,25 @@ html_static_path = ['_static']
 # defined by theme itself.  Builtin themes are using these templates by
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
-#
-# html_sidebars = {}
 
+html_sidebars = {
+    'index':
+    ['sidebarintro.html', 'sourcelink.html', 'searchbox.html', 'hacks.html']
+}
+
+# If true, links to the reST sources are added to the pages.
+html_show_sourcelink = False
+
+# If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
+html_show_sphinx = False
+
+# If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
+html_show_copyright = True
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pcapgraphdoc'
-
+htmlhelp_basename = 'PcapGraphdoc'
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -131,21 +156,14 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, 'pcapgraph.tex', 'pcapgraph Documentation',
-     'Ross Jacobs', 'manual'),
-]
-
+latex_documents = [(master_doc, 'pcapgraph.tex', 'pcapgraph Documentation',
+                    'Ross Jacobs', 'manual'), ]
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'pcapgraph', 'pcapgraph Documentation',
-     [author], 1)
-]
-
+man_pages = [(master_doc, 'pcapgraph', 'pcapgraph Documentation', [author], 1)]
 
 # -- Options for Texinfo output ----------------------------------------------
 
@@ -153,16 +171,14 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'pcapgraph', 'pcapgraph Documentation',
-     author, 'pcapgraph', 'One line description of project.',
-     'Miscellaneous'),
+    (master_doc, 'pcapgraph', 'pcapgraph Documentation', author, 'pcapgraph',
+     'One line description of project.', 'Miscellaneous'),
 ]
-
 
 # -- Options for Epub output -------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = project
+# epub_title = project
 
 # The unique identifier of the text. This can be a ISBN number
 # or the project homepage.
@@ -174,7 +190,6 @@ epub_title = project
 # epub_uid = ''
 
 # A list of files that should not be packed into the epub file.
-epub_exclude_files = ['search.html']
-
+# epub_exclude_files = ['search.html']
 
 # -- Extension configuration -------------------------------------------------

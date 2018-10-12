@@ -35,7 +35,7 @@ class TestDrawGraph(unittest.TestCase):
             '--anonymize': False,
             '--bounded-intersection': False,
             '--difference': False,
-            '--dir': ['examples'],
+            '--dir': [],
             '--filter': None,
             '--generate-pcaps': False,
             '--help': False,
@@ -48,7 +48,11 @@ class TestDrawGraph(unittest.TestCase):
             '--verbose': False,
             '--version': False,
             '<interface>': None,
-            '<file>': []
+            '<file>': [
+                'examples/simul1.pcap',
+                'examples/simul2.pcap',
+                'examples/simul3.pcap',
+            ]
         }
         self.mock_main(args)
         self.assertTrue(
@@ -63,39 +67,27 @@ class TestDrawGraph(unittest.TestCase):
         Equivalent to `pcapgraph -ditu examples/simul1.pcap
         examples/simul2.pcap examples/simul3.pcap --output png"""
         args = {
-            '--anonymize':
-            False,
-            '--bounded-intersection':
-            False,
-            '--difference':
-            False,
+            '--anonymize': False,
+            '--bounded-intersection': False,
+            '--difference': False,
             '--dir': [],
-            '--filter':
-            None,
-            '--generate-pcaps':
-            False,
-            '--help':
-            False,
-            '--int':
-            False,
-            '--intersection':
-            False,
-            '--inverse-bounded':
-            False,
+            '--filter': None,
+            '--generate-pcaps': False,
+            '--help': False,
+            '--int': False,
+            '--intersection': False,
+            '--inverse-bounded': False,
             '--output': ['png'],
-            '--symmetric-difference':
-            False,
-            '--union':
-            False,
-            '--verbose':
-            False,
-            '--version':
-            False,
-            '<interface>':
-            None,
+            '--symmetric-difference': False,
+            '--union': False,
+            '--verbose': False,
+            '--version': False,
+            '<interface>': None,
             '<file>': [
-                'examples/set_ops/union.pcap', 'examples/simul1.pcap',
-                'examples/simul2.pcap', 'examples/simul3.pcap',
+                'examples/set_ops/union.pcap',
+                'examples/simul1.pcap',
+                'examples/simul2.pcap',
+                'examples/simul3.pcap',
                 'examples/set_ops/diff_simul1-simul3.pcap',
                 'examples/set_ops/intersect.pcap',
                 'examples/set_ops/symdiff_simul1.pcap',

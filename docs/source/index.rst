@@ -11,8 +11,6 @@ Welcome to pcapgraph's documentation!
    :caption: Contents:
 
 Check out these projects to determine how to format:
-* https://tox.readthedocs.io/en/latest/
-* https://requests.readthedocs.io/en/latest/
 
 
 Indices and tables
