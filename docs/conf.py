@@ -12,11 +12,13 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
+import os
+import sys
 import pcapgraph
+
+sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('..'))
+
 
 # -- Project information -----------------------------------------------------
 
@@ -24,8 +26,8 @@ project = 'PcapGraph'
 copyright = '2018, Ross Jacobs'
 author = 'Ross Jacobs'
 
-# The short X.Y version (split off .Z)
-version = pcapgraph.__version__.rsplit('.', 1)
+# The short X.Y version
+version = pcapgraph.__version__
 # The full version, including alpha/beta/rc tags
 release = pcapgraph.__version__
 
@@ -77,29 +79,22 @@ add_function_parentheses = False
 add_module_names = True
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'flask_theme_support.FlaskyStyle'
+pygments_style = None
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 
-html_theme_options = {
-    'show_powered_by': False,
-    'github_user': 'pocc',
-    'github_repo': 'pcapgraph',
-    'github_banner': True,
-    'description': 'Make graphs from packet captures',
-    'logo': 'img/pcapgraph_logo.png',
-    'show_related': False,
-    'note_bg': '#FFF59C'
-}
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = '_static/logo.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -114,10 +109,13 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 
-html_sidebars = {
-    'index':
-    ['sidebarintro.html', 'sourcelink.html', 'searchbox.html', 'hacks.html']
-}
+#html_sidebars = {
+#        '**': [
+#        'about.html',
+#        'navigation.html',
+#        'searchbox.html',
+#    ]
+#}
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False

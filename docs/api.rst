@@ -3,4 +3,7 @@
 Developer Interface
 ===================
 
-.. module:: pcapgraph
+.. toctree::
+   :maxdepth: 2
+
+   pcapgraph.rst
