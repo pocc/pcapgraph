@@ -18,6 +18,7 @@ import pcapgraph
 
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../pcapgraph'))
 
 
 # -- Project information -----------------------------------------------------
@@ -45,7 +46,15 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
 ]
+
+# Force Sphinx to interpret docstrings as google docstring type
+napoleon_google_docstring = True
+
+# Recognize __init__() documentation
+autodoc_docstring_signature = True
+autoclass_content = 'init'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -79,7 +88,7 @@ add_function_parentheses = False
 add_module_names = True
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
 
 # -- Options for HTML output -------------------------------------------------
 
