@@ -260,12 +260,8 @@ def make_text_not_war(pcap_times):
         pcap_times (dict): Packet capture names and start/stop timestamps.
     Returns:
         (str): Full textstring of text to written to file/stdout
-
-        if pcap_times[pcap]['pivot_similarity']:
-            pcap_name_string = '(' + "{: >3}".format(
-                str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
-        else:
     """
+
     result_string = '\nPCAP NAME           YEAR  DATE 0  DATE $' \
                     '     TIME 0    TIME $       UTC 0' + 14*' ' + 'UTC $'
     for pcap in sorted(pcap_times.keys()):

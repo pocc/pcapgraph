@@ -30,10 +30,9 @@ Use case
 --------
 Scenario
 ~~~~~~~~
-* You have a bunch of packet captures all from multiple interfaces on a
-network
+* You have a bunch of packet captures all from multiple interfaces on a network
 * You need to verify that they were taken at the same time and contain the
-same packets
+  same packets
 
 Solution
 ~~~~~~~~
@@ -42,6 +41,9 @@ Use pcapgraph to visually see where there is time and traffic overlap.
 License
 -------
 Apache 2.0. See LICENSE for more details.
+
+Table of Contents
+-----------------
 
 .. toctree::
    :maxdepth: 2

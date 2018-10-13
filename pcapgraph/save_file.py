@@ -21,7 +21,7 @@ import os
 def convert_to_pcaptext(raw_packet, timestamp=''):
     """Convert the raw pcap hex to a form that text2cap can read from stdin.
 
-    hexdump and xxd can do this on *nix platforms, but not on Windows.
+    hexdump and xxd can do this on unix-like platforms, but not on Windows.
 
     `tshark -r <file> -T json -x` produces the "in" and text2pcap
     requires the "out" formats as shown below:
@@ -43,13 +43,12 @@ def convert_to_pcaptext(raw_packet, timestamp=''):
         0050  26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35
         0060  36 37
 
-    NOTE: Output format doesn't need an extra \n between packets. So in the
+    NOTE: Output format doesn't need an extra \\n between packets. So in the
     above example, the next line could be 0000  00 ... for the next packet.
 
     Args:
-        raw_packet (string): The ASCII hexdump seen above in 'In'
-        timestamp (string): Unix epoch timestamp of packet. This is optional.
-            If one is passed in, it will precede the 0000 line of the packet.
+        raw_packet (str): The ASCII hexdump seen above in 'In'
+        timestamp: Optional packet timestamp; will precede 0000 line of packet.
     """
     # init vars
     formatted_string = ''

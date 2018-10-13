@@ -1,9 +1,7 @@
-.. _api:
-
-Developer Interface
-===================
+pcapgraph
+=========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
-   modules.rst
+   pcapgraph

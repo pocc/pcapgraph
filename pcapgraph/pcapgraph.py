@@ -64,8 +64,9 @@ Input requirements
   of the two. When -d/--dir is used, this program will search a directory for
   valid packet capture types (essentially any format that Wireshark supports).
   The following packet capture extensions are supported by Wireshark:
-    .pcapng, .pcap, .cap, .dmp, .5vw, .TRC0, .TRC1, .enc,
-    .trc, .fdc, .syc, .bfr, .tr1, .snoop
+
+  .pcapng, .pcap, .cap, .dmp, .5vw, .TRC0, .TRC1, .enc,
+  .trc, .fdc, .syc, .bfr, .tr1, .snoop
 
 Output Formats:
   Export formats are dependent on OS capabilities. Matplotlib formats:
@@ -77,8 +78,6 @@ Output Formats:
   Other formats: txt, pcap, bin
     txt: Print results to text file
     pcap: Save output as pcap. Requires a set operation.
-    bin: Raw packets that can be sent to wireshark CLI utilities.
-      Requires a set operation.
 
 Set Operations:
   All set operations require take packet captures and do the following:
