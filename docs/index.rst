@@ -3,17 +3,18 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to PcapGraph's documentation!
-=====================================
+PcapGraph Manual
+================
+Create bar graphs out of packet capture timestamps.
+
 About
 -----
-Creates bar graphs out of packet capture timestamps.
 
-![Alt text](https://github.com/pocc/pcapgraph/blob/master/examples/set_ops/pcap_graph_all.png?raw=true "An example graph.")
+.. image:: ../examples/pcap_graph.png
+   :alt: An example graph
 
-**NOTE**: This project requires features from **python3.6**. It would be
-prudent to use
-this version of python or later.*
+*Three packet captures taken of the same network traffic,
+staggered by 20 seconds.*
 
 Platforms
 ~~~~~~~~~
@@ -26,24 +27,9 @@ timestamps. If the --compare option is used, packet captures are compared
 packet by packet to find what percentage of traffic is the same. A list of
 files, directories, and any combination thereof can be specified.
 
-Use case
---------
-Scenario
-~~~~~~~~
-* You have a bunch of packet captures all from multiple interfaces on a network
-* You need to verify that they were taken at the same time and contain the
-  same packets
-
-Solution
-~~~~~~~~
-Use pcapgraph to visually see where there is time and traffic overlap.
-
 License
--------
-Apache 2.0. See LICENSE for more details.
-
-Table of Contents
------------------
+~~~~~~~
+`Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0>`_
 
 .. toctree::
    :maxdepth: 2
