@@ -94,11 +94,11 @@ def union_pcap(*pcaps):
         mergecap is shipped with wireshark.
 
     Args:
-        *pcaps (list): List of pcap filenames.
+        *pcaps: List of pcap filenames.
     Returns:
         (string): Name of generated pcap.
     """
-    pcap_dict = parse_pcaps(list([pcaps]))
+    pcap_dict = parse_pcaps(pcaps)
     frame_dict = get_flat_frame_dict(pcap_dict)
     raw_packet_list = []
     for pcap in pcap_dict:
@@ -141,11 +141,11 @@ def intersect_pcap(*pcaps):
     Files starting with 'diff' are set differences of all packets to pivot A.
 
     Args:
-        *pcaps (list): List of pcap filenames.
+        *pcaps: List of pcap filenames.
     Returns:
         (string): Name of generated pcap.
     """
-    pcap_json_list = parse_pcaps([*pcaps])
+    pcap_json_list = parse_pcaps(pcaps)
     frame_dict = get_flat_frame_dict(pcap_json_list)
     # Generate intersection set of frames
     pcap_frame_list = get_pcap_frame_dict([*pcaps])
@@ -175,7 +175,7 @@ def difference_pcap(*pcaps):
     """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
 
     Args:
-        *pcaps (list): List of pcap filenames.
+        *pcaps: List of pcap filenames.
     Returns:
         (string): Name of generated pcap.
     """
@@ -206,7 +206,7 @@ def symmetric_difference_pcap(*pcaps):
     set is the result).
 
     Args:
-        pcaps (list): List of pcap filenames.
+        *pcaps: List of pcap filenames.
     Returns:
         (list(str)): Name of generated pcaps.
     """
@@ -262,12 +262,12 @@ def bounded_intersect_pcap(*pcaps):
 
 
     Args:
-        *pcaps (list): List of pcap filenames.
+        *pcaps: List of pcap filenames.
     Returns:
         (list(string)): List of generated pcaps.
     """
     # Init vars
-    pcap_dict = parse_pcaps(list(pcaps))
+    pcap_dict = parse_pcaps(pcaps)
     flat_frame_dict = get_flat_frame_dict(pcap_dict)
     pcap_frame_dict = get_pcap_frame_dict(list(pcaps))
 

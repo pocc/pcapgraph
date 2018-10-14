@@ -40,8 +40,7 @@ class TestPcapMath(unittest.TestCase):
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
         # This will generate union.pcap in tests/
-        union_pcap('examples/simul1.pcap', 'examples/simul2.pcap',
-                   'examples/simul3.pcap')
+        union_pcap()
         # The generated file should be the same as examples/union.pcap
         self.assertTrue(
             filecmp.cmp('union.pcap', 'examples/set_ops/union.pcap'))
@@ -50,7 +49,8 @@ class TestPcapMath(unittest.TestCase):
     def test_intersect_pcap(self):
         """Test union_pcap using the pcaps in examples."""
         # This will generate intersect.pcap in tests/
-        intersect_pcap('examples/simul1.pcap', 'examples/simul2.pcap',
+        intersect_pcap('examples/simul1.pcap',
+                       'examples/simul2.pcap',
                        'examples/simul3.pcap')
         # The generated file should be the same as examples/union.pcap
         self.assertTrue(
@@ -59,8 +59,8 @@ class TestPcapMath(unittest.TestCase):
         # 2 of 3 should fail as the generated intersection will be different.
         intersect_pcap('examples/simul1.pcap', 'examples/simul2.pcap')
         self.assertFalse(
-            filecmp.cmp('intersect.pcap', 'examples/set_ops/'
-                        'intersect.pcap'))
+            filecmp.cmp('intersect.pcap',
+                        'examples/set_ops/intersect.pcap'))
         os.remove('intersect.pcap')
 
     def test_difference_pcap(self):
@@ -111,7 +111,8 @@ class TestPcapMath(unittest.TestCase):
 
     def test_bounded_interface_pcap(self):
         """Test the bounded_interface_pcap using pcaps in examples."""
-        bounded_intersect_pcap('examples/simul1.pcap', 'examples/simul2.pcap',
+        bounded_intersect_pcap('examples/simul1.pcap',
+                               'examples/simul2.pcap',
                                'examples/simul3.pcap')
         # All 3 simul time-bound intersections should be the same and also
         # equal to the intersect.pcap. This is due to the traffic being the
