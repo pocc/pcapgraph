@@ -18,14 +18,17 @@ staggered by 20 seconds.*
 
 Platforms
 ~~~~~~~~~
-Linux, Macos, Windows
+Linux, macOS, Windows
 
 Description
 ~~~~~~~~~~~
-PcapGraph takes packet captures and creates a bar graph out of the start/end
-timestamps. If the --compare option is used, packet captures are compared
-packet by packet to find what percentage of traffic is the same. A list of
-files, directories, and any combination thereof can be specified.
+PcapGraph is the tool you need for flow-based troubleshooting when you have
+multiple packet captures. This tool creates a horizontal bar graph
+that can be used for visualizing `pcaps <https://en.wikipedia.org/wiki/Pcap>`_.
+It also uses set operations to find patterns among multiple packet
+captures in ways that Wireshark is not able to. If an output format is not
+specified, the default behavior is to print to stdout and send a
+`matplotlib <https://matplotlib.org/>`_ graph to the screen (thus the name).
 
 License
 ~~~~~~~
@@ -36,9 +39,9 @@ License
    :caption: Contents:
 
    install.rst
-   set_theory_background.rst
+   cli.rst
    set_operations.rst
    pcap_timebounded.rst
-   example_usage.rst
-   generating_pcaps.rst
+   example_output.rst
+   background.rst
    api.rst

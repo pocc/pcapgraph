@@ -60,7 +60,7 @@ html:
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 .PHONY: open
-open:
+open: clean html
 	firefox ./_build/html/index.html
 	@echo
 	@echo "Opening page in firefox..."

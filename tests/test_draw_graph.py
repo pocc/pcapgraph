@@ -56,8 +56,8 @@ class TestDrawGraph(unittest.TestCase):
         }
         self.mock_main(args)
         self.assertTrue(
-            filecmp.cmp('pcap_graph-simul1.png', 'examples/pcap_graph.png'))
-        os.remove('pcap_graph-simul1.png')
+            filecmp.cmp('pcap_graph-simul3.png', 'examples/pcap_graph.png'))
+        os.remove('pcap_graph-simul3.png')
 
     def test_draw_all(self):
         """Verifies that specific args create the exact same image as expected.
@@ -97,9 +97,9 @@ class TestDrawGraph(unittest.TestCase):
         self.mock_main(args)
         # Alphabetically first file will be union.pcap per list
         self.assertTrue(
-            filecmp.cmp('pcap_graph-union.png',
+            filecmp.cmp('pcap_graph-symdiff_simul3.png',
                         'examples/set_ops/pcap_graph_all.png'))
-        os.remove('pcap_graph-union.png')
+        os.remove('pcap_graph-symdiff_simul3.png')
 
     @staticmethod
     def mock_main(args):

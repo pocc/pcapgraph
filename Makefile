@@ -28,7 +28,7 @@ install:
 
 # Run all tests in test directory
 test:
-	python -m pytest
+	pytest tests
 
 # Lint using flake8, pylint, yapf
 lint:
