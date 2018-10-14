@@ -20,6 +20,7 @@ from pcapgraph.manipulate_frames import parse_pcaps
 from pcapgraph.manipulate_frames import get_flat_frame_dict
 from pcapgraph.manipulate_frames import get_pcap_frame_dict
 from pcapgraph.manipulate_frames import get_frame_from_json
+from pcapgraph.save_file import convert_to_pcaptext
 import pcapgraph.save_file as save
 
 
@@ -69,6 +70,8 @@ def parse_set_arg(filenames, args):
             os.remove(bi_file)
         new_files.extend(generated_filelist)
 
+    # Put filenames in a different place in memory so it is not altered here.
+    filenames = list(filenames)
     filenames.extend(new_files)
     return filenames
 
@@ -106,7 +109,7 @@ def union_pcap(*pcaps):
             raw_frame = get_frame_from_json(frame)
             raw_packet_list.append(raw_frame)
 
-    print("\nPacket statistics", collections.Counter(raw_packet_list))
+    print_10_most_common_frames(raw_packet_list)
 
     union_frame_dict = {}
     for frame in raw_packet_list:
@@ -114,6 +117,41 @@ def union_pcap(*pcaps):
     save.save_pcap(pcap_dict=union_frame_dict, name='union.pcap')
 
     return 'union.pcap'
+
+
+def print_10_most_common_frames(raw_packet_list):
+    """After doing a packet union, find/print the 10 most common packets.
+
+    This is a work in progress and may eventually use this bash:
+
+    <packets> | text2pcap - - | tshark -r - -o 'gui.column.format:"No.","%m",
+    "VLAN","%q","Src MAC","%uhs","Dst MAC","%uhd","Src IP","%us",
+    "Dst IP","%ud","Protocol","%p","Src port","%uS","Dst port","%uD"'
+
+    Alternatively, just use the existing information in pcap_dict.
+
+    The goal is to print
+    frame#, VLAN, src/dst MAC, src/dst IP, L4 src/dst ports, protocol
+
+    This should likely be its own CLI flag in future.
+    """
+    packet_stats = collections.Counter(raw_packet_list)
+    # It's not a common frame if it is only seen once.
+    packet_stats = {k: v for k, v in packet_stats.items() if v > 1}
+    sorted_packets = sorted(packet_stats,
+                            key=packet_stats.__getitem__,
+                            reverse=True)
+    counter = 0
+    for packet in sorted_packets:
+        counter += 1
+        if counter == 10:
+            break
+        packet_text = convert_to_pcaptext(packet)
+
+        print("Count: {: <7}\n{: <}".format(packet_stats[packet], packet_text))
+    print("To view the content of these packets, subtract the count lines, "
+          "\nadd and save to <textfile>, and then run "
+          "\n\ntext2pcap <textfile> out.pcap\nwireshark out.pcap\n")
 
 
 def intersect_pcap(*pcaps):

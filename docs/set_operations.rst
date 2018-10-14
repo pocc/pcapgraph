@@ -1,47 +1,45 @@
 Set Operations
 ==============
-Example packet captures
------------------------
+Sample captures
+---------------
 
-.. Note that tables are start to wrap at 90 characters. Example table:
+simul*.pcap packet captures in examples/ were generated with
+``pcapgraph --generate-pcaps --interface wlo1``. For more information on
+generating packet captures, please refer to Generating Packet Captures.
 
-+--------+-------+-----------+----------+-----------------+-------------------------------+
-| Frame# | Time* | Source IP | Dest IP  | Protocol + Type | Data (truncated)              |
-+========+=======+===========+==========+=================+===============================+
-| 1      | 1.0   | 10.0.0.2  |  8.8.8.8 | ICMP request    | id=0x6303, seq=1/256, ttl=64  |
-+--------+-------+-----------+----------+-----------------+-------------------------------+
-| 2      | 1.3   | 8.8.8.8   | 10.0.0.2 | ICMP reply      | id=0x6303, seq=1/256, ttl=121 |
-+--------+-------+-----------+----------+-----------------+-------------------------------+
+.. image:: ../examples/pcap_graph.png
+
+Once the packet captures were generated, this graph was created using
+``pcapgraph --dir examples``.
 
 Union
 -----
-Given packet captures 1 & 2,
 
+Union will only contain unique values, so frame with transaction id 0xedef
+from B and C is removed. Note how the packet capture is reordered according
+to time.
 
-About
-~~~~~
-    This method uses tshark to get identifying information on
-    pcaps and then mergepcap to save the combined pcap.
+.. image:: ../examples/set_ops/pcap_graph-union.png
 
 Use case
 ~~~~~~~~
-    * For a packet capture that contains a broadcast storm, this function
-      will find unique packets.
-    * For any other situation where you need to find all unique packets.
-    * This function can be lossy with timestamps because excluding
-      packets in diff pcaps with diff timestamps, but same content is the
-      purpose of this function.
+* For a packet capture that contains a broadcast storm, this function
+  will find unique packets.
+* For any other situation where you need to find all unique packets.
+* This function can be lossy with timestamps because if duplicate packets
+  are excluded, information can be lost.
 
-mergecap
-~~~~~~~~
-Similar wireshark tool: mergecap <file>... -w union.pcap
-    Merges multiple pcaps and saves them as a union.pcap (preserves
-    timestamps). This method does the same thing without duplicates.\
-    mergecap is shipped with wireshark.
+Similar Wireshark Tools
+~~~~~~~~~~~~~~~~~~~~~~~
+mergecap (<file>) [<file>...] -w union.pcap
+    Merges multiple pcaps without removing duplicates.
 
-Intersect
----------
+Intersection
+------------
+
 Save pcap intersection. First filename is pivot packet capture.
+
+.. image:: ../examples/set_ops/pcap_graph-intersect.png
 
 Example
 ~~~~~~~
@@ -72,11 +70,17 @@ Examples
 ~~~~~~~~
 Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
 
+.. image:: ../examples/set_ops/pcap_graph-difference.png
+
+
 Symmetric Difference
--------------------------
+--------------------
+
 Symmetric Difference is included for sake of set operation completeness.
 
-Examplen
+.. image:: ../examples/set_ops/pcap_graph-symdiff.png
+
+Example
 ~~~~~~~~
 Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A△B△C = (1, 5)
 

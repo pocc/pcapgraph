@@ -245,9 +245,9 @@ def set_xticks(first, last):
 def export_graph(pcap_names, save_fmt):
     """Exports the graph to the screen or to a file."""
     this_folder = os.getcwd()
-    pivot_file = pcap_names[0].split(' ')[0] + '.'
+    last_operation_file = pcap_names[-1].split(' ')[0] + '.'
     plt.savefig(
-        'pcap_graph-' + pivot_file + save_fmt,
+        'pcap_graph-' + last_operation_file + save_fmt,
         format=save_fmt,
         transparent=True)
     print(save_fmt, "file successfully created in ", this_folder, "!")

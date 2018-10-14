@@ -15,8 +15,7 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-abdeisuV] [--filter <filter>] [--output <format>...] \
-(--dir <dir>... | <file>...)
+  pcapgraph [-abdeisuV] [--output <format>...] (--dir <dir>... | <file>...)
   pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
@@ -137,9 +136,9 @@ def run():
     """
     get_tshark_status()
     args = docopt.docopt(__doc__)
-    filenames = gf.parse_cli_args(args)
-    filenames = pm.parse_set_arg(filenames, args)
-    pcaps_frame_dict = mf.get_pcap_frame_dict(filenames)
+    filenames = sorted(gf.parse_cli_args(args))
+    all_filenames = pm.parse_set_arg(filenames, args)
+    pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)
     dg.draw_graph(pcaps_frame_dict, filenames, args['--output'])
 
 

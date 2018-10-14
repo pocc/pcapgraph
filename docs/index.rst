@@ -36,7 +36,9 @@ License
    :caption: Contents:
 
    install.rst
+   set_theory_background.rst
    set_operations.rst
    pcap_timebounded.rst
    example_usage.rst
+   generating_pcaps.rst
    api.rst

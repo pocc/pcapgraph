@@ -40,7 +40,10 @@ class TestPcapMath(unittest.TestCase):
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
         # This will generate union.pcap in tests/
-        union_pcap()
+        os.chdir('..')
+        union_pcap('examples/simul1.pcap',
+                   'examples/simul2.pcap',
+                   'examples/simul3.pcap')
         # The generated file should be the same as examples/union.pcap
         self.assertTrue(
             filecmp.cmp('union.pcap', 'examples/set_ops/union.pcap'))
