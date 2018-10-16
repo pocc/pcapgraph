@@ -32,7 +32,7 @@ setup(name='PcapGraph',
       download_url='https://github.com/pocc/pcapgraph/releases',
       license='Apache 2.0',
       packages=['pcapgraph'],
-      python_requires='>=3.6',
+      python_requires='>=3.5',
       provides=['pcapgraph'],
       classifiers=[
           'Development Status :: 4 - Beta',

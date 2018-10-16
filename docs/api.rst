@@ -4,6 +4,8 @@ API Documentation
              is documented here for sake of completeness and is not
              explicity designed to be one.
 
+----
+
 pcapgraph module
 ----------------
 
@@ -11,6 +13,8 @@ pcapgraph module
     :members:
     :undoc-members:
     :show-inheritance:
+
+----
 
 pcapgraph.draw\_graph
 ---------------------
@@ -20,6 +24,8 @@ pcapgraph.draw\_graph
     :undoc-members:
     :show-inheritance:
 
+----
+
 pcapgraph.generate\_example\_pcaps
 ----------------------------------
 
@@ -27,6 +33,8 @@ pcapgraph.generate\_example\_pcaps
     :members:
     :undoc-members:
     :show-inheritance:
+
+----
 
 pcapgraph.get\_filenames
 ------------------------
@@ -36,6 +44,8 @@ pcapgraph.get\_filenames
     :undoc-members:
     :show-inheritance:
 
+----
+
 pcapgraph.manipulate\_frames
 ----------------------------
 
@@ -44,6 +54,8 @@ pcapgraph.manipulate\_frames
     :undoc-members:
     :show-inheritance:
 
+----
+
 pcapgraph.pcap\_math
 --------------------
 
@@ -51,6 +63,8 @@ pcapgraph.pcap\_math
     :members:
     :undoc-members:
     :show-inheritance:
+
+----
 
 pcapgraph.save\_file
 --------------------
