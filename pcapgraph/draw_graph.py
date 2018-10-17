@@ -71,15 +71,29 @@ def draw_graph(pcap_packets, input_files, output_fmts):
                 print(make_text_not_war(graph_vars))
                 plt.show()
     new_files = set(pcap_filenames) - set(input_files)
-    if delete_pcaps:
-        # Delete temp files if not required.
-        for file in new_files:
-            os.remove(file)
+    remove_or_open_files(new_files, open_in_wireshark, delete_pcaps)
 
+
+def remove_or_open_files(new_files, open_in_wireshark, delete_pcaps):
+    """Remove or open files.
+
+    delete_pcaps and open_in_wireshark should not both be true, because that
+    would mean that wireshark would try to open deleted files.
+
+    Args:
+        new_files (set): Set of new filenames to do something with
+        open_in_wireshark (bool): Whether to open files in wireshark
+        delete_pcaps (bool): Whether to delete generated pcaps
+    """
     # Open all created files in wireshark (flag -w)
     if open_in_wireshark:
         for file in new_files:
             sp.Popen(['wireshark', file])
+
+    if delete_pcaps:
+        # Delete temp files if not required.
+        for file in new_files:
+            os.remove(file)
 
 
 def get_graph_vars_from_file(filename):

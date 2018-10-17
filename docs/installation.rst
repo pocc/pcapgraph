@@ -13,7 +13,7 @@ Installation Steps
 ~~~~~~~~~~~~~~~~~~~~
 * These package managers have it in their repositories:
   ``apt``, ``dnf``, ``pacman``, ``brew``, ``choco``, ``...``
-* To download and install precomplied binaries, visit
+* To download and install precompiled binaries, visit
   `Wireshark's website <https://www.wireshark.org/download.html>`_.
 
 2. Install Python3
@@ -21,7 +21,7 @@ Installation Steps
 * This project requires python3.5 or later. ``pip`` is bundled
   with python starting with python3.4.
 * You can check your version of python with ``python -V`` in a terminal.
-* To download and install precomplied binaries, visit
+* To download and install precompiled binaries, visit
   `python's website <https://www.python.org/downloads/>`_.
 
 Note: macOS comes b

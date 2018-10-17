@@ -49,13 +49,13 @@ Options:
                         (see Set Operations > union).
   -v, --version         Show PcapGraph's version.
   -V, --verbose         Provide more context to what pcapgraph is doing.
-  -w                    Open pcaps in wireshark after creation.
-                        (shortcut for --output pcap --output wireshark)
+  -w                    Open pcaps in Wireshark after creation.
+                        (shortcut for --output pcap --output Wireshark)
   -x, --exclude-empty   eXclude pcap files from being saved if they are empty.
 
 About:
   PcapGraph is used to determine when packet captures were taken using the
-  wireshark filter 'frame.time_epoch' and creates a graph with those times.
+  Wireshark filter 'frame.time_epoch' and creates a graph with those times.
   The default behavior for output is a graph (hence the name).
 
   NOTE: pcap is shorthand for packet capture and is used throughout the program
@@ -103,7 +103,7 @@ Generation of example packet captures
   Creates 3 packet captures with a ping + nslookup sent every second for 100s.
   The graph from these pcaps should match the png file in examples/. When
   using this command, you may need to use sudo depending on whether you have
-  configured wireshark to allow unprivileged users to take packet captures.
+  configured Wireshark to allow unprivileged users to take packet captures.
 
   Pcap1 starts at 0s, Pcap2 starts at 20s, Pcap3 starts at 40s.
   Pcap1 should match Pcap1 100%, Pcap2 66%, and Pcap3 33% (with -c used).

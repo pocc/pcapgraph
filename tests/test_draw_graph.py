@@ -84,10 +84,8 @@ class TestDrawGraph(unittest.TestCase):
             '--version': False,
             '<interface>': None,
             '<file>': [
-                'examples/set_ops/union.pcap',
-                'examples/simul1.pcap',
-                'examples/simul2.pcap',
-                'examples/simul3.pcap',
+                'examples/set_ops/union.pcap', 'examples/simul1.pcap',
+                'examples/simul2.pcap', 'examples/simul3.pcap',
                 'examples/set_ops/diff_simul1-simul3.pcap',
                 'examples/set_ops/intersect.pcap',
                 'examples/set_ops/symdiff_simul1.pcap',

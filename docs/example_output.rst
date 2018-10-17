@@ -26,11 +26,11 @@ that do or do not demonstrate the issue you are troubleshooting.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Use the --intersect of pcaps to find all traffic that is
 shared between them. Given pcaps A-F, where A and F are the endpoints, you
-can find all packets
+can find all packets that have made it from A to F and all points in between.
 
 .. code-block:: bash
 
-    pcapgraph --dir examples
+    pcapgraph --dir examples --intersect
 
 ----
 
@@ -48,7 +48,7 @@ right direction to help find the loop though.
 
 .. code-block:: bash
 
-    pcapgraph --dir examples
+    pcapgraph --dir examples --union
 
 ----
 
@@ -60,7 +60,7 @@ This can be useful when troubleshooting a flow to determine where it fails.
 
 .. code-block:: bash
 
-    pcapgraph --dir examples
+    pcapgraph --dir examples --inverse-bounded-intersect
 
 ----
 
@@ -68,11 +68,20 @@ Have fun with your Downloads folder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If you take a lot of packet captures, you can use pcapgraph to visualize
 your Downloads folder. Use ``pcapgraph --dir ~/Downloads`` to see what
-it looks like! (It may take a wihle to process hundreds of packet captures).
+it looks like! (It may take a while to process hundreds of packet captures).
+
+**bash on Linux/Macos:**
 
 .. code-block:: bash
 
-    pcapgraph --dir examples
+    pcapgraph --dir ~/Downloads
+
+**command prompt on Windows:**
+
+.. code-block:: bat
+
+    pcapgraph --dir %USERPROFILE%\\Downloads
+
 
 ----
 

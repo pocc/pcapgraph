@@ -4,7 +4,7 @@ Set Theory
 ----------
 .. note:: If you want a set primer, you may want to check out the
           `set operations <https://en.wikipedia.org/wiki/Set_(mathematics)
-          #Basic_operations>`_ wikipedia article.
+          #Basic_operations>`_ Wikipedia article.
 
 Basic Set Operations
 ~~~~~~~~~~~~~~~~~~~~

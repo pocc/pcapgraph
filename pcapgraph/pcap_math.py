@@ -46,8 +46,8 @@ def parse_set_arg(filenames, args):
     new_files = []
     bounded_filelist = []
     if set_args['difference']:
-        generated_file = difference_pcap(*filenames,
-                                         exclude_empty=args['--exclude-empty'])
+        generated_file = difference_pcap(
+            *filenames, exclude_empty=args['--exclude-empty'])
         # As long as the difference exists and .
         if generated_file and not args['--exclude-empty']:
             new_files.append(generated_file)
@@ -55,9 +55,8 @@ def parse_set_arg(filenames, args):
         generated_file = intersect_pcap(*filenames)
         new_files.append(generated_file)
     if set_args['symmetric-difference']:
-        generated_filelist = symmetric_difference_pcap(*filenames,
-                                                       exclude_empty=args[
-                                                           '--exclude-empty'])
+        generated_filelist = symmetric_difference_pcap(
+            *filenames, exclude_empty=args['--exclude-empty'])
         new_files.extend(generated_filelist)
     if set_args['union']:
         generated_file = union_pcap(*filenames)
@@ -141,9 +140,8 @@ def print_10_most_common_frames(raw_packet_list):
     packet_stats = collections.Counter(raw_packet_list)
     # It's not a common frame if it is only seen once.
     packet_stats = {k: v for k, v in packet_stats.items() if v > 1}
-    sorted_packets = sorted(packet_stats,
-                            key=packet_stats.__getitem__,
-                            reverse=True)
+    sorted_packets = sorted(
+        packet_stats, key=packet_stats.__getitem__, reverse=True)
     counter = 0
     for packet in sorted_packets:
         counter += 1
@@ -267,8 +265,8 @@ def symmetric_difference_pcap(*pcaps, exclude_empty=False):
         file_in_list = [file]
         other_files = set(pcaps) - set(file_in_list)
         # difference_pcap will generate files like difference-simul1.pcap
-        diff_filename = difference_pcap(file, *other_files,
-                                        exclude_empty=exclude_empty)
+        diff_filename = difference_pcap(
+            file, *other_files, exclude_empty=exclude_empty)
         if diff_filename:  # If diff file has packets.
             symdiff_filename = 'symdiff_' + os.path.basename(file)
             os.replace(diff_filename, symdiff_filename)
@@ -334,7 +332,7 @@ def bounded_intersect_pcap(*pcaps):
 
 
 def inverse_bounded_intersect_pcap(*filenames, bounded_filelist=False,
-                                   exclude_empty=False,):
+                                   exclude_empty=False):
     """Inverse of bounded intersection = (bounded intersect) - (intersect)
 
     Args:
@@ -355,8 +353,7 @@ def inverse_bounded_intersect_pcap(*filenames, bounded_filelist=False,
     intersect_file = [intersect_pcap(*filenames)]
     for bi_file in bounded_filelist:
         difference_file = difference_pcap(
-            bi_file, *intersect_file,
-            exclude_empty=exclude_empty)
+            bi_file, *intersect_file, exclude_empty=exclude_empty)
         if difference_file:
             generated_filelist.append(difference_file)
         if has_bounded_intersect_flag:

@@ -121,7 +121,7 @@ Description
 It is sometimes useful when doing flow-based troubleshooting to find all
 packets between the earliest shared frame and the latest shared frame.
 It may also be useful to find all traffic that is between two timestamps.
-These timebounded operations are built with, but are not bound by the
+These time-bounded operations are built with, but are not bound by the
 constraints of set operations.
 
 Create a packet capture intersection out of two files by finding the first and
@@ -157,7 +157,7 @@ and that G is the latest common packet.
 | I         | L         |           |                |                |
 +-----------+-----------+-----------+----------------+----------------+
 
-(TB = Timebounded)
+(TB = Time-bounded)
 
 .. note:: * In Pcap2, M does not exist in Pcap1
           * In Pcap2, C and F are out of order compared to Pcap1
@@ -170,8 +170,8 @@ Inverse Timebounded Intersection
 --------------------------------
 Description
 ~~~~~~~~~~~
-The difference of the intersection and the timebounded intersection for each
-packet capture. By definition, the intersection and timebounded intersection
+The difference of the intersection and the time-bounded intersection for each
+packet capture. By definition, the intersection and time-bounded intersection
 have the exact same starting and ending packets. What may be useful for
 troubleshooting is determining in that timeframe which packets are different
 across pcaps and why.
@@ -200,7 +200,7 @@ Example operation
 | I         | L         |           |                    |                    |
 +-----------+-----------+-----------+--------------------+--------------------+
 
-(Inv TB = Inverse Timebounded)
+(Inv TB = Inverse Time-bounded)
 
 The key here is to subtract the intersection from each initial packet capture
 to find the interesting packets that are unique to each during the intersection

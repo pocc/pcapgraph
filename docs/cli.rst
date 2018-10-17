@@ -38,6 +38,6 @@ Options:
                          (see Set Operations > union).
    -v, --version         Show PcapGraph's version.
    -V, --verbose         Provide more context to what pcapgraph is doing.
-   -w                    Open pcaps in wireshark after creation.
-                        (shortcut for --output pcap --output wireshark)
+   -w                    Open pcaps in Wireshark after creation.
+                        (shortcut for --output pcap --output Wireshark)
    -x, --exclude-empty   eXclude pcap files from being saved if they are empty.

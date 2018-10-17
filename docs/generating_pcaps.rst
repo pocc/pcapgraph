@@ -16,7 +16,7 @@ and non-zero Rx/Tx counts.
 
 ``pcapgraph --generate-pcaps --int <interface-name>``
 
-.. warning:: On unix-like systems, wireshark will prompt you during
+.. warning:: On unix-like systems, Wireshark will prompt you during
              installation to allow/disallow unprivileged users to take
              packet captures. If you have disallowed unprivileged users,
              you may need to use ``sudo`` to capture generated traffic.

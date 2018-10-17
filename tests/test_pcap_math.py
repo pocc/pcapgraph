@@ -61,8 +61,7 @@ class TestPcapMath(unittest.TestCase):
         # 2 of 3 should fail as the generated intersection will be different.
         intersect_pcap('examples/simul1.pcap', 'examples/simul2.pcap')
         self.assertFalse(
-            filecmp.cmp('intersect.pcap',
-                        'examples/set_ops/intersect.pcap'))
+            filecmp.cmp('intersect.pcap', 'examples/set_ops/intersect.pcap'))
         os.remove('intersect.pcap')
 
     def test_difference_pcap(self):
