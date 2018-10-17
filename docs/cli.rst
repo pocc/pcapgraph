@@ -4,7 +4,7 @@ PcapGraph
 ---------
 
 Usage:
-   | pcapgraph [-abdeisuV] [--output <format>...] (--dir <dir>... | <file>...)
+   | pcapgraph [-abdeisuVwx] [--output <format>...] (--dir <dir>... | <file>...)
    | pcapgraph (-g | --generate-pcaps) [--int <interface>]
    | pcapgraph (-h | --help)
    | pcapgraph (-v | --version)
@@ -20,8 +20,8 @@ Options:
                          packet captures. (see Set Operations > difference).
    --dir <dir>       Specify directories to add pcaps from (not recursive).
                      Can be used multiple times.
-   -e, --inverse-bounded  Shortcut for applying `-b` to a group of pcaps and then
-                          subtracting the intersection from each.
+   -e, --inverse-bounded  Shortcut for applying `-b` to a group of pcaps and
+                          then subtracting the intersection from each.
    -g, --generate-pcaps  Generate 3 example packet captures (see Generation).
    -h, --help            Show this screen.
    -i, --intersection    All packets that are shared by all packet captures
@@ -38,3 +38,6 @@ Options:
                          (see Set Operations > union).
    -v, --version         Show PcapGraph's version.
    -V, --verbose         Provide more context to what pcapgraph is doing.
+   -w                    Open pcaps in wireshark after creation.
+                        (shortcut for --output pcap --output wireshark)
+   -x, --exclude-empty   eXclude pcap files from being saved if they are empty.

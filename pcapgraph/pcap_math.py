@@ -15,6 +15,7 @@
 """Do algebraic operations on sets like union, intersect, difference."""
 import collections
 import os
+import time
 
 from pcapgraph.manipulate_frames import parse_pcaps
 from pcapgraph.manipulate_frames import get_flat_frame_dict
@@ -43,31 +44,33 @@ def parse_set_arg(filenames, args):
         'inverse-bounded': args['--inverse-bounded']
     }
     new_files = []
+    bounded_filelist = []
     if set_args['difference']:
-        generated_file = difference_pcap(*filenames)
-        if generated_file:  # As long as the difference exists.
+        generated_file = difference_pcap(*filenames,
+                                         exclude_empty=args['--exclude-empty'])
+        # As long as the difference exists and .
+        if generated_file and not args['--exclude-empty']:
             new_files.append(generated_file)
     if set_args['intersection']:
         generated_file = intersect_pcap(*filenames)
         new_files.append(generated_file)
     if set_args['symmetric-difference']:
-        generated_filelist = symmetric_difference_pcap(*filenames)
+        generated_filelist = symmetric_difference_pcap(*filenames,
+                                                       exclude_empty=args[
+                                                           '--exclude-empty'])
         new_files.extend(generated_filelist)
     if set_args['union']:
         generated_file = union_pcap(*filenames)
         new_files.append(generated_file)
 
     if set_args['bounded-intersect']:
-        generated_filelist = bounded_intersect_pcap(*filenames)
-        new_files.extend(generated_filelist)
-    if set_args['inverse-bounded']:
-        # Inverse of bounded intersection = (bounded intersect) - (intersect)
-        generated_filelist = []
         bounded_filelist = bounded_intersect_pcap(*filenames)
-        intersect_file = list([intersect_pcap(*filenames)])
-        for bi_file in bounded_filelist:
-            generated_filelist.append(difference_pcap(bi_file, intersect_file))
-            os.remove(bi_file)
+        new_files.extend(bounded_filelist)
+    if set_args['inverse-bounded']:
+        generated_filelist = inverse_bounded_intersect_pcap(
+            *filenames,
+            bounded_filelist=bounded_filelist,
+            exclude_empty=args['--exclude-empty'])
         new_files.extend(generated_filelist)
 
     # Put filenames in a different place in memory so it is not altered here.
@@ -209,11 +212,12 @@ def intersect_pcap(*pcaps):
     return ''
 
 
-def difference_pcap(*pcaps):
+def difference_pcap(*pcaps, exclude_empty=False):
     """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
 
     Args:
         *pcaps: List of pcap filenames.
+        exclude_empty (bool): Whether to exclude empty files from saving.
     Returns:
         (string): Name of generated pcap.
     """
@@ -229,14 +233,23 @@ def difference_pcap(*pcaps):
     for frame in packet_diff:
         # Minuend frame dict should have all values we care about.
         diff_frame_dict[frame] = minuend_frame_dict[frame]
-    save.save_pcap(pcap_dict=diff_frame_dict, name='difference.pcap')
-    if packet_diff:
-        return 'difference.pcap'
-    print('WARNING! ' + str(pcaps[0]) + ' difference contains no packets!')
+    diff_filename = 'diff_' + os.path.basename(minuend_name)
+    # Save only if there are packets or -x flag is not used.
+    if not packet_diff:
+        print('WARNING! ' + str(pcaps[0]) + ' difference contains no packets!')
+    if packet_diff or not exclude_empty:
+        # If the file already exists, choose a different name.
+        unique_diff_name = diff_filename
+        while os.path.isfile(unique_diff_name):
+            unique_diff_name = diff_filename[:-5] + '-' + \
+                               str(int(time.time())) + '.pcap'
+        save.save_pcap(pcap_dict=diff_frame_dict, name=unique_diff_name)
+        return unique_diff_name
+
     return ''
 
 
-def symmetric_difference_pcap(*pcaps):
+def symmetric_difference_pcap(*pcaps, exclude_empty=False):
     """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A△B△C = (1, 5)
 
     For all pcaps, the symmetric difference produces a pcap that has the
@@ -245,6 +258,7 @@ def symmetric_difference_pcap(*pcaps):
 
     Args:
         *pcaps: List of pcap filenames.
+        exclude_empty (bool): Whether to exclude empty files from saving.
     Returns:
         (list(str)): Name of generated pcaps.
     """
@@ -253,7 +267,8 @@ def symmetric_difference_pcap(*pcaps):
         file_in_list = [file]
         other_files = set(pcaps) - set(file_in_list)
         # difference_pcap will generate files like difference-simul1.pcap
-        diff_filename = difference_pcap(file, *other_files)
+        diff_filename = difference_pcap(file, *other_files,
+                                        exclude_empty=exclude_empty)
         if diff_filename:  # If diff file has packets.
             symdiff_filename = 'symdiff_' + os.path.basename(file)
             os.replace(diff_filename, symdiff_filename)
@@ -316,6 +331,38 @@ def bounded_intersect_pcap(*pcaps):
         save.save_pcap(pcap_dict=bounded_pcaps[index], name=names[index])
 
     return names
+
+
+def inverse_bounded_intersect_pcap(*filenames, bounded_filelist=False,
+                                   exclude_empty=False,):
+    """Inverse of bounded intersection = (bounded intersect) - (intersect)
+
+    Args:
+        *filenames: List of filenames
+        bounded_filelist (list): List of existing bounded pcaps generated by
+            bounded_intersect_pcap()
+        exclude_empty (bool): Delete files to be exported if they are empty.
+    Returns:
+        List of files generated by this method.
+    """
+    generated_filelist = []
+    has_bounded_intersect_flag = False
+    if not bounded_filelist:
+        # Don't generate twice if flags -be are used
+        # Note that this runs after bounded_intersect if it would be run
+        bounded_filelist = bounded_intersect_pcap(*filenames)
+        has_bounded_intersect_flag = True
+    intersect_file = [intersect_pcap(*filenames)]
+    for bi_file in bounded_filelist:
+        difference_file = difference_pcap(
+            bi_file, *intersect_file,
+            exclude_empty=exclude_empty)
+        if difference_file:
+            generated_filelist.append(difference_file)
+        if has_bounded_intersect_flag:
+            # Do not keep bounded-intersect files if they are not necessary
+            os.remove(bi_file)
+    return generated_filelist
 
 
 def get_bounded_pcaps(pcaps, flat_frame_dict, pcap_frame_dict):

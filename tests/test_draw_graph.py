@@ -98,7 +98,7 @@ class TestDrawGraph(unittest.TestCase):
         # Alphabetically first file will be union.pcap per list
         self.assertTrue(
             filecmp.cmp('pcap_graph-symdiff_simul3.png',
-                        'examples/set_ops/pcap_graph_all.png'))
+                        'examples/set_ops/pcap_graph-disu.png'))
         os.remove('pcap_graph-symdiff_simul3.png')
 
     @staticmethod

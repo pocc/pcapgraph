@@ -71,9 +71,9 @@ class TestPcapMath(unittest.TestCase):
         difference_pcap('examples/simul1.pcap', 'examples/simul3.pcap')
         # The generated file should be the same as examples/union.pcap
         self.assertTrue(
-            filecmp.cmp('difference.pcap', 'examples/set_ops/'
+            filecmp.cmp('diff_simul1.pcap', 'examples/set_ops/'
                         'diff_simul1-simul3.pcap'))
-        os.remove('difference.pcap')
+        os.remove('diff_simul1.pcap')
 
     def test_symmetric_difference(self):
         """Test the symmetric difference method with muliple pcaps."""
@@ -88,6 +88,7 @@ class TestPcapMath(unittest.TestCase):
             filecmp.cmp('symdiff_simul3.pcap',
                         'examples/set_ops/symdiff_simul3.pcap'))
         os.remove('symdiff_simul1.pcap')
+        os.remove('symdiff_simul2.pcap')
         os.remove('symdiff_simul3.pcap')
 
     def test_get_minmax_common_frames(self):

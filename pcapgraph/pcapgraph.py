@@ -15,7 +15,7 @@
 """PcapGraph
 
 Usage:
-  pcapgraph [-abdeisuV] [--output <format>...] (--dir <dir>... | <file>...)
+  pcapgraph [-abdeisuVwx] [--output <format>...] (--dir <dir>... | <file>...)
   pcapgraph (-g | --generate-pcaps) [--int <interface>]
   pcapgraph (-h | --help)
   pcapgraph (-v | --version)
@@ -28,7 +28,7 @@ Options:
                         Bounded intersection of packets (see Set Operations).
   -d, --difference      First packet capture minus packets in all succeeding
                         packet captures. (see Set Operations > difference).
-      --dir <dir>       Specify directories to add pcaps from (not recursive).
+  --dir <dir>          Specify directories to add pcaps from (not recursive).
                         Can be used multiple times.
   -e, --inverse-bounded
                         Shortcut for applying `-b` to a group of pcaps and then
@@ -37,7 +37,7 @@ Options:
   -h, --help            Show this screen.
   -i, --intersection    All packets that are shared by all packet captures
                         (see Set Operations > intersection).
-      --interface <interface>
+  --interface <interface>
                         Specify the interface to capture on. Requires -g. Open
                         Wireshark to find the active interface with traffic
                         passing if you are not sure which to specify.
@@ -49,6 +49,9 @@ Options:
                         (see Set Operations > union).
   -v, --version         Show PcapGraph's version.
   -V, --verbose         Provide more context to what pcapgraph is doing.
+  -w                    Open pcaps in wireshark after creation.
+                        (shortcut for --output pcap --output wireshark)
+  -x, --exclude-empty   eXclude pcap files from being saved if they are empty.
 
 About:
   PcapGraph is used to determine when packet captures were taken using the
@@ -74,7 +77,7 @@ Output Formats:
   More information on format can be found in matplotlib's online documentation:
   https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
 
-  Other formats: txt, pcap, bin
+  Other formats: txt, pcap
     txt: Print results to text file
     pcap: Save output as pcap. Requires a set operation.
 
@@ -95,17 +98,6 @@ Set Operations:
     limts to return all frames in each pcap that are between these two
     frames. This can help to identify traffic that sholud be in both packet
     captures, but is in only one.
-
-Packet comparisons:
-  The first packet capture argument to pcapgraph will be used as a pivot to
-  compare to other packet captures to compute fraction similar if -c is
-  specified This is useful in determining overlap of pcaps; however,
-  this is slow, so you may want to filter your pcaps before using this option.
-
-  Comparison speed tests *per file* added as param (on a 6-year-old laptop):
-    25K packets x 25K packets: 12s with -c, 6s without
-    50K packets x 50K packets: 20s with -c, 10s without
-    100K packets x 100K packets: 50s with -c, 25s without
 
 Generation of example packet captures
   Creates 3 packet captures with a ping + nslookup sent every second for 100s.
@@ -139,6 +131,8 @@ def run():
     filenames = sorted(gf.parse_cli_args(args))
     all_filenames = pm.parse_set_arg(filenames, args)
     pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)
+    if args['-w']:
+        args['--output'].extend(['wireshark', 'pcap'])
     dg.draw_graph(pcaps_frame_dict, filenames, args['--output'])
 
 

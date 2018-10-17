@@ -33,5 +33,5 @@ To modify a packet capture to have the correct timestamps, use editcap:
 
     editcap -t <offset> <infile> <outfile>
 
-More information about tshark usage can be found on the `editcap manpage
+More information about editcap usage can be found on the `editcap manpage
 <https://www.wireshark.org/docs/man-pages/editcap.html>`_

@@ -22,13 +22,23 @@ Linux, macOS, Windows
 
 Description
 ~~~~~~~~~~~
-PcapGraph is the tool you need for flow-based troubleshooting when you have
-multiple packet captures. This tool creates a horizontal bar graph
-that can be used for visualizing `pcaps <https://en.wikipedia.org/wiki/Pcap>`_.
-It can also use set operations to find patterns among multiple packet
-captures in ways that Wireshark is not able to. If an output format is not
-specified, the default behavior is to print to stdout and send a
-`matplotlib <https://matplotlib.org/>`_ graph to the screen (thus the name).
+* Main use case is assisting with flow-based troubleshooting where there are at
+  least 3 `pcaps <https://en.wikipedia.org/wiki/Pcap>`_
+* Create a horizontal bar graph to visualize when pcaps were taken.
+* Use set operations to find patterns among multiple packet
+  captures in ways that Wireshark is not able to.
+* If an output format is not specified, the default behavior is to print to
+  stdout and send a `matplotlib <https://matplotlib.org/>`_ graph to the
+  screen (thus the name).
+
+Inputs (packet captures):
+  .pcapng, .pcap, .cap, .dmp, .5vw, .TRC0, .TRC1, .enc,
+  .trc, .fdc, .syc, .bfr, .tr1, .snoop
+Outputs:
+  | **image**: display graph on screen, eps, jpeg, jpg, pdf, pgf,
+    png, ps, raw, rgba, svg, svgz, tif, tiff
+  | **text**: txt, stdout
+  | **packet capture**: pcap
 
 License
 ~~~~~~~

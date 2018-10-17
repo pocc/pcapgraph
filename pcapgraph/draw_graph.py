@@ -24,26 +24,30 @@ import numpy as np
 import pcapgraph.manipulate_frames as mf
 
 
-def draw_graph(pcap_packets, input_files, save_fmts):
+def draw_graph(pcap_packets, input_files, output_fmts):
     """Draw a graph using matplotlib and numpy.
 
     Args:
         pcap_packets (dict): All packets, where key is pcap filename/operation.
         input_files (list): List of input files that shouldn't be deleted.
-        save_fmts (list): The save file type. Supported formats are dependent
+        output_fmts (list): The save file type. Supported formats are dependent
             on the capabilites of the system: [png, pdf, ps, eps, and svg]. See
             https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
             for more information.
     """
     # So that if no save format is specified, print to screen and stdout
-    if not save_fmts:
-        save_fmts = ['show']
+    if not output_fmts:
+        output_fmts = ['show']
     pcap_filenames = list(pcap_packets)
     delete_pcaps = True
-    if 'pcap' in save_fmts:
-        save_fmts.remove('pcap')
+    open_in_wireshark = False
+    if 'pcap' in output_fmts:
+        output_fmts.remove('pcap')
         delete_pcaps = False
-    for save_format in save_fmts:
+    if 'wireshark' in output_fmts:
+        output_fmts.remove('wireshark')
+        open_in_wireshark = True
+    for save_format in output_fmts:
         if save_format == 'txt':
             output_text = make_text_not_war(pcap_packets)
             print(output_text)
@@ -66,11 +70,16 @@ def draw_graph(pcap_packets, input_files, save_fmts):
                 # Print text version because it's possible.
                 print(make_text_not_war(graph_vars))
                 plt.show()
+    new_files = set(pcap_filenames) - set(input_files)
     if delete_pcaps:
         # Delete temp files if not required.
-        new_files = set(pcap_filenames) - set(input_files)
         for file in new_files:
             os.remove(file)
+
+    # Open all created files in wireshark (flag -w)
+    if open_in_wireshark:
+        for file in new_files:
+            sp.Popen(['wireshark', file])
 
 
 def get_graph_vars_from_file(filename):
@@ -122,7 +131,7 @@ def get_graph_vars_from_file(filename):
         return {'pcap_start': pcap_start, 'pcap_end': pcap_end}
     # (else) May need to raise an exception for this as it means input is bad.
     print("!!! ERROR: Packet capture", filename,
-          " has no packets or cannot be read!\n!!! Excluding from results.\n")
+          " has no packets or cannot be read!\n")
     return {}
 
 
