@@ -59,8 +59,8 @@ Input:
   This program can read all files that can be read by tshark.
 
   packet capture:
-    `pcapng, pcap, cap, .dmp, .5vw, .TRC0, .TRC1,
-    enc, trc, fdc, syc, .bfr, .tr1, .snoop`
+      `pcapng, pcap, cap, .dmp, .5vw, .TRC0, .TRC1,
+      enc, trc, fdc, syc, .bfr, .tr1, .snoop`
 
 Output:
   *[--output <format>]...*
@@ -69,42 +69,72 @@ Output:
   Image formats are those supported by matplotlib on your system. You can see
   which ones are available by running this in your python interpreter:
 
-    ``matplotlib.pyplot.gcf().canvas.get_supported_filetypes()``
+      ``matplotlib.pyplot.gcf().canvas.get_supported_filetypes()``
 
   All formats are listed below:
 
   image:
-    `eps, jpeg, jpg, pdf, pgf, png,
-    ps, raw, rgba, svg, svgz, tif, tiff`
+      `eps, jpeg, jpg, pdf, pgf, png,
+      ps, raw, rgba, svg, svgz, tif, tiff`
 
   text:
-    `txt`
+      `txt`
 
   packet capture:
-    * pcap: requires a set operation for there to be packets to save.
-    * generate-pcaps: creates the pcaps simul1-3 used throughout documentation.
+      * pcap: requires a set operation for there to be packets to save.
+      * generate-pcaps: creates the pcaps simul1-3 used in documentation.
 
-    `pcap, generate-pcaps`
+      `pcap, generate-pcaps`
+
+Set Operations:
+  All set operations require packet captures and do the following:
+
+  1. Find all unique packets by their ASCII hexdump value.
+  2. Apply the operation and generate a list of packets.
+  3. Reencode the packets in a pcap using text2pcap.
+
+  difference:
+      Remove all packets that are present in one pcap from another.
+
+  intersection:
+      Find all packets that two pcaps have in common.
+
+  union:
+      Find all unique packets found in all provided pcaps.
+
+  symmetric difference:
+      Find all packets that are unique to each pcap.
+
+  bounded (time intersection):
+      Find the first and last frames in the frame intersection of all pcaps
+      according to their timestamp Use these two frames as upper and lower
+      limts to return all frames in each pcap that are between these two
+      frames. This can help to identify traffic that sholud be in both packet
+      captures, but is in only one.
+
+  inverse bounded (time intersection):
+      Finds which packets are unique to each packet capture in a given time
+      frame and saves each as a packet capture.
 
 See Also:
   pcapgraph (https://pcapgraph.readthedocs.io):
-    Comprehensive documentation for this program.
+      Comprehensive documentation for this program.
 
   wireshark (https://www.wireshark.org/):
-    Look at packets to troubleshoot networks.
+      Read packet captures to troubleshoot networks.
 
   wireshark utils (https://www.wireshark.org/docs/man-pages/):
-    CLI utils that contain or enhance wireshark functionality. These were used
-    in PcapGraph: editcap, mergecap, reordercap, text2pcap, tshark
+      CLI utils that contain or enhance wireshark functionality. These were
+      used in PcapGraph: editcap, mergecap, reordercap, text2pcap, tshark
 
   pyshark (https://kiminewt.github.io/pyshark/):
-    Python wrapper for tshark.
+      Python wrapper for tshark.
 
   scapy (https://scapy.readthedocs.io/en/latest/):
-    Python program to manipulate frames.
+      Python program to manipulate frames.
 
   matplotlib (https://matplotlib.org/):
-    Python package to plot 2D graphs.
+      Python package to plot 2D graphs.
 """
 import docopt
 

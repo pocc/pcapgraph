@@ -16,7 +16,7 @@ with display filters and save to pcap.
     tshark -r <in.pcap> -Y "<display filter>" -w <out.pcap>
 
 For example, to filter for ICMP traffic going to/from Cloudflare's
-DNS service, use "icmp && ip.addr==1.1.1.1" in place of "<display filter>".
+DNS service, use ``"icmp && ip.addr==1.1.1.1"`` in place of "<display filter>".
 
 More information about tshark usage can be found on the `tshark manpage
 <https://www.wireshark.org/docs/man-pages/tshark.html>`_.

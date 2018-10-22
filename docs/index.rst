@@ -35,15 +35,6 @@ Description
   stdout and send a `matplotlib <https://matplotlib.org/>`_ graph to the
   screen (thus the name).
 
-Inputs (packet captures):
-  .pcapng, .pcap, .cap, .dmp, .5vw, .TRC0, .TRC1, .enc,
-  .trc, .fdc, .syc, .bfr, .tr1, .snoop
-Outputs:
-  | **image**: display graph on screen, eps, jpeg, jpg, pdf, pgf,
-    png, ps, raw, rgba, svg, svgz, tif, tiff
-  | **text**: txt, stdout
-  | **packet capture**: pcap
-
 License
 ~~~~~~~
 `Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0>`_
@@ -58,6 +49,5 @@ License
    cli.rst
    pcap_preparation.rst
    example_usage.rst
-   set_operations.rst
    addenda.rst
    api.rst

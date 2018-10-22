@@ -61,7 +61,7 @@ html:
 
 .PHONY: open
 open: clean html
-	firefox ./_build/html/index.html
+	firefox _build/html/index.html
 	@echo
 	@echo "Opening page in firefox..."
 
