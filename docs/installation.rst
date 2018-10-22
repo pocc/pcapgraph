@@ -1,5 +1,5 @@
-Installation
-============
+Install
+=======
 
     *Python is not the only language being used for network automation but the
     combination of being an easy to learn language with many code samples and
@@ -7,8 +7,12 @@ Installation
 
     -- Cisco DevNet
 
-Installation Steps
+Install Steps
 ------------------
+.. comment filler for horizontal rule.
+
+----
+
 1. Install Wireshark
 ~~~~~~~~~~~~~~~~~~~~
 * These package managers have it in their repositories:
@@ -24,7 +28,9 @@ Installation Steps
 * To download and install precompiled binaries, visit
   `python's website <https://www.python.org/downloads/>`_.
 
-Note: macOS comes b
+.. note:: macOS comes with Python 2.7 by default. If installing python3
+          separately, make sure to add ``alias 'python=python3'`` to your
+          .bashrc.
 
 3. Install PcapGraph with pip
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,8 +38,12 @@ Note: macOS comes b
 
     pip install --user pcapgraph
 
-Installation Errors
--------------------
+Install Errors
+--------------
+.. comment filler for horizontal rule.
+
+----
+
 .. note:: These are some misconfiguration errors I came across during testing
           on Ubuntu. If you have trouble installing, please create an
           `issue <https://github.com/pocc/pcapgraph/issues>`_.
@@ -52,3 +62,15 @@ minor versions of python, you may need to reinstall both.
 
     python -m pip uninstall -y numpy matplotlib
     python -m pip install --user numpy matplotlib
+
+Testing Install
+---------------
+.. comment filler for horizontal rule.
+
+----
+
+Test whether pcapgraph is working:
+
+.. code-block:: bash
+
+    pcapgraph -V

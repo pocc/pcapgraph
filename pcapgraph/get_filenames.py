@@ -33,15 +33,22 @@ def parse_cli_args(args):
         print(__version__)
         sys.exit()
 
-    if args['--generate-pcaps']:
+    if 'generate-pcaps' in args['--output']:
         print('Generating pcaps...')
         print(args)
         generate_example_pcaps(interface=args['--int'])
         print('Pcaps sucessfully generated!')
         sys.exit()
 
-    filenames = get_filenames_from_directories(args['--dir'])
-    filenames.extend(get_filenames(args['<file>']))
+    directories = []
+    files = list(args['<file>'])
+    for file in args['<file>']:
+        if os.path.isdir(file):
+            directories.append(file)
+            files.remove(file)
+
+    filenames = get_filenames_from_directories(directories)
+    filenames.extend(get_filenames(files))
     return filenames
 
 

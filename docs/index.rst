@@ -5,10 +5,14 @@
 
 PcapGraph Manual
 ================
-Create bar graphs out of packet capture timestamps.
+Create bar graphs out of `packet capture <https://en.wikipedia.org/wiki/Pcap>`_
+timestamps.
 
 About
 -----
+.. comment filler for horizontal rule.
+
+----
 
 .. image:: ../examples/pcap_graph.png
    :alt: An example graph
@@ -22,8 +26,8 @@ Linux, macOS, Windows
 
 Description
 ~~~~~~~~~~~
-* Main use case is assisting with flow-based troubleshooting where there are at
-  least 3 `pcaps <https://en.wikipedia.org/wiki/Pcap>`_
+* Assists with flow-based troubleshooting where there are at
+  least 3 pcaps. See `Usage <example_usage.rst>`_ for detailed use cases.
 * Create a horizontal bar graph to visualize when pcaps were taken.
 * Use set operations to find patterns among multiple packet
   captures in ways that Wireshark is not able to.
@@ -44,6 +48,8 @@ License
 ~~~~~~~
 `Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0>`_
 
+----
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -51,8 +57,7 @@ License
    installation.rst
    cli.rst
    pcap_preparation.rst
+   example_usage.rst
    set_operations.rst
-   example_output.rst
-   generating_pcaps.rst
-   background.rst
+   addenda.rst
    api.rst

@@ -27,7 +27,7 @@ class TestGetFilenames(unittest.TestCase):
             '--version': True,
             '--generate-pcaps': False,
             '<file>': [],
-            '--dir': []
+            '--output': []
         }
         # Version should exit.
         with self.assertRaises(SystemExit):
@@ -37,9 +37,8 @@ class TestGetFilenames(unittest.TestCase):
         # Not testing generating_pcaps as it could fail depending on whether
         # the default interface is the one that traffic is going through.
 
-        # --dir and <files> should be properly parsed.
-        args['--dir'] = ['tests/files/test_dir']
-        args['<file>'] = ['tests/files/test.pcap']
+        # directory and file should be properly detected as such and parsed.
+        args['<file>'] = ['tests/files/test.pcap', 'tests/files/test_dir']
         expected_results = [
             'tests/files/test_dir/test_dir.pcap', 'tests/files/test.pcap'
         ]
