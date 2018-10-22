@@ -1,9 +1,66 @@
-Generating Packet Captures
-==========================
-.. note:: Generating packet captures is optional if you have cloned the
-          repository as pcaps can be found in examples/.
-          If you do not have packet captures laying around and you have
-          downloaded pcapgraph with pip, then this may provide value.
+Addenda
+=======
+Set Theory
+----------
+.. comment filler for horizontal rule.
+
+----
+
+.. note:: If you want a set primer, you may want to check out the
+          `set operations <https://en.wikipedia.org/wiki/Set_(mathematics)
+          #Basic_operations>`_ Wikipedia article.
+
+Basic Set Operations
+~~~~~~~~~~~~~~~~~~~~
+The terminology used here is based on set theory. For example, given sets
+
+    | A = (1, 2, 3)
+    | B = (2, 3, 4)
+    | C = (3, 4, 5)
+
++------------------------------------------+----------------------+---------------------------------------------------+
+| Set Operation                            | Applied to (A, B, C) | Definition                                        |
++==========================================+======================+===================================================+
+| .. image:: _static/set_union.png         |                      |                                                   |
+|    :alt: Union                           |                      |                                                   |
+|                                          |                      |                                                   |
+| Union                                    |  (1, 2, 3, 4, 5)     | All unique elements.                              |
++------------------------------------------+----------------------+---------------------------------------------------+
+| .. image:: _static/set_intersection.png  |                      |                                                   |
+|   :alt: Intersection                     |                      |                                                   |
+|                                          |                      |                                                   |
+| Intersection                             | \(3\)                | All common elements.                              |
++------------------------------------------+----------------------+---------------------------------------------------+
+| .. image:: _static/set_difference.png    |                      |                                                   |
+|   :alt: Intersection                     |                      |                                                   |
+|                                          |                      |                                                   |
+| Difference                               | \(1\)                | All elements in the first set not in latter sets. |
++------------------------------------------+----------------------+---------------------------------------------------+
+| .. image:: _static/set_disjunction.png   |                      |                                                   |
+|   :alt: Intersection                     |                      |                                                   |
+|                                          |                      |                                                   |
+| Symmetric Difference                     | (1, 5)               | All elements unique to only one set.              |
++------------------------------------------+----------------------+---------------------------------------------------+
+
+Packet Uniqueness
+~~~~~~~~~~~~~~~~~
+By definition, a set only has unique elements. The result of any
+set operation is also a set. This program uses the entire frame as an
+element to determine uniqueness, which ensures fewer duplicates. The FCS
+may be stripped by the NIC depending on network drivers, and so may not
+necessarily be available for packet identification (I have only seen Juniper
+devices take packet captures that contain the FCS).
+
+
+Generating Demo Packet Captures
+-------------------------------
+.. comment filler for horizontal rule.
+
+----
+
+.. note:: Generating the demo packet captures is optional if you have cloned
+          the repository as these pcaps can be found in examples/.
+          Above all else, this is documentation of the pcap generation script.
 
 To generate pcaps by letting tshark decide the default interface, enter
 
@@ -22,7 +79,7 @@ and non-zero Rx/Tx counts.
              you may need to use ``sudo`` to capture generated traffic.
 
 Generation Explanation
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 pcapgraph/generate_example_pcaps.py is the relevant file.
 
 The script creates 3 packet captures, each lasting 60 seconds and
