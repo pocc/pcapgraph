@@ -38,7 +38,6 @@ class TestPcapMath(unittest.TestCase):
         get_tshark_status()
 
     def test_union_pcap(self):
-        os.chdir('..')
         """Test union_pcap using the pcaps in examples."""
         # This will generate union.pcap in tests/
         union_pcap('examples/simul1.pcap',

@@ -51,6 +51,18 @@ may be stripped by the NIC depending on network drivers, and so may not
 necessarily be available for packet identification (I have only seen Juniper
 devices take packet captures that contain the FCS).
 
+Set Caveats
+-----------
+Symmetric Difference
+~~~~~~~~~~~~~~~~~~~~
+Symmetric Difference is included for sake of set operation completeness.
+It is the equivalent to the set difference applied to all pcaps where each
+pcap is at some point the pivot. If the difference contains no packets, it
+is discarded.
+
+Technically, this usage of symmetric difference is incorrect because it
+produces multiple packet captures with unique packets instead of one
+containing all of them.
 
 Generating Demo Packet Captures
 -------------------------------
