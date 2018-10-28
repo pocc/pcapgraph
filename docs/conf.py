@@ -11,7 +11,7 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
+"""Config file for Sphinx."""
 import os
 import sys
 
@@ -110,8 +110,8 @@ html_static_path = ['_static']
 html_context = {
     'css_files': [
         '_static/theme_overrides.css',  # override wide tables in RTD theme
-        ],
-     }
+    ],
+}
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -121,13 +121,13 @@ html_context = {
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 
-#html_sidebars = {
+# html_sidebars = {
 #        '**': [
 #        'about.html',
 #        'navigation.html',
 #        'searchbox.html',
 #    ]
-#}
+# }
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False

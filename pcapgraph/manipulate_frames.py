@@ -45,6 +45,7 @@ def parse_pcaps(pcaps):
         pcaps (list(string)): A list of pcap filenames
     Returns:
         pcap_dict (list): All the packet data in json format.
+            [{<pcap>: {PCAP JSON}}, ...]
     """
     pcap_json_list = []
     for pcap in pcaps:

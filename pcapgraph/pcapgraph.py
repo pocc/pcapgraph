@@ -16,7 +16,7 @@
   Create bar graphs out of packet captures.
 
 Usage:
-  pcapgraph [-abdehisuvVwx] (<file>)... [--output <format>]...
+  pcapgraph [-abdehisuvVwx23] (<file>)... [--output <format>]...
 
 Options:
   -a, --anonymize       Anonymize packet capture file names with fictional
@@ -43,6 +43,13 @@ Options:
   -w                    Open pcaps in Wireshark after creation.
                         (shortcut for --output pcap --output wireshark)
   -x, --exclude-empty   eXclude pcap files from being saved if they are empty.
+  -2, --strip-layer2    Remove layer2 bits and encode raw IP packets.
+                        Use if pcaps track flows across layer 3 boundaries or
+                        L2 frame formats differ between pcaps (e.g. An AP will
+                        have Eth/Wi-Fi interfaces that encode 802.3/802.11).
+  -3, --strip-layer3    Remove IP header and encode dummy ethernet/IP headers
+                        Use if pcaps track flows across IPv4 NAT.
+                        -3 implies -2. IPv4 only as IPv6 should not have NAT.
 
 About:
   Analyze packet captures with graphs and set operations. Graphs will show
@@ -59,8 +66,8 @@ Input:
   This program can read all files that can be read by tshark.
 
   packet capture:
-      `pcapng, pcap, cap, .dmp, .5vw, .TRC0, .TRC1,
-      enc, trc, fdc, syc, .bfr, .tr1, .snoop`
+      `pcapng, pcap, cap, dmp, 5vw, TRC0, TRC1,
+      enc, trc, fdc, syc, bfr, tr1, snoop`
 
 Output:
   *[--output <format>]...*
@@ -81,10 +88,11 @@ Output:
       `txt`
 
   packet capture:
-      * pcap: requires a set operation for there to be packets to save.
-      * generate-pcaps: creates the pcaps simul1-3 used in documentation.
+      * pcap, pcapng: Requires a set operation for there to be packets to save.
+      * generate-pcaps: Creates the pcaps simul1-3 used in documentation.
+      * wireshark: Opens the pcaps from a set operation in wireshark.
 
-      `pcap, generate-pcaps`
+      `pcap, pcapng, generate-pcaps, wireshark`
 
 Set Operations:
   All set operations require packet captures and do the following:
