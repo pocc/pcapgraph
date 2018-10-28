@@ -165,7 +165,8 @@ def run():
     get_tshark_status()
     args = docopt.docopt(__doc__)
     filenames = sorted(gf.parse_cli_args(args))
-    all_filenames = pm.parse_set_arg(filenames, args)
+    pcap_math = pm.PcapMath(filenames)
+    all_filenames = pcap_math.parse_set_args(args)
     pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)
     if args['-w']:
         args['--output'].extend(['wireshark', 'pcap'])

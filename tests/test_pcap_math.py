@@ -17,17 +17,8 @@
 import unittest
 import filecmp
 import os
-"""
-from pcapgraph.pcap_math import union_pcap
-from pcapgraph.pcap_math import intersect_pcap
-from pcapgraph.pcap_math import difference_pcap
-from pcapgraph.pcap_math import symmetric_difference_pcap
-from pcapgraph.pcap_math import bounded_intersect_pcap
-from pcapgraph.pcap_math import get_minmax_common_frames
-"""
+
 from pcapgraph.pcap_math import PcapMath
-from pcapgraph.manipulate_frames import get_flat_frame_dict
-from pcapgraph.manipulate_frames import parse_pcaps
 from pcapgraph import get_tshark_status
 
 
@@ -68,9 +59,10 @@ class TestPcapMath(unittest.TestCase):
 
     def test_difference_pcap(self):
         """Test the difference_pcap method with multiple pcaps."""
-        self.set_obj.difference_pcap()
+        diff1and3 = PcapMath(['examples/simul1.pcap', 'examples/simul3.pcap'])
+        diff_filename = diff1and3.difference_pcap()
         self.assertTrue(
-            filecmp.cmp('diff_simul1.pcap', 'examples/set_ops/'
+            filecmp.cmp(diff_filename, 'examples/set_ops/'
                         'diff_simul1-simul3.pcap'))
         os.remove('diff_simul1.pcap')
 
@@ -98,14 +90,8 @@ class TestPcapMath(unittest.TestCase):
                     '808080a301290000082a563110001f930ab5b00000000a9e80d0000' \
                     '000000101112131415161718191a1b1c1d1e1f20212223242526272' \
                     '8292a2b2c2d2e2f3031323334353637'
-        pcap_list = [
-            'examples/simul1.pcap', 'examples/simul2.pcap',
-            'examples/simul3.pcap'
-        ]
-        frame_json = parse_pcaps(pcap_list)
-        frame_dict = get_flat_frame_dict(frame_json)
         actual_min_frame, actual_max_frame = \
-            self.set_obj.get_minmax_common_frames(pcap_list, frame_dict)
+            self.set_obj.get_minmax_common_frames()
         self.assertEqual(min_frame, actual_min_frame)
         self.assertEqual(max_frame, actual_max_frame)
 

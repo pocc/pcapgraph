@@ -74,20 +74,23 @@ def get_flat_frame_dict(pcap_json_list):
     return frame_dict
 
 
-def get_pcap_frame_dict(pcaps):
+def get_frame_list_by_pcap(pcap_json_dict):
     """Like get_flat_frame_dict, but with pcapname as key to each frame list
 
     Args:
-        pcaps (list): List of pcap file names.
+        pcap_json_dict (dict): List of Pcap JSONs.
     Returns:
-        (dict): {<pcap>: {<frame>:<timestamp>, ...}, ...}
+        (dict): {<pcap>: [<frame>, ...], ...}
     """
-    pcap_frame_list = {}
-    for pcap in pcaps:
-        pcap_json_list = parse_pcaps([pcap])
-        pcap_frame_list[pcap] = get_flat_frame_dict(pcap_json_list)
+    pcap_frame_dict = []
+    for pcap in pcap_json_dict.values():
+        pcap_frames = []
+        for frame in pcap:
+            raw_frame = frame['_source']['layers']['frame_raw']
+            pcap_frames.append(raw_frame)
+        pcap_frame_dict.append(pcap_frames)
 
-    return pcap_frame_list
+    return pcap_frame_dict
 
 
 def get_frame_from_json(frame):
@@ -98,6 +101,9 @@ def get_frame_from_json(frame):
     Returns:
         (str): The ASCII hexdump value of a packet
     """
+    if not isinstance(frame, dict):
+        print('frame is type', type(frame))
+        raise TypeError("Frame must be dict!\n" + str(frame)[:120] + '...')
     frame_raw = frame['_source']['layers']['frame_raw']
     # Sometimes we get a list including the frame str instead of the frame str.
     if isinstance(frame_raw, list):
@@ -121,6 +127,8 @@ def get_pcap_as_json(pcap):
     Returns:
         (dict): Dict of the pcap json provided by tshark.
     """
+    if not isinstance(pcap, str):
+        raise TypeError("Filename must be string!\n" + str(pcap)[:120] + '...')
     get_json_cmds = ['tshark', '-r', pcap, '-x', '-T', 'json']
     pcap_json_pipe = sp.Popen(get_json_cmds, stdout=sp.PIPE)
     pcap_json_raw = pcap_json_pipe.communicate()[0]
