@@ -315,6 +315,8 @@ Difference file:
   `examples/set_ops/symdiff_simul1.pcap`
   `examples/set_ops/symdiff_simul3.pcap`
 
+----
+
 Timebounded Intersection
 ------------------------
 Description
@@ -324,9 +326,6 @@ packets between the earliest shared frame and the latest shared frame.
 It may also be useful to find all traffic that is between two timestamps.
 These time-bounded operations are built with, but are not bound by the
 constraints of set operations.
-
-Create a packet capture intersection out of two files by finding the first and
-last instances of identical frames in multiple packet captures.
 
 Example Operation
 ~~~~~~~~~~~~~~~~~
@@ -364,6 +363,27 @@ and that G is the latest common packet.
           * In Pcap2, C and F are out of order compared to Pcap1
           * The intersection does not include these interesting packets that
             are in one pcap, but note the other.
+
+Timebound Intersection Text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Does not exist**: None created.
+
+Timebound Intersection Pcap
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*Trim packet captures to a timeframe*
+
+Create a packet capture intersection out of two files by finding the first and
+last instances of identical frames in multiple packet captures. This is
+something that you might manually do by finding a shared ip.id at the top of
+both packet captures and the ip.id at the bottom of both packet captures and
+then filtering out all traffic not between the frame numbers corresponding
+to the packets with those ip.ids.
+
+This function automates the described manual process.
+
+.. code-block:: bash
+
+    pcapgraph examples/ --bounded-intersect --output pcap
 
 ----
 
@@ -407,6 +427,10 @@ The key here is to subtract the intersection from each initial packet capture
 to find the interesting packets that are unique to each during the intersection
 time period.
 
+Inverse Timebound Intersection Text
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Does not exist**: None created.
+
 Inverse Timebounded Intersect Pcap
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *Find what interface traffic fails at*
@@ -417,7 +441,7 @@ This can be useful when troubleshooting a flow to determine where it fails.
 
 .. code-block:: bash
 
-    pcapgraph examples/ --inverse-bounded-intersect
+    pcapgraph examples/ --inverse-bounded --output pcap
 
 ----
 
