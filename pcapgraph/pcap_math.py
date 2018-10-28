@@ -31,30 +31,74 @@ class PcapMath:
     For multiple set operations, files are read in only once in __init__.
     Use different PcapMath objects if input files are different.
     """
-    def __init__(self, filenames):
+
+    def __init__(self, filenames, options):
         """Prepare PcapMath object for one or multiple operations.
 
         Every PcapMath object should start with the data structures filled with
         the data that each operation needs to function.
 
         Args:
-            filenames (list): List of filenames
+            filenames (list): List of filenames.
+            options (dict): Whether to strip L2 and L3 headers.
         """
         self.filenames = filenames
         self.pcap_json_dict = {}
         for file in filenames:
-            self.pcap_json_dict[file] = parse_pcaps([file])[0]
+            pcap_json = parse_pcaps([file])[0]
+            if options['strip-l3']:
+                for index, packet in enumerate(pcap_json):
+                    ip_raw = packet['_source']['layers']['ip_raw']
+                    frame_raw = packet['_source']['layers']['frame_raw']
+                    homogenized_packet = self.homogenize_l3_header(ip_raw)
+                    pcap_json[index]['_source']['layers']['frame_raw'] = \
+                        homogenized_packet + frame_raw.split(ip_raw)[1]
+            elif options['strip-l2']:
+                for index, packet in enumerate(pcap_json):
+                    eth_raw = packet['_source']['layers']['eth_raw']
+                    eth_len = len(eth_raw)
+                    frame_raw = packet['_source']['layers']['frame_raw']
+                    pcap_json[index]['_source']['layers']['frame_raw'] = \
+                        frame_raw[eth_len:]
+            self.pcap_json_dict[file] = pcap_json
+
         pcap_json_list = [*self.pcap_json_dict.values()]
         self.frame_timestamp_dict = get_flat_frame_dict(pcap_json_list)
         self.frame_list_by_pcap = []
         self.exclude_empty = False
+        self.options = options
+
+    @staticmethod
+    def homogenize_l3_header(ip_raw):
+        """Replace TTL, header checksum, and IP src/dst with generic values.
+
+        This function is designed to replace all IP data that would change on
+        a layer 3 boundary
+
+        Note that these options are found only in IPv4.
+        TTL is expected to change at every hop along with header
+        checksum. IPs are expected to change for NAT.
+
+        Args:
+            ip_raw (str): The IP header per RFC 791.
+        Returns:
+            (str): The modified packet that contains more generic values.
+        """
+        ttl = 'ff'
+        ip_proto = ip_raw[18:20]
+        ip_checksum = '1337'
+        src_ip = '0a010101'
+        dst_ip = '0a020202'
+        modified_packet = ip_raw[:16] + ttl + ip_proto + \
+            ip_checksum + src_ip + dst_ip + ip_raw[40:]
+        return modified_packet
 
     def parse_set_args(self, args):
         """Call the appropriate method per CLI flags.
 
         difference, union, intersect consist of {<op>: {frame: timestamp, ...}}
         bounded_intersect consists of {pcap: {frame: timestamp, ...}, ...}
-        
+
         Args:
             args (dict): Dict of all arguments (including set args).
         """
@@ -110,7 +154,10 @@ class PcapMath:
         union_frame_dict = {}
         for frame in raw_packet_list:
             union_frame_dict[frame] = self.frame_timestamp_dict[frame]
-        save.save_pcap(pcap_dict=union_frame_dict, name='union.pcap')
+        save.save_pcap(
+            pcap_dict=union_frame_dict,
+            name='union.pcap',
+            options=self.options)
 
         return 'union.pcap'
 
@@ -173,7 +220,10 @@ class PcapMath:
         intersect_frame_dict = {}
         for frame in frame_intersection:
             intersect_frame_dict[frame] = self.frame_timestamp_dict[frame]
-        save.save_pcap(pcap_dict=intersect_frame_dict, name='intersect.pcap')
+        save.save_pcap(
+            pcap_dict=intersect_frame_dict,
+            name='intersect.pcap',
+            options=self.options)
 
         if frame_intersection:
             return 'intersect.pcap'
@@ -218,7 +268,10 @@ class PcapMath:
             while os.path.isfile(unique_diff_name):
                 unique_diff_name = diff_filename[:-5] + '-' + \
                                    str(int(time.time())) + '.pcap'
-            save.save_pcap(pcap_dict=diff_frame_dict, name=unique_diff_name)
+            save.save_pcap(
+                pcap_dict=diff_frame_dict,
+                name=unique_diff_name,
+                options=self.options)
             return unique_diff_name
 
         return ''
@@ -257,12 +310,14 @@ class PcapMath:
         names = []  # Names of all generated pcaps
         for index, _ in enumerate(bounded_pcaps):
             names.append('bounded_intersect-simul' + str(index + 1) + '.pcap')
-            save.save_pcap(pcap_dict=bounded_pcaps[index], name=names[index])
+            save.save_pcap(
+                pcap_dict=bounded_pcaps[index],
+                name=names[index],
+                options=self.options)
 
         return names
 
-    def inverse_bounded_intersect_pcap(self,
-                                       bounded_filelist=False):
+    def inverse_bounded_intersect_pcap(self, bounded_filelist=False):
         """Inverse of bounded intersection = (bounded intersect) - (intersect)
 
         Args:
@@ -297,9 +352,6 @@ class PcapMath:
         Create a bounding box around each packet capture where the bounds are
         the min and max packets in the intersection.
 
-        Args:
-            flat_frame_dict: A list of frames across all pcaps
-            pcap_frame_dict: A list of frames by pcap
         Returns:
             bounded_pcaps: A list of frame_dicts
         """

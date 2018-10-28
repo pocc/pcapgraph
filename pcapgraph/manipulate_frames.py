@@ -93,6 +93,22 @@ def get_frame_list_by_pcap(pcap_json_dict):
     return pcap_frame_dict
 
 
+def get_pcap_frame_dict(pcaps):
+    """Like get_flat_frame_dict, but with pcapname as key to each frame list
+
+    Args:
+        pcaps (list): List of pcap file names.
+    Returns:
+        (dict): {<pcap>: {<frame>:<timestamp>, ...}, ...}
+    """
+    pcap_frame_list = {}
+    for pcap in pcaps:
+        pcap_json_list = parse_pcaps([pcap])
+        pcap_frame_list[pcap] = get_flat_frame_dict(pcap_json_list)
+
+    return pcap_frame_list
+
+
 def get_frame_from_json(frame):
     """Get/sanitize raw frame from JSON of frame from `tshark -x -T json ...`
 

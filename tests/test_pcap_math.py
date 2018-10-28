@@ -31,9 +31,11 @@ class TestPcapMath(unittest.TestCase):
             os.chdir('..')
         # Add the wireshark folder to PATH for this shell.
         get_tshark_status()
+        self.options = {'strip-l2': False, 'strip-l3': False}
         self.set_obj = PcapMath(['examples/simul1.pcap',
                                  'examples/simul2.pcap',
-                                 'examples/simul3.pcap'])
+                                 'examples/simul3.pcap'],
+                                self.options)
 
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
@@ -51,7 +53,8 @@ class TestPcapMath(unittest.TestCase):
             filecmp.cmp('intersect.pcap', 'examples/set_ops/intersect.pcap'))
         # examples/intersect.pcap is from all 3 simul pcaps, so using
         # 2 of 3 should fail as the generated intersection will be different.
-        two_thirds = PcapMath(['examples/simul1.pcap', 'examples/simul2.pcap'])
+        two_thirds = PcapMath(['examples/simul1.pcap', 'examples/simul2.pcap'],
+                              options=self.options)
         two_thirds.intersect_pcap()
         self.assertFalse(
             filecmp.cmp('intersect.pcap', 'examples/set_ops/intersect.pcap'))
@@ -59,7 +62,8 @@ class TestPcapMath(unittest.TestCase):
 
     def test_difference_pcap(self):
         """Test the difference_pcap method with multiple pcaps."""
-        diff1and3 = PcapMath(['examples/simul1.pcap', 'examples/simul3.pcap'])
+        diff1and3 = PcapMath(['examples/simul1.pcap', 'examples/simul3.pcap'],
+                             self.options)
         diff_filename = diff1and3.difference_pcap()
         self.assertTrue(
             filecmp.cmp(diff_filename, 'examples/set_ops/'

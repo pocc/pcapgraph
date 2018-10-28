@@ -25,6 +25,11 @@ import pcapgraph.pcap_math as pm
 
 class TestDrawGraph(unittest.TestCase):
     """Test draw_graph.py against existing png files."""
+    def setUp(self):
+        """set directory to project root."""
+        # If testing from ./tests, change to root directory (useful in PyCharm)
+        if os.getcwd().endswith('tests'):
+            os.chdir('..')
 
     def test_draw_basic(self):
         """Verifies that specific args create the exact same image as expected.
@@ -36,6 +41,7 @@ class TestDrawGraph(unittest.TestCase):
             '--bounded-intersection': False,
             '--difference': False,
             '--dir': [],
+            '--exclude-empty': False,
             '--filter': None,
             '--generate-pcaps': False,
             '--help': False,
@@ -43,6 +49,8 @@ class TestDrawGraph(unittest.TestCase):
             '--intersection': False,
             '--inverse-bounded': False,
             '--output': ['png'],
+            '--strip-l2': False,
+            '--strip-l3': False,
             '--symmetric-difference': False,
             '--union': False,
             '--verbose': False,
@@ -71,6 +79,7 @@ class TestDrawGraph(unittest.TestCase):
             '--bounded-intersection': False,
             '--difference': False,
             '--dir': [],
+            '--exclude-empty': False,
             '--filter': None,
             '--generate-pcaps': False,
             '--help': False,
@@ -78,6 +87,8 @@ class TestDrawGraph(unittest.TestCase):
             '--intersection': False,
             '--inverse-bounded': False,
             '--output': ['png'],
+            '--strip-l2': False,
+            '--strip-l3': False,
             '--symmetric-difference': False,
             '--union': False,
             '--verbose': False,
@@ -103,6 +114,9 @@ class TestDrawGraph(unittest.TestCase):
     def mock_main(args):
         """Like main, but main doesn't take arguments"""
         filenames = gf.parse_cli_args(args)
-        filenames = pm.parse_set_arg(filenames, args)
+        options = {'strip-l2': args['--strip-l2'],
+                   'strip-l3': args['--strip-l3']}
+        set_obj = pm.PcapMath(filenames, options)
+        filenames = set_obj.parse_set_args(args)
         pcaps_frame_dict = mf.get_pcap_frame_dict(filenames)
         dg.draw_graph(pcaps_frame_dict, filenames, args['--output'])

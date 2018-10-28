@@ -88,19 +88,23 @@ def reorder_packets(pcap):
     os.replace('_' + pcap, pcap)
 
 
-def save_pcap(pcap_dict, name):
+def save_pcap(pcap_dict, name, options):
     """Save a packet capture given ASCII hexdump using `text2pcap`
 
     Args:
         pcap_dict (dict): List of pcaps of frames to timestamps. Format:
             {<frame>: <timestamp>, ...}
         name (str): Type of operation and name of savefile
+        options (dict): Whether to encode with L2/L3 headers.
     """
     pcap_text = ''
     for frame in pcap_dict:
         frame_timestamp = pcap_dict[frame]
         pcap_text += convert_to_pcaptext(frame, frame_timestamp)
     save_pcap_cmds = ['text2pcap', '-', name, '-t', '%s.']
+    if options['strip-l2'] or options['strip-l3']:
+        # 101 is the link-type for raw-ip (IPv4 & IPv6)
+        save_pcap_cmds += ['-l', '101']
     save_pcap_sp = sp.Popen(
         save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     save_pcap_sp.communicate(input=pcap_text.encode())

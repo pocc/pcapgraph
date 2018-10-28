@@ -125,7 +125,7 @@ Set Operations:
       frame and saves each as a packet capture.
 
 See Also:
-  pcapgraph (https://pcapgraph.readthedocs.io):
+  **pcapgraph (https://pcapgraph.readthedocs.io):**
       Comprehensive documentation for this program.
 
   wireshark (https://www.wireshark.org/):
@@ -165,7 +165,8 @@ def run():
     get_tshark_status()
     args = docopt.docopt(__doc__)
     filenames = sorted(gf.parse_cli_args(args))
-    pcap_math = pm.PcapMath(filenames)
+    options = {'strip-l2': args['--strip-l2'], 'strip-l3': args['--strip-l3']}
+    pcap_math = pm.PcapMath(filenames, options)
     all_filenames = pcap_math.parse_set_args(args)
     pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)
     if args['-w']:
