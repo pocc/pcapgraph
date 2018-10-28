@@ -32,9 +32,9 @@ test:
 
 # Lint using flake8, pylint, yapf
 lint:
-	flake8
-	pylint
-	yapf -pri
+	flake8 pcapgraph tests
+	pylint pcapgraph tests
+	yapf -pri pcapgraph
 
 # Use this first before uploading to pypi to verify that it uploaded correctly.
 testpypi: clean install
@@ -42,7 +42,7 @@ testpypi: clean install
 
 # After testpypi, verify that it installs and runs correctly
 installtestpypi:
-	python3.6 -m pip install -U --user --index-url https://test.pypi.org/simple/ pcapgraph
+	python -m pip install -U --user --index-url https://test.pypi.org/simple/ pcapgraph
 
 # Use this when you are sure that the test upload (above) looks good.
 pypi: clean install
