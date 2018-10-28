@@ -43,11 +43,11 @@ Options:
   -w                    Open pcaps in Wireshark after creation.
                         (shortcut for --output pcap --output wireshark)
   -x, --exclude-empty   eXclude pcap files from being saved if they are empty.
-  -2, --strip-layer2    Remove layer2 bits and encode raw IP packets.
+  -2, --strip-l2        Remove layer2 bits and encode raw IP packets.
                         Use if pcaps track flows across layer 3 boundaries or
                         L2 frame formats differ between pcaps (e.g. An AP will
                         have Eth/Wi-Fi interfaces that encode 802.3/802.11).
-  -3, --strip-layer3    Remove IP header and encode dummy ethernet/IP headers
+  -3, --strip-l3        Remove IP header and encode dummy ethernet/IP headers
                         Use if pcaps track flows across IPv4 NAT.
                         -3 implies -2. IPv4 only as IPv6 should not have NAT.
 
@@ -61,7 +61,7 @@ About:
 Input:
   *<file>...*
 
-  One or more files and directories. When PcapGraph detects a
+  One or more files or directories. When PcapGraph detects a
   directory, it will go one level deep to find packet captures.
   This program can read all files that can be read by tshark.
 
@@ -165,7 +165,9 @@ def run():
     get_tshark_status()
     args = docopt.docopt(__doc__)
     filenames = sorted(gf.parse_cli_args(args))
-    options = {'strip-l2': args['--strip-l2'], 'strip-l3': args['--strip-l3']}
+    options = {'strip-l2': args['--strip-l2'],
+               'strip-l3': args['--strip-l3'],
+               'pcapng': 'pcapng' in args['--output']}
     pcap_math = pm.PcapMath(filenames, options)
     all_filenames = pcap_math.parse_set_args(args)
     pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)

@@ -44,6 +44,9 @@ def draw_graph(pcap_packets, input_files, output_fmts):
     if 'pcap' in output_fmts:
         output_fmts.remove('pcap')
         delete_pcaps = False
+    if 'pcapng' in output_fmts:
+        output_fmts.remove('pcapng')
+        delete_pcaps = False
     for save_format in output_fmts:
         if save_format == 'txt':
             output_text = make_text_not_war(pcap_packets)

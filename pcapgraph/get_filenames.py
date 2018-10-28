@@ -40,6 +40,13 @@ def parse_cli_args(args):
         print('Pcaps sucessfully generated!')
         sys.exit()
 
+    has_set_operation = args['--symmetric-difference'] or args['--union'] or \
+        args['--difference'] or args['--inverse-bounded'] or \
+        args['--bounded-intersection'] or args['--intersection']
+    pcap_out = 'pcap' in args['--output'] or 'pcapng' in args['--output']
+    if pcap_out and not has_set_operation:
+        raise SyntaxError("`-o pcap/ng` needs a set operation (-bdeisu).")
+
     directories = []
     files = list(args['<file>'])
     for file in args['<file>']:

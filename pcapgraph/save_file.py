@@ -101,10 +101,14 @@ def save_pcap(pcap_dict, name, options):
     for frame in pcap_dict:
         frame_timestamp = pcap_dict[frame]
         pcap_text += convert_to_pcaptext(frame, frame_timestamp)
-    save_pcap_cmds = ['text2pcap', '-', name, '-t', '%s.']
+    save_pcap_cmds = ['text2pcap', '-', '-t', '%s.']
     if options['strip-l2'] or options['strip-l3']:
         # 101 is the link-type for raw-ip (IPv4 & IPv6)
         save_pcap_cmds += ['-l', '101']
+    if options['pcapng']:  # If output type is pcapng
+        save_pcap_cmds += ['-n']
+        name += 'ng'
+    save_pcap_cmds += [name]
     save_pcap_sp = sp.Popen(
         save_pcap_cmds, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     save_pcap_sp.communicate(input=pcap_text.encode())
