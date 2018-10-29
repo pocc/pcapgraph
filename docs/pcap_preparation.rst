@@ -31,7 +31,7 @@ split it into multiple files.
     editcap -c <packets per split> source.pcap split.pcap
 
 Additional examples can be found at `Packet Life
-<http://packetlife.net/blog/2011/apr/11/extracting-packets-large-captures/>`_
+<http://packetlife.net/blog/2011/apr/11/extracting-packets-large-captures/>`_.
 
 Modifying Timestamps
 ~~~~~~~~~~~~~~~~~~~~
@@ -46,4 +46,4 @@ To modify a packet capture to have the correct timestamps, use editcap:
     editcap -t <offset> <infile> <outfile>
 
 More information about editcap usage can be found on the `editcap man page
-<https://www.wireshark.org/docs/man-pages/editcap.html>`_
+<https://www.wireshark.org/docs/man-pages/editcap.html>`_.

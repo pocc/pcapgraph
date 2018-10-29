@@ -16,7 +16,9 @@
   Create bar graphs out of packet captures.
 
 Usage:
-  pcapgraph [-abdehisuvVwx23] (<file>)... [--output <format>]...
+  ‣ pcapgraph [-abdeisuvwx23] (<file>)... [--output <format>]...
+  ‣ pcapgraph (-V | --version)
+  ‣ pcapgraph (-h | --help)
 
 Options:
   -a, --anonymize       Anonymize packet capture file names with fictional
@@ -38,8 +40,8 @@ Options:
                         (see Set Operations > symmetric difference).
   -u, --union           All unique packets across all pcaket captures.
                         (see Set Operations > union).
-  -v, --version         Show PcapGraph's version.
-  -V, --verbose         Provide more context to what pcapgraph is doing.
+  -v, --verbose         Provide more context to what pcapgraph is doing.
+  -V, --version         Show PcapGraph's version.
   -w                    Open pcaps in Wireshark after creation.
                         (shortcut for --output pcap --output wireshark)
   -x, --exclude-empty   eXclude pcap files from being saved if they are empty.
@@ -55,8 +57,9 @@ About:
   Analyze packet captures with graphs and set operations. Graphs will show
   the temporal overlap of packets. Set operations can help with flow-based
   troubleshooting across multiple interfaces or devices.
-
   The default behavior for output is a graph (hence the name).
+
+  Official documentation: https://pcapgraph.readthedocs.io/
 
 Input:
   *<file>...*
@@ -125,7 +128,7 @@ Set Operations:
       frame and saves each as a packet capture.
 
 See Also:
-  **pcapgraph (https://pcapgraph.readthedocs.io):**
+  pcapgraph (https://pcapgraph.readthedocs.io):
       Comprehensive documentation for this program.
 
   wireshark (https://www.wireshark.org/):

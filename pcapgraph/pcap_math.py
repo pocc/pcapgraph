@@ -86,11 +86,11 @@ class PcapMath:
         """
         ttl = 'ff'
         ip_proto = ip_raw[18:20]
-        ip_checksum = '1337'
+        ip_header_checksum = '1337'
         src_ip = '0a010101'
         dst_ip = '0a020202'
         modified_packet = ip_raw[:16] + ttl + ip_proto + \
-            ip_checksum + src_ip + dst_ip + ip_raw[40:]
+            ip_header_checksum + src_ip + dst_ip + ip_raw[40:]
         return modified_packet
 
     def parse_set_args(self, args):

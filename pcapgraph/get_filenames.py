@@ -30,7 +30,8 @@ def parse_cli_args(args):
         (list): List of filepaths
     """
     if args['--version']:
-        print(__version__)
+        print('pcapgraph', __version__)
+        print('python', sys.version)
         sys.exit()
 
     if 'generate-pcaps' in args['--output']:
