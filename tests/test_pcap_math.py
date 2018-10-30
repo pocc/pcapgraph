@@ -31,7 +31,7 @@ class TestPcapMath(unittest.TestCase):
             os.chdir('..')
         # Add the wireshark folder to PATH for this shell.
         get_tshark_status()
-        self.options = {'strip-l2': False, 'strip-l3': False}
+        self.options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
         self.set_obj = PcapMath(['examples/simul1.pcap',
                                  'examples/simul2.pcap',
                                  'examples/simul3.pcap'],

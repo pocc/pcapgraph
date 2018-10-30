@@ -86,8 +86,8 @@ def get_frame_list_by_pcap(pcap_json_dict):
     for pcap in pcap_json_dict.values():
         pcap_frames = []
         for frame in pcap:
-            raw_frame = frame['_source']['layers']['frame_raw']
-            pcap_frames.append(raw_frame)
+            frame_str = get_frame_from_json(frame)
+            pcap_frames.append(frame_str)
         pcap_frame_dict.append(pcap_frames)
 
     return pcap_frame_dict
