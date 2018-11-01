@@ -15,31 +15,30 @@
 """Test get_filenames.py."""
 
 import unittest
+
 import pcapgraph.get_filenames as gf
+from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 
 class TestGetFilenames(unittest.TestCase):
     """Test get_filenames.py."""
+    setup_testenv()
+    args = DEFAULT_CLI_ARGS
 
     def test_parse_cli_args(self):
         """Test parse_cli_args,get_filenames_from_directories,get_filenames"""
-        args = {
-            '--version': True,
-            '--generate-pcaps': False,
-            '<file>': [],
-            '--output': []
-        }
+        self.args['--version'] = True
         # Version should exit.
         with self.assertRaises(SystemExit):
-            gf.parse_cli_args(args)
-        args['--version'] = False
+            gf.parse_cli_args(self.args)
+        self.args['--version'] = False
 
         # Not testing generating_pcaps as it could fail depending on whether
         # the default interface is the one that traffic is going through.
 
         # directory and file should be properly detected as such and parsed.
-        args['<file>'] = ['tests/files/test.pcap', 'tests/files/test_dir']
+        self.args['<file>'] = ['tests/files/test.pcap', 'tests/files/test_dir']
         expected_results = [
             'tests/files/test_dir/test_dir.pcap', 'tests/files/test.pcap'
         ]
-        self.assertEqual(expected_results, gf.parse_cli_args(args))
+        self.assertEqual(expected_results, gf.parse_cli_args(self.args))

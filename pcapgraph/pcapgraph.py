@@ -16,9 +16,9 @@
   Create bar graphs out of packet captures.
 
 Usage:
-  ‣ pcapgraph [-abdeisuvwx23] (<file>)... [--output <format>]...
-  ‣ pcapgraph (-V | --version)
-  ‣ pcapgraph (-h | --help)
+  pcapgraph [-abdeisuvwx23] (<file>)... [--output <format>]...
+  pcapgraph (-V | --version)
+  pcapgraph (-h | --help)
 
 Options:
   -a, --anonymize       Anonymize packet capture file names with fictional
@@ -167,10 +167,13 @@ def run():
     """
     get_tshark_status()
     args = docopt.docopt(__doc__)
+    print(args)
     filenames = sorted(gf.parse_cli_args(args))
-    options = {'strip-l2': args['--strip-l2'],
-               'strip-l3': args['--strip-l3'],
-               'pcapng': 'pcapng' in args['--output']}
+    options = {
+        'strip-l2': args['--strip-l2'],
+        'strip-l3': args['--strip-l3'],
+        'pcapng': 'pcapng' in args['--output']
+    }
     pcap_math = pm.PcapMath(filenames, options)
     all_filenames = pcap_math.parse_set_args(args)
     pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)

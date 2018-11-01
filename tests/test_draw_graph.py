@@ -21,51 +21,36 @@ import pcapgraph.manipulate_frames as mf
 import pcapgraph.get_filenames as gf
 import pcapgraph.draw_graph as dg
 import pcapgraph.pcap_math as pm
+from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 
 class TestDrawGraph(unittest.TestCase):
     """Test draw_graph.py against existing png files."""
+
     def setUp(self):
         """set directory to project root."""
-        # If testing from ./tests, change to root directory (useful in PyCharm)
-        if os.getcwd().endswith('tests'):
-            os.chdir('..')
+        setup_testenv()
+        self.args = DEFAULT_CLI_ARGS
+        self.args['--output'] = ['png']
 
     def test_draw_basic(self):
         """Verifies that specific args create the exact same image as expected.
 
         Equivalent to `pcapgraph examples/simul1.pcap
         examples/simul2.pcap examples/simul3.pcap --output png"""
-        args = {
-            '--anonymize': False,
-            '--bounded-intersection': False,
-            '--difference': False,
-            '--dir': [],
-            '--exclude-empty': False,
-            '--filter': None,
-            '--generate-pcaps': False,
-            '--help': False,
-            '--int': False,
-            '--intersection': False,
-            '--inverse-bounded': False,
-            '--output': ['png'],
-            '--strip-l2': False,
-            '--strip-l3': False,
-            '--symmetric-difference': False,
-            '--union': False,
-            '--verbose': False,
-            '--version': False,
-            '<interface>': None,
-            '<file>': [
-                'examples/simul1.pcap',
-                'examples/simul2.pcap',
-                'examples/simul3.pcap',
-            ]
-        }
-        self.mock_main(args)
-        self.assertTrue(
-            filecmp.cmp('pcap_graph-simul3.png', 'examples/pcap_graph.png'))
-        os.remove('pcap_graph-simul3.png')
+        self.args['<file>'] = [
+            'examples/simul1.pcap',
+            'examples/simul2.pcap',
+            'examples/simul3.pcap',
+        ]
+        if os.name == 'posix':  # Graphs are generated differently on Windows
+            self.mock_main(self.args)
+            self.assertTrue(
+                filecmp.cmp('pcap_graph-simul3.png',
+                            'examples/pcap_graph.png'))
+            os.remove('pcap_graph-simul3.png')
+        else:
+            print("test_draw_all: Skipping on Windows...")
 
     def test_draw_all(self):
         """Verifies that specific args create the exact same image as expected.
@@ -74,48 +59,33 @@ class TestDrawGraph(unittest.TestCase):
 
         Equivalent to `pcapgraph -ditu examples/simul1.pcap
         examples/simul2.pcap examples/simul3.pcap --output png"""
-        args = {
-            '--anonymize': False,
-            '--bounded-intersection': False,
-            '--difference': False,
-            '--dir': [],
-            '--exclude-empty': False,
-            '--filter': None,
-            '--generate-pcaps': False,
-            '--help': False,
-            '--int': False,
-            '--intersection': False,
-            '--inverse-bounded': False,
-            '--output': ['png'],
-            '--strip-l2': False,
-            '--strip-l3': False,
-            '--symmetric-difference': False,
-            '--union': False,
-            '--verbose': False,
-            '--version': False,
-            '<interface>': None,
-            '<file>': [
-                'examples/set_ops/union.pcap', 'examples/simul1.pcap',
-                'examples/simul2.pcap', 'examples/simul3.pcap',
-                'examples/set_ops/diff_simul1-simul3.pcap',
-                'examples/set_ops/intersect.pcap',
-                'examples/set_ops/symdiff_simul1.pcap',
-                'examples/set_ops/symdiff_simul3.pcap'
-            ],
-        }
-        self.mock_main(args)
-        # Alphabetically first file will be union.pcap per list
-        self.assertTrue(
-            filecmp.cmp('pcap_graph-symdiff_simul3.png',
-                        'examples/set_ops/pcap_graph-disu.png'))
-        os.remove('pcap_graph-symdiff_simul3.png')
+        self.args['<file>'] = [
+            'examples/set_ops/union.pcap', 'examples/simul1.pcap',
+            'examples/simul2.pcap', 'examples/simul3.pcap',
+            'examples/set_ops/diff_simul1-simul3.pcap',
+            'examples/set_ops/intersect.pcap',
+            'examples/set_ops/symdiff_simul1.pcap',
+            'examples/set_ops/symdiff_simul3.pcap'
+        ]
+        if os.name == 'posix':  # Graphs are generated differently on Windows
+            self.mock_main(self.args)
+            # Alphabetically first file will be union.pcap per list
+            self.assertTrue(
+                filecmp.cmp('pcap_graph-symdiff_simul3.png',
+                            'examples/set_ops/pcap_graph-disu.png'))
+            os.remove('pcap_graph-symdiff_simul3.png')
+        else:
+            print("test_draw_all: Skipping on Windows...")
 
     @staticmethod
     def mock_main(args):
         """Like main, but main doesn't take arguments"""
         filenames = gf.parse_cli_args(args)
-        options = {'strip-l2': args['--strip-l2'],
-                   'strip-l3': args['--strip-l3']}
+        options = {
+            'strip-l2': args['--strip-l2'],
+            'strip-l3': args['--strip-l3'],
+            'pcapng': False
+        }
         set_obj = pm.PcapMath(filenames, options)
         filenames = set_obj.parse_set_args(args)
         pcaps_frame_dict = mf.get_pcap_frame_dict(filenames)

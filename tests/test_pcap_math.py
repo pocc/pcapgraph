@@ -20,22 +20,22 @@ import os
 
 from pcapgraph.pcap_math import PcapMath
 from pcapgraph import get_tshark_status
+from tests import setup_testenv
 
 
 class TestPcapMath(unittest.TestCase):
     """Test pcap_math.py. Expected to be run from project root."""
+
     def setUp(self):
         """Make sure that tshark is in PATH."""
-        # If testing from ./tests, change to root directory (useful in PyCharm)
-        if os.getcwd().endswith('tests'):
-            os.chdir('..')
+        setup_testenv()
         # Add the wireshark folder to PATH for this shell.
         get_tshark_status()
         self.options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
-        self.set_obj = PcapMath(['examples/simul1.pcap',
-                                 'examples/simul2.pcap',
-                                 'examples/simul3.pcap'],
-                                self.options)
+        self.set_obj = PcapMath([
+            'examples/simul1.pcap', 'examples/simul2.pcap',
+            'examples/simul3.pcap'
+        ], self.options)
 
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""

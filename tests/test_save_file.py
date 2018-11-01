@@ -17,16 +17,15 @@
 import unittest
 
 from pcapgraph.save_file import convert_to_pcaptext
-from pcapgraph import get_tshark_status
+from tests import setup_testenv
 
 
 class TestSaveFile(unittest.TestCase):
     """Test save_file.py"""
 
     def setUp(self):
-        """Make sure that tshark is in PATH."""
-        # Add the wireshark folder to PATH for this shell.
-        get_tshark_status()
+        """Setup env."""
+        setup_testenv()
 
     def test_convert_to_pcaptext(self):
         """test the conversion of ASCII hexdump to text2pcap-readable"""
