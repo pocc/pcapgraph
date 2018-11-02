@@ -16,7 +16,7 @@
 
 PYTHON_PIP_VER:=$(lastword $(shell pip -V))
 .DEFAULT: install
-.PHONY: clean install test lint testpypi testinstall pypi onefile onedir html
+.PHONY: clean install test lint testpypi testinstall pypi onefile onedir html pyinstaller
 
 clean:
 	$(RM) -r dist/ build/
@@ -24,31 +24,38 @@ clean:
 # Triggers `pip setup.py sdist` prior to install.
 install: clean
 	@echo "INFO: Your pip's python version ($(PYTHON_PIP_VER), 3.5+ required"
+	pip install -r requirements.txt
 	pip install --user .
+
+pyinstaller:
+	pip install pyinstaller
 
 # Use PyInstaller to generate a single file containing all libraries
 # matplotlib is 15MB, numpy is 13MB for executable size
-onefile: clean
+onefile: clean pyinstaller
 	pyinstaller gateway.py -n pcapgraph --onefile --exclude-module PyQt5 \
 	--exclude-module PyQt4 --exclude-module PySide --clean -y
 
 # Use PyInstaller to generate a dir ideal for a tarfile
-onedir: clean
+onedir: clean pyinstaller
 	pyinstaller gateway.py -n pcapgraph --onedir --exclude-module PyQt5 \
 	--exclude-module PyQt4 --exclude-module PySide --clean -y
 
 # Run all tests in test directory
 test:
+	pip install pytest
 	pytest tests
 
 # Lint using flake8, pylint, yapf
 lint:
+	pip install flake8 pylint yapf
 	flake8 pcapgraph tests
 	pylint pcapgraph tests
 	yapf -pri pcapgraph
 
 # Use this first before uploading to pypi to verify that it uploaded correctly.
 testpypi: clean install test lint
+	pip install twine
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 # After testpypi, verify that it installs and runs correctly

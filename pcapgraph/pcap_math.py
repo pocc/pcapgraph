@@ -17,7 +17,7 @@ import collections
 import os
 import time
 
-from pcapgraph.manipulate_frames import parse_pcaps
+from pcapgraph.manipulate_frames import strip_layers
 from pcapgraph.manipulate_frames import get_flat_frame_dict
 from pcapgraph.manipulate_frames import get_frame_list_by_pcap
 from pcapgraph.manipulate_frames import get_frame_from_json
@@ -43,55 +43,12 @@ class PcapMath:
             options (dict): Whether to strip L2 and L3 headers.
         """
         self.filenames = filenames
-        self.pcap_json_dict = {}
-        for file in filenames:
-            pcap_json = parse_pcaps([file])[0]
-            if options['strip-l3']:
-                for index, packet in enumerate(pcap_json):
-                    ip_raw = packet['_source']['layers']['ip_raw']
-                    frame_raw = packet['_source']['layers']['frame_raw']
-                    homogenized_packet = self.homogenize_l3_header(ip_raw)
-                    pcap_json[index]['_source']['layers']['frame_raw'] = \
-                        homogenized_packet + frame_raw.split(ip_raw)[1]
-            elif options['strip-l2']:
-                for index, packet in enumerate(pcap_json):
-                    eth_raw = packet['_source']['layers']['eth_raw']
-                    eth_len = len(eth_raw)
-                    frame_raw = packet['_source']['layers']['frame_raw']
-                    pcap_json[index]['_source']['layers']['frame_raw'] = \
-                        frame_raw[eth_len:]
-            self.pcap_json_dict[file] = pcap_json
-
+        self.pcap_json_dict = strip_layers(filenames, options)
         pcap_json_list = [*self.pcap_json_dict.values()]
         self.frame_timestamp_dict = get_flat_frame_dict(pcap_json_list)
         self.frame_list_by_pcap = []
         self.exclude_empty = False
         self.options = options
-
-    @staticmethod
-    def homogenize_l3_header(ip_raw):
-        """Replace TTL, header checksum, and IP src/dst with generic values.
-
-        This function is designed to replace all IP data that would change on
-        a layer 3 boundary
-
-        Note that these options are found only in IPv4.
-        TTL is expected to change at every hop along with header
-        checksum. IPs are expected to change for NAT.
-
-        Args:
-            ip_raw (str): The IP header per RFC 791.
-        Returns:
-            (str): The modified packet that contains more generic values.
-        """
-        ttl = 'ff'
-        ip_proto = ip_raw[18:20]
-        ip_header_checksum = '1337'
-        src_ip = '0a010101'
-        dst_ip = '0a020202'
-        modified_packet = ip_raw[:16] + ttl + ip_proto + \
-            ip_header_checksum + src_ip + dst_ip + ip_raw[40:]
-        return modified_packet
 
     def parse_set_args(self, args):
         """Call the appropriate method per CLI flags.
@@ -101,6 +58,9 @@ class PcapMath:
 
         Args:
             args (dict): Dict of all arguments (including set args).
+        Returns:
+            filenames (list): List of all files, including ones generated
+                by set operations.
         """
         new_files = []
         bounded_filelist = []
@@ -162,7 +122,7 @@ class PcapMath:
         return 'union.pcap'
 
     @staticmethod
-    def print_10_most_common_frames(raw_packet_list):
+    def print_10_most_common_frames(raw_frame_list):
         """After doing a packet union, find/print the 10 most common packets.
 
         This is a work in progress and may eventually use this bash:
@@ -177,8 +137,11 @@ class PcapMath:
         frame#, VLAN, src/dst MAC, src/dst IP, L4 src/dst ports, protocol
 
         This should likely be its own CLI flag in future.
+
+        Args:
+            raw_frame_list (list): List of raw frames
         """
-        packet_stats = collections.Counter(raw_packet_list)
+        packet_stats = collections.Counter(raw_frame_list)
         # It's not a common frame if it is only seen once.
         packet_stats = {k: v for k, v in packet_stats.items() if v > 1}
         sorted_packets = sorted(
@@ -200,7 +163,7 @@ class PcapMath:
         """Save pcap intersection. First filename is pivot packet capture.
 
         Returns:
-            (string): Name of generated pcap.
+            (str): Fileame of generated pcap.
         """
         # Generate intersection set of frames
         if not self.frame_list_by_pcap:
@@ -284,7 +247,7 @@ class PcapMath:
         set is the result).
 
         Returns:
-            (list(str)): Name of generated pcaps.
+            (list(str)): Filenames of generated pcaps.
         """
         generated_filelist = []
         for index, file in enumerate(self.filenames):
@@ -303,7 +266,7 @@ class PcapMath:
         then the latest common packet in both pcaps by ip.id.
 
         Returns:
-            (list(string)): List of generated pcaps.
+            (list(string)): Filenames of generated pcaps.
         """
         # Init vars
         bounded_pcaps = self.get_bounded_pcaps()
@@ -324,7 +287,7 @@ class PcapMath:
             bounded_filelist (list): List of existing bounded pcaps generated
                 by bounded_intersect_pcap()
         Returns:
-            List of files generated by this method.
+            (list(string)): Filenames of generated pcaps.
         """
         generated_filelist = []
         has_bounded_intersect_flag = False
@@ -353,7 +316,7 @@ class PcapMath:
         the min and max packets in the intersection.
 
         Returns:
-            bounded_pcaps: A list of frame_dicts
+            bounded_pcaps (list): A list of frame_dicts
         """
         min_frame, max_frame = self.get_minmax_common_frames()
 

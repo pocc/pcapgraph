@@ -96,7 +96,13 @@ def get_filenames_from_directories(directories):
 
 
 def get_filenames(files):
-    """Return a list of filenames."""
+    """Return a validated list of filenames.
+
+    Args:
+        files (list): List of file params entered by user
+    Returns:
+        (list): List of files validated to be packet captures.
+    """
     pcap_extensions = [
         '.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0', '.TRC1', '.enc',
         '.trc', '.fdc', '.syc', '.bfr', '.tr1', '.snoop'

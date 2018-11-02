@@ -21,6 +21,7 @@ import json
 
 def get_pcap_dict(filenames):
     """Return a dict with names of pcap files and their start/stop times.
+
     This function needs to get a dict with keys of filenames and values of
     the list of frames contained in each.
 
@@ -42,9 +43,9 @@ def parse_pcaps(pcaps):
     """Given pcaps, return all frames and their timestamps.
 
     Args:
-        pcaps (list(string)): A list of pcap filenames
+        pcaps (list): A list of pcap filenames
     Returns:
-        pcap_dict (list): All the packet data in json format.
+        pcap_json_list (list): All the packet data in json format.
             [{<pcap>: {PCAP JSON}}, ...]
     """
     pcap_json_list = []
@@ -155,10 +156,72 @@ def get_pcap_as_json(pcap):
     return pcap_json
 
 
+def strip_layers(filenames, options):
+    """Get the PCAP JSON dict stripped per options.
+
+    strip-l3:
+        Replace layer 3 fields src/dst IP, ttl, checksum with dummy values
+    strip-l2:
+        Remove all layer 2 fields like FCS, source/dest MAC, VLAN tag...
+
+    Args:
+        filenames (list): List of filenames.
+        options (dict): Whether to strip L2 and L3 headers.
+    Returns:
+        (dict): The modified packet dict
+    """
+    pcap_json_dict = {}
+    for file in filenames:
+        pcap_json = parse_pcaps([file])[0]
+        if options['strip-l3']:
+            for index, packet in enumerate(pcap_json):
+                ip_raw = packet['_source']['layers']['ip_raw']
+                frame_raw = packet['_source']['layers']['frame_raw']
+                homogenized_packet = get_homogenized_packet(ip_raw)
+                pcap_json[index]['_source']['layers']['frame_raw'] = \
+                    homogenized_packet + frame_raw.split(ip_raw)[1]
+        elif options['strip-l2']:
+            for index, packet in enumerate(pcap_json):
+                eth_raw = packet['_source']['layers']['eth_raw']
+                eth_len = len(eth_raw)
+                frame_raw = packet['_source']['layers']['frame_raw']
+                pcap_json[index]['_source']['layers']['frame_raw'] = \
+                    frame_raw[eth_len:]
+        pcap_json_dict[file] = pcap_json
+
+    return pcap_json_dict
+
+
+def get_homogenized_packet(ip_raw):
+    """Change an IPw4 packet's fields to the same, homogenized values.
+
+    Replace TTL, header checksum, and IP src/dst with generic values.
+    This function is designed to replace all IP data that would change
+    on a layer 3 boundary
+
+    Note that these options are found only in IPv4.
+    TTL is expected to change at every hop along with header
+    checksum. IPs are expected to change for NAT.
+
+    Args:
+        ip_raw (str): ASCII hex of packet.
+    Returns:
+        (str): Packet with fields that would be altered by l3 boundary replaced
+    """
+    ttl = 'ff'
+    ip_proto = ip_raw[18:20]
+    ip_header_checksum = '1337'
+    src_ip = '0a010101'
+    dst_ip = '0a020202'
+    homogenized_packet = ip_raw[:16] + ttl + ip_proto + \
+        ip_header_checksum + src_ip + dst_ip + ip_raw[40:]
+    return homogenized_packet
+
+
 def anonymous_pcap_name():
     """Anonymize pcap names.
 
-    Funny pcap names like switch_wireless is intendeded behavior.
+    Creation of funny pcap names like `switch_wireless` is intendeded behavior.
 
     Returns:
         (string): Fake pcap name
@@ -188,7 +251,13 @@ def decode_stdout(stdout):
 
 
 def get_packet_count(filename):
-    """Given a file, get the packet count."""
+    """Given a file, get the packet count.
+
+    Args:
+        filename (str): Path of a file, including extension
+    Returns:
+        packet_count (int): How many packets were in that pcap
+    """
     packet_count_cmds = ['-r', filename, '-2']
 
     pcap_text_pipe = sp.Popen(['tshark', *packet_count_cmds],

@@ -107,9 +107,7 @@ def get_graph_vars_from_file(filename):
     Args:
         filename (str): Name of file
     Returns:
-        start_times_array (list): List of all end times of pcaps.
-        end_times_array (list): List of all start times of pcaps.
-        pcap_names (list): List of pcap names.
+        (dict): File start/stop times if file has 1+ valid packets.
     """
     packet_count = mf.get_packet_count(filename)
 
@@ -210,7 +208,7 @@ def set_horiz_bar_colors(barlist):
     more horiz bars than in the color array, loop and continue to set colors.
 
     Args:
-        barlist
+        barlist (list): List of the horizontal bars.
     """
     colors = [
         '#2d89ef',
@@ -239,8 +237,9 @@ def set_xticks(first, last):
         first: Earliest timestamp of pcaps.
         last: Latest timestamp of pcaps.
     Returns:
-        x_ticks (list(float)): List of unix epoch time values as xticks.
-        x_label (string): Text to be used to label X-axis.
+        (tuple):
+            x_ticks (list(float)): List of unix epoch time values as xticks.
+            x_label (string): Text to be used to label X-axis.
     """
     # 10 x ticks chosen for aesthetic reasons.
     xticks_qty = 10
@@ -266,7 +265,12 @@ def set_xticks(first, last):
 
 
 def export_graph(pcap_names, save_fmt):
-    """Exports the graph to the screen or to a file."""
+    """Exports the graph to the screen or to a file.
+
+    Args:
+        pcap_names (list): List of pcap_names
+        save_fmt (str): File extension of output file
+    """
     this_folder = os.getcwd()
     last_operation_file = pcap_names[-1].split(' ')[0] + '.'
     plt.savefig(

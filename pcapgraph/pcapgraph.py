@@ -15,45 +15,12 @@
 """PcapGraph:
   Create bar graphs out of packet captures.
 
-Usage:
+USAGE:
   pcapgraph [-abdeisuvwx23] (<file>)... [--output <format>]...
   pcapgraph (-V | --version)
   pcapgraph (-h | --help)
 
-Options:
-  -a, --anonymize       Anonymize packet capture file names with fictional
-                        place names and devices.
-  -b, --bounded-intersection
-                        Bounded intersection of packets (see Set Operations).
-  -d, --difference      First packet capture minus packets in all succeeding
-                        packet captures. (see Set Operations > difference).
-  -e, --inverse-bounded
-                        Shortcut for applying `-b` to a group of pcaps and then
-                        subtracting the intersection from each.
-  -h, --help            Show this screen.
-  -i, --intersection    All packets that are shared by all packet captures
-                        (see Set Operations > intersection).
-  -o, --output <format>
-                        Output results as a file with format type.
-  -s, --symmetric-difference
-                        Packets unique to each packet capture.
-                        (see Set Operations > symmetric difference).
-  -u, --union           All unique packets across all pcaket captures.
-                        (see Set Operations > union).
-  -v, --verbose         Provide more context to what pcapgraph is doing.
-  -V, --version         Show PcapGraph's version.
-  -w                    Open pcaps in Wireshark after creation.
-                        (shortcut for --output pcap --output wireshark)
-  -x, --exclude-empty   eXclude pcap files from being saved if they are empty.
-  -2, --strip-l2        Remove layer2 bits and encode raw IP packets.
-                        Use if pcaps track flows across layer 3 boundaries or
-                        L2 frame formats differ between pcaps (e.g. An AP will
-                        have Eth/Wi-Fi interfaces that encode 802.3/802.11).
-  -3, --strip-l3        Remove IP header and encode dummy ethernet/IP headers
-                        Use if pcaps track flows across IPv4 NAT.
-                        -3 implies -2. IPv4 only as IPv6 should not have NAT.
-
-About:
+DESCRIPTION:
   Analyze packet captures with graphs and set operations. Graphs will show
   the temporal overlap of packets. Set operations can help with flow-based
   troubleshooting across multiple interfaces or devices.
@@ -61,7 +28,47 @@ About:
 
   Official documentation: https://pcapgraph.readthedocs.io/
 
-Input:
+OPTIONS:
+    SET OPERATIONS:
+      -b, --bounded-intersection
+                            Bounded intersection of packets.
+      -d, --difference      First packet capture minus packets in all
+                            succeeding packet captures.
+      -e, --inverse-bounded
+                            Shortcut for applying `-b` to a group of pcaps and
+                            then subtracting the intersection from each.
+      -s, --symmetric-difference
+                            Packets unique to each packet capture.
+                            (see Set Operations > symmetric difference).
+      -u, --union           All unique packets across all pcaket captures.
+                            (see Set Operations > union).
+      -i, --intersection    All packets that are shared by all packet captures
+                            (see Set Operations > intersection).
+
+    OUTPUT OPTIONS:
+      -a, --anonymize       Anonymize packet capture file names with fictional
+                            place names and devices.
+      -o, --output <format>
+                            Output results as a file with format type.
+      -w                    Open pcaps in Wireshark after creation.
+                            (shortcut for --output pcap --output wireshark)
+      -x, --exclude-empty   eXclude empty pcap files from being saved.
+      -2, --strip-l2        Remove layer2 bits and encode raw IP packets.
+                            Use if pcaps track flows across layer 3 boundaries
+                            or L2 frame formats differ between pcaps (e.g. An
+                            AP will have Ethernet/Wi-Fi interfaces that encode
+                            802.3/802.11 frames).
+      -3, --strip-l3        Remove IP header and encode dummy ethernet/IP
+                            headers. Use if pcaps track flows across IPv4 NAT.
+                            -3 implies -2. This flag is IPv4 only as IPv6
+                            should not have NAT.
+
+    MISC OPTIONS:
+      -h, --help            Show this screen.
+      -v, --verbose         Provide more context to what pcapgraph is doing.
+      -V, --version         Show PcapGraph's version.
+
+INPUT:
   *<file>...*
 
   One or more files or directories. When PcapGraph detects a
@@ -72,7 +79,7 @@ Input:
       `pcapng, pcap, cap, dmp, 5vw, TRC0, TRC1,
       enc, trc, fdc, syc, bfr, tr1, snoop`
 
-Output:
+OUTPUT:
   *[--output <format>]...*
 
   If no format is specified, a graph is printed to the screen and stdout.
@@ -97,7 +104,7 @@ Output:
 
       `pcap, pcapng, generate-pcaps, wireshark`
 
-Set Operations:
+SET OPERATIONS:
   All set operations require packet captures and do the following:
 
   1. Find all unique packets by their ASCII hexdump value.
@@ -127,7 +134,7 @@ Set Operations:
       Finds which packets are unique to each packet capture in a given time
       frame and saves each as a packet capture.
 
-See Also:
+SEE ALSO:
   pcapgraph (https://pcapgraph.readthedocs.io):
       Comprehensive documentation for this program.
 
@@ -167,7 +174,6 @@ def run():
     """
     get_tshark_status()
     args = docopt.docopt(__doc__)
-    print(args)
     filenames = sorted(gf.parse_cli_args(args))
     options = {
         'strip-l2': args['--strip-l2'],

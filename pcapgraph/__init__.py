@@ -18,6 +18,9 @@ def get_tshark_status():
 
     Changing os.environ will only affect the cmd shell this program is using
     (tested). Not using setx here as that could be potentially destructive.
+
+    Raises FileNotFonudError:
+        If wireshark/tshark is not found, raise an error as they are required.
     """
     try:
         if sys.platform == 'win32':
