@@ -80,17 +80,19 @@ def reorder_packets(pcap):
     """Union causes packets to be ordered incorrectly, so reorder properly.
 
     Reorder packets, save to 2nd file. After this is done, replace initial
-    file with reordered one. Prepend temporary file with '_'.
+    file with reordered one. Append temporary file with '_'.
 
     Args:
-        pcap (str): Filename of packet capture. Should start with '_', which
+        pcap (str): Filename of packet capture. Should end with '_', which
             can be stripped off so that we can reorder to a diff file.
     """
-    reorder_packets_cmds = ['reordercap', pcap, '_' + pcap]
+    pcap_filename_parts = os.path.splitext(pcap)
+    temp_pcap = pcap_filename_parts[0] + '2' + pcap_filename_parts[1]
+    reorder_packets_cmds = ['reordercap', pcap, temp_pcap]
     reorder_sp = sp.Popen(reorder_packets_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
     reorder_sp.communicate()
     reorder_sp.kill()
-    os.replace('_' + pcap, pcap)
+    os.replace(temp_pcap, pcap)
 
 
 def save_pcap(pcap_dict, name, options):

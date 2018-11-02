@@ -26,15 +26,12 @@ class TestGetFilenames(unittest.TestCase):
     args = DEFAULT_CLI_ARGS
 
     def test_parse_cli_args(self):
-        """Test parse_cli_args,get_filenames_from_directories,get_filenames"""
+        """Test parse_cli_args."""
         self.args['--version'] = True
         # Version should exit.
         with self.assertRaises(SystemExit):
             gf.parse_cli_args(self.args)
         self.args['--version'] = False
-
-        # Not testing generating_pcaps as it could fail depending on whether
-        # the default interface is the one that traffic is going through.
 
         # directory and file should be properly detected as such and parsed.
         self.args['<file>'] = ['tests/files/test.pcap', 'tests/files/test_dir']
@@ -44,7 +41,33 @@ class TestGetFilenames(unittest.TestCase):
         self.assertEqual(expected_results, gf.parse_cli_args(self.args))
 
     def test_get_filenames_from_directories(self):
-        raise NotImplemented
+        """Test get_filenames_from_directories"""
+        directories = ['tests/files',
+                       'tests/files/test_dir']
+        pcap_filenames = gf.get_filenames_from_directories(directories)
+        expected_result = ['tests/files/in_order_packets.pcap',
+                           'tests/files/out_of_order_packets.pcap',
+                           'tests/files/test.pcap',
+                           'tests/files/test.pcapng',
+                           'tests/files/test_dir/test_dir.pcap']
+        self.assertEqual(expected_result, pcap_filenames)
 
     def test_get_filenames(self):
-        raise NotImplemented
+        """Test get_filenames.
+
+        If an incorrect file is entered, expected behavior is to exit.
+        """
+        filenames = ['tests/files/test.txt',
+                     'tests/files/test.pcap',
+                     'tests/files/test.pcapng']
+        packet_captures = []
+        for filename in filenames:
+            try:
+                packet_captures += gf.get_filenames([filename])
+            # For one text file
+            except SystemExit:
+                pass
+
+        expected_result = ['tests/files/test.pcap',
+                           'tests/files/test.pcapng']
+        self.assertEqual(expected_result, packet_captures)

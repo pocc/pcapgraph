@@ -63,6 +63,8 @@ def parse_cli_args(args):
 def get_filenames_from_directories(directories):
     """Get all the files from all provided directories.
 
+    This function is not recursive and searches one deep.
+
     Args:
         directories (list): List of user-inputted directories.
     Returns:
@@ -111,7 +113,7 @@ def get_filenames(files):
     filenames = []
     for filename in files:
         file_string = filename
-        if "C:\\" not in filename.upper():
+        if "C:\\" not in filename.upper() and os.name == 'nt':
             file_string = cwd + filename
         if not os.path.isfile(file_string):
             print("ERROR: File", file_string, "not found!")
