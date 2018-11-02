@@ -12,12 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test draw_graph.py."""
+"""Test manipulate_frames"""
 
 import unittest
 
-from pcapgraph.draw_graph import *
 from tests import setup_testenv, DEFAULT_CLI_ARGS
+from pcapgraph.manipulate_frames import *
 
 
 class TestManipulateFrames(unittest.TestCase):
@@ -28,26 +28,39 @@ class TestManipulateFrames(unittest.TestCase):
         setup_testenv()
         self.args = DEFAULT_CLI_ARGS
 
-    def test_draw_graph(self):
+    def test_get_pcap_dict(self):
         raise NotImplemented
 
-    def test_remove_or_open_files(self):
+    def test_parse_pcaps(self):
         raise NotImplemented
 
-    def test_get_graph_vars_from_files(self):
+    def test_get_flat_frame_dict(self):
         raise NotImplemented
 
-    def test_generate_graph(self):
+    def test_get_frame_list_by_pcap(self):
         raise NotImplemented
 
-    def test_set_horiz_bar_colors(self):
+    def test_get_pcap_frame_dict(self):
         raise NotImplemented
 
-    def test_set_xticks(self):
-        raise  NotImplemented
-
-    def test_export_graph(self):
+    def test_get_frame_from_json(self):
         raise NotImplemented
 
-    def test_make_text_not_war(self):
+    def test_get_pcap_as_json(self):
         raise NotImplemented
+
+    def test_strip_layers(self):
+        raise NotImplemented
+
+    def test_get_homogenized_packet(self):
+        raise NotImplemented
+
+    def test_anonymous_pcap_name(self):
+        raise NotImplemented
+
+    def test_decode_stdout(self):
+        raise NotImplemented
+
+    def test_get_packet_count(self):
+        raise NotImplemented
+

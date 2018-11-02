@@ -43,3 +43,9 @@ class TestSaveFile(unittest.TestCase):
 0060  36 37              \n"""
 
         self.assertEqual(convert_to_pcaptext(test_packet), result_packet)
+
+    def test_reorder_packets(self):
+        raise NotImplemented
+
+    def test_save_pcap(self):
+        raise NotImplemented

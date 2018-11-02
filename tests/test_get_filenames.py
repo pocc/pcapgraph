@@ -42,3 +42,9 @@ class TestGetFilenames(unittest.TestCase):
             'tests/files/test_dir/test_dir.pcap', 'tests/files/test.pcap'
         ]
         self.assertEqual(expected_results, gf.parse_cli_args(self.args))
+
+    def test_get_filenames_from_directories(self):
+        raise NotImplemented
+
+    def test_get_filenames(self):
+        raise NotImplemented

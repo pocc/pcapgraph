@@ -29,13 +29,14 @@ class TestPcapMath(unittest.TestCase):
     def setUp(self):
         """Make sure that tshark is in PATH."""
         setup_testenv()
-        # Add the wireshark folder to PATH for this shell.
-        get_tshark_status()
         self.options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
         self.set_obj = PcapMath([
             'examples/simul1.pcap', 'examples/simul2.pcap',
             'examples/simul3.pcap'
         ], self.options)
+
+    def test_parse_set_args(self):
+        raise NotImplemented
 
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
@@ -117,3 +118,9 @@ class TestPcapMath(unittest.TestCase):
         os.remove('bounded_intersect-simul1.pcap')
         os.remove('bounded_intersect-simul2.pcap')
         os.remove('bounded_intersect-simul3.pcap')
+
+    def test_print_10_most_common_frames(self):
+        raise NotImplemented
+
+    def test_get_bounded_pcaps(self):
+        raise NotImplemented
