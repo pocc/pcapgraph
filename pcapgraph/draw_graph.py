@@ -70,7 +70,7 @@ def draw_graph(pcap_packets, input_files, output_fmts):
                 # Print text version because it's possible.
                 print(make_text_not_war(graph_vars))
                 plt.show()
-    new_files = [set(pcap_filenames) - set(input_files)]
+    new_files = set(pcap_filenames) - set(input_files)
     remove_or_open_files(new_files, open_in_wireshark, delete_pcaps)
 
 
@@ -81,7 +81,7 @@ def remove_or_open_files(new_files, open_in_wireshark, delete_pcaps):
     would mean that wireshark would try to open deleted files.
 
     Args:
-        new_files (list): Set of new filenames to do something with
+        new_files (set): Set of new filenames to do something with
         open_in_wireshark (bool): Whether to open files in wireshark
         delete_pcaps (bool): Whether to delete generated pcaps
     """

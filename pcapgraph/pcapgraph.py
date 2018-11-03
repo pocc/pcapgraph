@@ -52,7 +52,7 @@ OPTIONS:
                             Output results as a file with format type.
       -w                    Open pcaps in Wireshark after creation.
                             (shortcut for --output pcap --output wireshark)
-      -x, --exclude-empty   eXclude empty pcap files from being saved.
+      -x, --exclude-empty   eXclude generated pcaps from being saved if empty.
       -2, --strip-l2        Remove layer2 bits and encode raw IP packets.
                             Use if pcaps track flows across layer 3 boundaries
                             or L2 frame formats differ between pcaps (e.g. An

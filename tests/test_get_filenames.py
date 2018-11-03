@@ -22,8 +22,10 @@ from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 class TestGetFilenames(unittest.TestCase):
     """Test get_filenames.py."""
-    setup_testenv()
-    args = DEFAULT_CLI_ARGS
+    def setUp(self):
+        """Set up vars."""
+        setup_testenv()
+        self.args = DEFAULT_CLI_ARGS
 
     def test_parse_cli_args(self):
         """Test parse_cli_args."""
@@ -44,7 +46,7 @@ class TestGetFilenames(unittest.TestCase):
         """Test get_filenames_from_directories"""
         directories = ['tests/files',
                        'tests/files/test_dir']
-        pcap_filenames = gf.get_filenames_from_directories(directories)
+        pcap_filenames = sorted(gf.get_filenames_from_directories(directories))
         expected_result = ['tests/files/in_order_packets.pcap',
                            'tests/files/out_of_order_packets.pcap',
                            'tests/files/test.pcap',

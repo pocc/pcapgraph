@@ -17,10 +17,11 @@
 import unittest
 import filecmp
 import os
+import io
+from contextlib import redirect_stdout
 
 from pcapgraph.pcap_math import PcapMath
-from pcapgraph import get_tshark_status
-from tests import setup_testenv
+from tests import setup_testenv, DEFAULT_CLI_ARGS, EXPECTED_UNION_STDOUT
 
 
 class TestPcapMath(unittest.TestCase):
@@ -31,16 +32,30 @@ class TestPcapMath(unittest.TestCase):
         setup_testenv()
         self.options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
         self.set_obj = PcapMath([
-            'examples/simul1.pcap', 'examples/simul2.pcap',
+            'examples/simul1.pcap',
+            'examples/simul2.pcap',
             'examples/simul3.pcap'
         ], self.options)
 
-    def test_parse_set_args(self):
-        raise NotImplemented
+    def test_exclude_empty(self):
+        """Verify --exclude-empty option. Relevant for pcap differences."""
+        args = DEFAULT_CLI_ARGS
+        filenames = ['examples/simul1.pcap', 'examples/simul1.pcap']
+        self.set_obj.filenames = filenames
+        args['--exclude-empty'] = True
+        args['--difference'] = True
+        excluded_filenames = self.set_obj.parse_set_args(args)
+        self.assertEqual(filenames, excluded_filenames)
 
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
-        self.set_obj.union_pcap()
+        f = io.StringIO()
+        with redirect_stdout(f):
+            self.set_obj.union_pcap()
+        generated_stdout = f.getvalue()
+
+        # Tests print_10_most_common_frames
+        self.assertEqual(EXPECTED_UNION_STDOUT, generated_stdout)
         self.assertTrue(
             filecmp.cmp('union.pcap', 'examples/set_ops/union.pcap'))
         os.remove('union.pcap')
@@ -100,12 +115,16 @@ class TestPcapMath(unittest.TestCase):
         self.assertEqual(min_frame, actual_min_frame)
         self.assertEqual(max_frame, actual_max_frame)
 
-    def test_bounded_interface_pcap(self):
-        """Test the bounded_interface_pcap using pcaps in examples."""
+    def test_bounded_intersect_pcap(self):
+        """Test the bounded_intersect_pcap using pcaps in examples.
+
+        This should also test get_bounded_pcaps at the same time.
+
+        All 3 simul time-bound intersections should be the same and also
+        equal to the intersect.pcap. This is due to the traffic being the
+        same and there being no infixed traffic from other sources.
+        """
         self.set_obj.bounded_intersect_pcap()
-        # All 3 simul time-bound intersections should be the same and also
-        # equal to the intersect.pcap. This is due to the traffic being the
-        # same and there being no infixed traffic from other sources.
         self.assertTrue(
             filecmp.cmp('bounded_intersect-simul1.pcap',
                         'examples/set_ops/intersect.pcap'))
@@ -118,9 +137,3 @@ class TestPcapMath(unittest.TestCase):
         os.remove('bounded_intersect-simul1.pcap')
         os.remove('bounded_intersect-simul2.pcap')
         os.remove('bounded_intersect-simul3.pcap')
-
-    def test_print_10_most_common_frames(self):
-        raise NotImplemented
-
-    def test_get_bounded_pcaps(self):
-        raise NotImplemented

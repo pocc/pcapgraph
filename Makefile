@@ -19,7 +19,7 @@ PYTHON_PIP_VER:=$(lastword $(shell pip -V))
 .PHONY: clean install test lint testpypi testinstall pypi onefile onedir html pyinstaller
 
 clean:
-	$(RM) -r dist/ build/
+	$(RM) -r dist/ build/ *.png *.pcap
 
 # Triggers `pip setup.py sdist` prior to install.
 install: clean
