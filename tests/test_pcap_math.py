@@ -31,24 +31,34 @@ class TestPcapMath(unittest.TestCase):
         """Make sure that tshark is in PATH."""
         setup_testenv()
         self.options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
-        self.set_obj = PcapMath([
+        filenames = [
             'examples/simul1.pcap',
             'examples/simul2.pcap',
             'examples/simul3.pcap'
-        ], self.options)
+            ]
+        self.set_obj = PcapMath(filenames, self.options)
 
     def test_exclude_empty(self):
-        """Verify --exclude-empty option. Relevant for pcap differences."""
+        """Verify --exclude-empty option. Relevant for pcap differences.
+
+        A difference of a file and itself should be an empty packet capture.
+        If we do not save that packet capture and remove it from the filelist,
+        it should not appear in the return filelist.
+        """
         args = DEFAULT_CLI_ARGS
-        filenames = ['examples/simul1.pcap', 'examples/simul1.pcap']
-        self.set_obj.filenames = filenames
         args['--exclude-empty'] = True
         args['--difference'] = True
-        excluded_filenames = self.set_obj.parse_set_args(args)
+        args['--union'] = False  # Required to avoid unexpected pytest behavior
+        # Have to specify filename in 2 ways because filename is key in dict.
+        filenames = ['examples/simul1.pcap',
+                     '../pcapgraph/examples/simul1.pcap']
+        exclude_set_obj = PcapMath(filenames, self.options)
+        excluded_filenames = exclude_set_obj.parse_set_args(args)
         self.assertEqual(filenames, excluded_filenames)
 
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
+        # These 4 lines will save generated_stdout from union()
         f = io.StringIO()
         with redirect_stdout(f):
             self.set_obj.union_pcap()

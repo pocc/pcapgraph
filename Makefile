@@ -42,7 +42,7 @@ onedir: clean pyinstaller
 	--exclude-module PyQt4 --exclude-module PySide --clean -y
 
 # Run all tests in test directory
-test:
+test: clean
 	pip install pytest
 	pytest tests
 

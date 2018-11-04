@@ -47,7 +47,8 @@ class TestGetFilenames(unittest.TestCase):
         directories = ['tests/files',
                        'tests/files/test_dir']
         pcap_filenames = sorted(gf.get_filenames_from_directories(directories))
-        expected_result = ['tests/files/in_order_packets.pcap',
+        expected_result = ['tests/files/empty.pcap',
+                           'tests/files/in_order_packets.pcap',
                            'tests/files/out_of_order_packets.pcap',
                            'tests/files/test.pcap',
                            'tests/files/test.pcapng',
@@ -66,7 +67,7 @@ class TestGetFilenames(unittest.TestCase):
         for filename in filenames:
             try:
                 packet_captures += gf.get_filenames([filename])
-            # For one text file
+            # For one text file that is expected to error out.
             except SystemExit:
                 pass
 

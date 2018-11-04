@@ -52,9 +52,9 @@ class TestSaveFile(unittest.TestCase):
 
     def test_reorder_packets(self):
         """Reorder packets in tempfile inplace and compare with expected."""
-        out_of_order = '../files/out_of_order_packets.pcap'
-        temp_out_of_order = '../files/out_of_order_temp.pcap'
-        in_order = '../files/in_order_packets.pcap'
+        out_of_order = 'tests/files/out_of_order_packets.pcap'
+        temp_out_of_order = 'tests/files/out_of_order_temp.pcap'
+        in_order = 'tests/files/in_order_packets.pcap'
 
         shutil.copyfile(out_of_order, temp_out_of_order)
         self.assertTrue(filecmp.cmp(temp_out_of_order, out_of_order))
