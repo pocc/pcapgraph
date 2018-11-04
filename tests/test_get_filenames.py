@@ -22,6 +22,7 @@ from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 class TestGetFilenames(unittest.TestCase):
     """Test get_filenames.py."""
+
     def setUp(self):
         """Set up vars."""
         setup_testenv()
@@ -44,8 +45,7 @@ class TestGetFilenames(unittest.TestCase):
 
     def test_get_filenames_from_directories(self):
         """Test get_filenames_from_directories"""
-        directories = ['tests/files',
-                       'tests/files/test_dir']
+        directories = ['tests/files', 'tests/files/test_dir']
         pcap_filenames = sorted(gf.get_filenames_from_directories(directories))
         expected_result = ['tests/files/empty.pcap',
                            'tests/files/in_order_packets.pcap',
@@ -71,6 +71,5 @@ class TestGetFilenames(unittest.TestCase):
             except SystemExit:
                 pass
 
-        expected_result = ['tests/files/test.pcap',
-                           'tests/files/test.pcapng']
+        expected_result = ['tests/files/test.pcap', 'tests/files/test.pcapng']
         self.assertEqual(expected_result, packet_captures)

@@ -16,10 +16,10 @@
 
 PYTHON_PIP_VER:=$(lastword $(shell pip -V))
 .DEFAULT: install
-.PHONY: clean install test lint testpypi testinstall pypi onefile onedir html pyinstaller
+.PHONY: clean install test tests lint testpypi testinstall pypi onefile onedir html pyinstaller
 
 clean:
-	$(RM) -r dist/ build/ *.png *.pcap
+	$(RM) -r dist/ build/ docs/_build *.png *.pcap *.pcapng
 
 # Triggers `pip setup.py sdist` prior to install.
 install: clean
@@ -42,6 +42,7 @@ onedir: clean pyinstaller
 	--exclude-module PyQt4 --exclude-module PySide --clean -y
 
 # Run all tests in test directory
+tests: test
 test: clean
 	pip install pytest
 	pytest tests

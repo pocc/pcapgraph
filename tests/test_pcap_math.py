@@ -36,7 +36,7 @@ class TestPcapMath(unittest.TestCase):
             'examples/simul1.pcap',
             'examples/simul2.pcap',
             'examples/simul3.pcap'
-            ]
+        ]
         self.set_obj = PcapMath(filenames, self.options)
 
     def test_exclude_empty(self):
@@ -51,8 +51,9 @@ class TestPcapMath(unittest.TestCase):
         args['--difference'] = True
         args['--union'] = False  # Required to avoid unexpected pytest behavior
         # Have to specify filename in 2 ways because filename is key in dict.
-        filenames = ['examples/simul1.pcap',
-                     '../pcapgraph/examples/simul1.pcap']
+        filenames = [
+            'examples/simul1.pcap', '../pcapgraph/examples/simul1.pcap'
+        ]
         exclude_set_obj = PcapMath(filenames, self.options)
         excluded_filenames = exclude_set_obj.parse_set_args(args)
         self.assertEqual(filenames, excluded_filenames)
