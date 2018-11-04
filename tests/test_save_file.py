@@ -64,6 +64,7 @@ class TestSaveFile(unittest.TestCase):
         os.remove(temp_out_of_order)
 
     def test_save_pcap(self):
+        """test save_pacp."""
         pcap_dict = {self.test_packet: '1537945792.667334763'}
         save_pcap(pcap_dict=pcap_dict, name='test.pcap', options=self.options)
         self.assertTrue(filecmp.cmp('test.pcap', 'tests/files/test.pcap'))

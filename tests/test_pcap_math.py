@@ -18,6 +18,7 @@ import unittest
 import filecmp
 import os
 import io
+import re
 from contextlib import redirect_stdout
 
 from pcapgraph.pcap_math import PcapMath
@@ -59,10 +60,12 @@ class TestPcapMath(unittest.TestCase):
     def test_union_pcap(self):
         """Test union_pcap using the pcaps in examples."""
         # These 4 lines will save generated_stdout from union()
-        f = io.StringIO()
-        with redirect_stdout(f):
+        f_stream = io.StringIO()
+        with redirect_stdout(f_stream):
             self.set_obj.union_pcap()
-        generated_stdout = f.getvalue()
+        generated_stdout = f_stream.getvalue()
+        # Remove all whitespace at end of lines to match expected
+        generated_stdout = re.sub(r' +$', '', generated_stdout, flags=re.M)
 
         # Tests print_10_most_common_frames
         self.assertEqual(EXPECTED_UNION_STDOUT, generated_stdout)

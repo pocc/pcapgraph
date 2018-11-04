@@ -234,8 +234,8 @@ def set_xticks(first, last):
     """Generate the x ticks and return a list of them.
 
     Args:
-        first: Earliest timestamp of pcaps.
-        last: Latest timestamp of pcaps.
+        first (float): Earliest timestamp of pcaps.
+        last (float): Latest timestamp of pcaps.
     Returns:
         (tuple):
             x_ticks (list(float)): List of unix epoch time values as xticks.

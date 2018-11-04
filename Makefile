@@ -48,7 +48,7 @@ test: clean
 
 # Lint using flake8, pylint, yapf
 lint:
-	pip install flake8 pylint yapf
+	pip install --user flake8 pylint yapf
 	flake8 pcapgraph tests
 	pylint pcapgraph tests
 	yapf -pri pcapgraph

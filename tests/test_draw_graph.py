@@ -15,9 +15,8 @@
 """Test draw_graph.py."""
 
 import unittest
-import subprocess as sp
 
-from pcapgraph.draw_graph import *
+from pcapgraph.draw_graph import set_xticks
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 
@@ -65,9 +64,7 @@ class TestManipulateFrames(unittest.TestCase):
                              delete_pcaps=True)
         for file in filenames:
             assert not os.path.isfile(file)
-    """
 
-    """
     def test_get_graph_vars_from_files(self):
         raise NotImplemented
 
@@ -77,12 +74,19 @@ class TestManipulateFrames(unittest.TestCase):
     def test_set_horiz_bar_colors(self):
         raise NotImplemented
 
-    def test_set_xticks(self):
-        raise NotImplemented
-
+    # Should go after test_set_xticks
     def test_export_graph(self):
         raise NotImplemented
 
     def test_make_text_not_war(self):
         raise NotImplemented
     """
+
+    def test_set_xticks(self):
+        """test set_xticks"""
+        first = 1537945792.667334000
+        last = 1537945731.592421000
+        expected_result = (['Sep-26   00:09:52', 'Sep-26   00:09:45', 'Sep-26   00:09:39', 'Sep-26   00:09:32', 'Sep-26   00:09:25', 'Sep-26   00:09:18', 'Sep-26   00:09:11', 'Sep-26   00:09:05', 'Sep-26   00:08:58', 'Sep-26   00:08:51'], 'Time (2018)')  # noqa: E501 pylint: disable=C0301
+        actual_result = set_xticks(first, last)
+
+        self.assertEqual(expected_result, actual_result)
