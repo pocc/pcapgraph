@@ -19,26 +19,6 @@ import random
 import json
 
 
-def get_pcap_dict(filenames):
-    """Return a dict with names of pcap files and their start/stop times.
-
-    This function needs to get a dict with keys of filenames and values of
-    the list of frames contained in each.
-
-    Args:
-        filenames (list): A list of filepaths.
-    Returns:
-        (list): A list of pcap dicts containing packet JSON data.
-    Raises:
-        IOError: Raise if there are no valid packet captures provided.
-    """
-    pcap_list = parse_pcaps(list(filenames))
-
-    if not pcap_list:
-        raise FileNotFoundError("ERROR: All packet captures are empty!")
-    return pcap_list
-
-
 def parse_pcaps(pcaps):
     """Given pcaps, return all frames and their timestamps.
 
