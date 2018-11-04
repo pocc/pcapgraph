@@ -17,8 +17,10 @@
 import unittest
 import subprocess as sp
 import os
+import pickle
 
-from pcapgraph.draw_graph import remove_or_open_files, set_xticks
+from pcapgraph.draw_graph import remove_or_open_files, set_xticks, \
+    make_text_not_war, get_graph_vars_from_file, set_horiz_bar_colors
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 
@@ -38,6 +40,8 @@ class TestManipulateFrames(unittest.TestCase):
         * output pcap: Verify that pcap is saved
         * output pcapng: Verify that pcapng is saved
         * output png: Verify that there are no pcaps
+
+        Depending on integration and pcap_math tests to test this function.
         """
         pass
 
@@ -57,29 +61,50 @@ class TestManipulateFrames(unittest.TestCase):
             if filename.endswith('pcapng'):
                 encode_pcap += ['-n']
             text = sp.Popen(send_empty_text, stdout=sp.PIPE, stderr=sp.PIPE)
-            encode = sp.Popen(encode_pcap, stdin=text.stdout, stdout=sp.PIPE,
-                              stderr=sp.PIPE)
+            encode = sp.Popen(
+                encode_pcap, stdin=text.stdout, stdout=sp.PIPE, stderr=sp.PIPE)
             encode.communicate()
             text.kill()
             encode.kill()
 
-        remove_or_open_files(new_files=filenames,
-                             open_in_wireshark=False,
-                             delete_pcaps=True)
+        remove_or_open_files(
+            new_files=filenames, open_in_wireshark=False, delete_pcaps=True)
         for file in filenames:
             assert not os.path.isfile(file)
 
     def test_get_graph_vars_from_files(self):
         """Testing get_graphs_vars_from_files."""
-        pass
+        input_filename = 'tests/files/in_order_packets.pcap'
+        expected_result = {'pcap_start': 1537945792.65536,
+                           'pcap_end': 1537945792.720895}
+        actual_result = get_graph_vars_from_file(input_filename)
+        self.assertEqual(expected_result, actual_result)
 
     def test_generate_graph(self):
-        """Testing generate_graph."""
+        """Do not test generate_graph as it needs a matplotlib.pyplot object.
+
+        Any test MUST test plt methods, and it is unclear where the graph
+        variables are stored in order to test it.
+        """
         pass
 
     def test_set_horiz_bar_colors(self):
-        """Testing set_horiz_bar_colors."""
-        pass
+        """Testing set_horiz_bar_colors.
+
+        Loading as pickle because a barlist is a complex matplotlib object.
+        """
+        barlist = pickle.load(open('tests/files/barlist.pickle', 'rb'))
+        set_horiz_bar_colors(barlist)
+        colors = ['#2d89ef', '#603cba', '#2b5797']
+        self.assertEqual(
+            colors[0],
+            barlist.patches[0]._original_facecolor)  # pylint: disable=W0212
+        self.assertEqual(
+            colors[1],
+            barlist.patches[1]._original_facecolor)  # pylint: disable=W0212
+        self.assertNotEqual(
+            colors[1],
+            barlist.patches[2]._original_facecolor)  # pylint: disable=W0212
 
     def test_set_xticks(self):
         """test set_xticks"""
@@ -97,9 +122,30 @@ class TestManipulateFrames(unittest.TestCase):
         self.assertEqual(expected_result, actual_result)
 
     def test_export_graph(self):
-        """Testing export_graph."""
+        """Do not test export_graph as it needs a matplotlib.pyplot object.
+
+        Any test MUST test plt.saveconfig, and it is unclear where the graph
+        variables are stored in order for using this to trigger a save.
+        """
         pass
 
     def test_make_text_not_war(self):
         """Testing make_text_not_war."""
-        pass
+        pcap_times = {
+            'in_order_packets': {
+                'pcap_start': 1537945792.65536,
+                'pcap_end': 1537945792.720895
+            },
+            'out_of_order_packets': {
+                'pcap_start': 1537945792.720895,
+                'pcap_end': 1537945792.65536
+            },
+            'test': {
+                'pcap_start': 1537945792.667334,
+                'pcap_end': 1537945792.667334
+            }
+        }
+
+        expected_result = "\nPCAP NAME           YEAR  DATE 0  DATE $     TIME 0    TIME $       UTC 0              UTC $\nin_order_packets    2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.65536   1537945792.720895 \nout_of_order_pack   2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.720895  1537945792.65536  \ntest                2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.667334  1537945792.667334 "  # noqa: E501 pylint: disable=C0301
+        actual_result = make_text_not_war(pcap_times)
+        self.assertEqual(expected_result, actual_result)
