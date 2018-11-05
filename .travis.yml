@@ -20,20 +20,20 @@ matrix:
     osx_image: xcode9.4
 
 before_install:
-  pwd
-  ls
-  pip install -r requirements.txt
-  pip install pyinstaller
+  - pwd
+  - ls
+  - pip install -r requirements.txt
+  - pip install pyinstaller
 
 install:
-  pyinstaller pcapgraph.spec
+  - pyinstaller pcapgraph.spec
 
 # Troubleshooting github release + travis ci integration: https://docs.travis-ci.com/user/common-build-problems/#I-pushed-a-commit-and-can%E2%80%99t-find-its-corresponding-build
 
 script:
   # Run tests and verify that code is not terrible.
-  make lint
-  make test
+  - make lint
+  - make test
 
 deploy:
   provider: releases
