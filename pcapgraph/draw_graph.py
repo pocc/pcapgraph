@@ -24,7 +24,7 @@ import numpy as np
 import pcapgraph.manipulate_frames as mf
 
 
-def draw_graph(pcap_packets, input_files, output_fmts):
+def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty):
     """Draw a graph using matplotlib and numpy.
 
     Args:
@@ -34,6 +34,7 @@ def draw_graph(pcap_packets, input_files, output_fmts):
             on the capabilites of the system: [png, pdf, ps, eps, and svg]. See
             https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
             for more information.
+        exclude_empty (bool): Whether to exclude empty pcaps from graph.
     """
     # So that if no save format is specified, print to screen and stdout
     if not output_fmts:
@@ -57,13 +58,17 @@ def draw_graph(pcap_packets, input_files, output_fmts):
             print("Text file successfully created!")
         else:
             graph_vars = {}
+            empty_files = []
             for filename in pcap_filenames:
                 graph_startstop_dict = get_graph_vars_from_file(filename)
+                filename = os.path.basename(os.path.splitext(filename)[0])
                 if graph_startstop_dict:  # If it's a valid pcap
-                    filename = os.path.basename(os.path.splitext(filename)[0])
                     graph_vars[filename] = graph_startstop_dict
+                elif not exclude_empty:
+                    filename += ' (no packets)'
+                    empty_files.append(filename)
 
-            generate_graph(graph_vars)
+            generate_graph(graph_vars, empty_files)
             if save_format != 'show':
                 export_graph(list(graph_vars), save_format)
             else:
@@ -147,24 +152,20 @@ def get_graph_vars_from_file(filename):
     return {}
 
 
-def generate_graph(pcap_vars):
+def generate_graph(pcap_vars, empty_files):
     """Generate the matplotlib graph.
 
     Args:
-        pcap_vars (dict): Contains all data required for the graph
+        pcap_vars (dict): Contains all data required for the graph.
             {<pcap>: {'pcap_start': <timestamp>, 'pcap_end': <timestamp>}, ...}
+        empty_files (list): List of filenames of empty files.
     """
     # first and last are the first and last timestamp of all pcaps.
-    pcap_names = list(pcap_vars)
+    pcap_names = list(pcap_vars) + empty_files
     start_times = np.array(
         [pcap_vars[pcap]['pcap_start'] for pcap in pcap_vars])
     end_times = np.array([pcap_vars[pcap]['pcap_end'] for pcap in pcap_vars])
-    first_time = min(start_times)
-    last_time = max(end_times)
-    # Force padding on left and right sides
-    graph_one_percent_width = (last_time - first_time) / 100
-    first = first_time - graph_one_percent_width
-    last = last_time + graph_one_percent_width
+    x_min, x_max = get_x_minmax(start_times, end_times)
 
     fig, axes = plt.subplots()
     barlist = plt.barh(
@@ -172,10 +173,10 @@ def generate_graph(pcap_vars):
 
     set_horiz_bar_colors(barlist)
     # xticks will look like 'Dec-31   23:59:59'
-    x_ticks, xlabel = set_xticks(first, last)
+    x_ticks, xlabel = set_xticks(x_min, x_max)
     # Print all x labels that aren't at the lower corners
     plt.xticks(rotation=45)
-    axes.set_xticks(np.round(np.linspace(first, last, 10)))
+    axes.set_xticks(np.round(np.linspace(x_min, x_max, 10)))
     axes.tick_params(axis='y', labelsize=12)  # Set ytick fontsize to 10
     axes.set_xticklabels(x_ticks)
     for tick in axes.xaxis.get_majorticklabels():
@@ -189,7 +190,7 @@ def generate_graph(pcap_vars):
     # adjusted_height = (len(pcap_names) - 18) * 2
     # fig.set_figheight(5.5 + adjusted_height)
     # If there's more than 18 packet captures, don't show the names.
-    # pcap_names = len(pcap_names) * ['']
+
     # Pcap names as y ticks. Position them halfway up the bar.
     plt.yticks(np.arange(len(pcap_names), step=1), pcap_names)
     axes.set_ylim(-0.5, len(pcap_names) - 0.5)
@@ -199,6 +200,27 @@ def generate_graph(pcap_vars):
     fig.suptitle('Pcap Time Analysis', fontsize=20)
     # Use 0.95 for top because tight_layout does not consider suptitle
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+
+
+def get_x_minmax(start_times, end_times):
+    """Determine the horizontal (x) min and max values.
+
+    This function adds 1% to either side for padding.
+
+    Args:
+        start_times (np.array): First packet unix timestamps of all pcaps.
+        end_times (np.array): Last packet unix timestamps of all pcaps.
+    Returns:
+        (tuple): min_x, max_x to be used for graph
+    """
+    first_time = min(start_times)
+    last_time = max(end_times)
+    # Force padding on left and right sides
+    graph_one_percent_width = (last_time - first_time) / 100
+    first = first_time - graph_one_percent_width
+    last = last_time + graph_one_percent_width
+
+    return first, last
 
 
 def set_horiz_bar_colors(barlist):

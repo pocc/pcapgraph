@@ -20,7 +20,8 @@ import os
 import pickle
 
 from pcapgraph.draw_graph import remove_or_open_files, set_xticks, \
-    make_text_not_war, get_graph_vars_from_file, set_horiz_bar_colors
+    make_text_not_war, get_graph_vars_from_file, set_horiz_bar_colors, \
+    get_x_minmax
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 
@@ -87,6 +88,19 @@ class TestManipulateFrames(unittest.TestCase):
         variables are stored in order to test it.
         """
         pass
+
+    def test_get_x_minmax(self):
+        """Test get_x_minmax: Given start/stop lists, choose x min, x max.
+
+        For a graph that would be between 1 and 101, make it 0 and 102 to
+        provide padding.
+        """
+        start_times = [1.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+        end_times = [97.0, 98.0, 99.0, 100.0, 101.0, 101.0]
+
+        x_min, x_max = get_x_minmax(start_times, end_times)
+        self.assertEqual(x_min, 0.0)
+        self.assertEqual(x_max, 102.0)
 
     def test_set_horiz_bar_colors(self):
         """Testing set_horiz_bar_colors.

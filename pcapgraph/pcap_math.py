@@ -67,8 +67,8 @@ class PcapMath:
         self.exclude_empty = args['--exclude-empty']
         if args['--difference']:
             generated_file = self.difference_pcap()
-            # As long as the difference exists and .
-            if generated_file and not args['--exclude-empty']:
+            # As long as the difference exists.
+            if generated_file:
                 new_files.append(generated_file)
         if args['--intersection']:
             generated_file = self.intersect_pcap()

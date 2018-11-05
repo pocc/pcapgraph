@@ -41,6 +41,7 @@ class TestDrawGraph(unittest.TestCase):
 
         Equivalent to `pcapgraph -disu examples/simul1.pcap
         examples/simul2.pcap examples/simul3.pcap --output png"""
+        self.args['--exclude-empty'] = True
         self.args['--difference'] = True
         self.args['--intersect'] = True
         self.args['--symmetric-difference'] = True
@@ -68,4 +69,4 @@ class TestDrawGraph(unittest.TestCase):
         pcap_math = pm.PcapMath(filenames, options)
         all_filenames = pcap_math.parse_set_args(args)
         pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)
-        dg.draw_graph(pcaps_frame_dict, filenames, args['--output'])
+        dg.draw_graph(pcaps_frame_dict, filenames, args['--output'], True)
