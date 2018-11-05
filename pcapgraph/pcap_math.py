@@ -296,16 +296,21 @@ class PcapMath:
             # Note that this runs after bounded_intersect if it would be run
             bounded_filelist = self.bounded_intersect_pcap()
             has_bounded_intersect_flag = True
-        intersect_file = [self.intersect_pcap()]
         backup_filenames = self.filenames
-        self.filenames = intersect_file
+        intersect_file = self.intersect_pcap()
         for index, bi_file in enumerate(bounded_filelist):
-            difference_file = self.difference_pcap(pivot_index=index)
+            self.filenames = [bounded_filelist[index], intersect_file]
+            self.pcap_json_dict = strip_layers(self.filenames, self.options)
+            pcap_json_list = [*self.pcap_json_dict.values()]
+            self.frame_timestamp_dict = get_flat_frame_dict(pcap_json_list)
+            difference_file = self.difference_pcap()
             if difference_file:
                 generated_filelist.append(difference_file)
             if has_bounded_intersect_flag:
                 # Do not keep bounded-intersect files if they are not necessary
                 os.remove(bi_file)
+        # Intersect is only used for comparison, so delete it when done.
+        os.remove(intersect_file)
         self.filenames = backup_filenames
         return generated_filelist
 
