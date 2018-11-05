@@ -25,8 +25,8 @@ addons:
       - wireshark
 
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update;          ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install wireshark; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update;
+    then brew install wireshark; fi
   - pip install -r requirements.txt
   - pip install pyinstaller twine flake8 pylint yapf pytest
   # Run tests and verify that code is not terrible.
