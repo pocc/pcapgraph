@@ -21,7 +21,7 @@ matrix:
 
 before_install:
   - pip install -r requirements.txt
-  - pip install --user pyinstaller twine flake8 pylint yapf pytest
+  - pip install pyinstaller twine flake8 pylint yapf pytest
 
 install:
   - pyinstaller gateway.py -n pcapgraph --onefile --exclude-module PyQt5 \
