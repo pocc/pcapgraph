@@ -20,13 +20,12 @@ matrix:
     osx_image: xcode9.4
 
 before_install:
-  - pwd
-  - ls
   - pip install -r requirements.txt
-  - pip install pyinstaller
+  - pip install --user pyinstaller twine flake8 pylint yapf pytest
 
 install:
-  - pyinstaller pcapgraph.spec
+  - pyinstaller gateway.py -n pcapgraph --onefile --exclude-module PyQt5 \
+    --exclude-module PyQt4 --exclude-module PySide --clean -y
 
 # Troubleshooting github release + travis ci integration: https://docs.travis-ci.com/user/common-build-problems/#I-pushed-a-commit-and-can%E2%80%99t-find-its-corresponding-build
 
