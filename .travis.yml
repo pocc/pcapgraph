@@ -1,0 +1,49 @@
+matrix:
+  include:
+  # Not specifying precise because it's EOL
+
+  - os: linux
+    sudo: false
+    dist: trusty
+    language: python
+    python: '3.5'
+
+  - os: linux
+    sudo: false
+    dist: xenial
+    language: python
+    python: '3.5'
+
+# OSX 10.13
+  - os: osx
+    sudo: false
+    osx_image: xcode9.4
+
+before_install:
+  pip install pyinstaller
+
+install:
+  pyinstaller pcapgraph.spec
+
+# Troubleshooting github release + travis ci integration: https://docs.travis-ci.com/user/common-build-problems/#I-pushed-a-commit-and-can%E2%80%99t-find-its-corresponding-build
+
+script:
+  # Run tests and verify that code is not terrible.
+  make lint
+  make test
+
+deploy:
+  provider: releases
+  prerelease: false
+  file_glob: true
+  file:
+    # ${TRAVIS_TAG:1} strips the starting v from the tag
+    pcapgraph
+  on:
+    repo: pocc/pcapgraph
+    # We only want the builds from xenial
+    dist: xenial
+    os: osx
+
+  # Without this, cleaning will remove what you were planning on deploying
+  skip_cleanup: true

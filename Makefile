@@ -66,6 +66,7 @@ testinstall:
 # Use this when you are sure that the test upload (above) looks good.
 pypi: clean install test lint
 	@echo "If this fails, increase __version__"
+	python setup.py sdist
 	twine upload dist/*
 
 # Trigger Sphinx Makefile in docs/ and open them in a web browser
