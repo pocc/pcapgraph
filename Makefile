@@ -14,27 +14,59 @@
 
 # Creating this so I don't need to memorize PyPI commands.
 
-
-
-.DEFAULT: clean
-.PHONY: clean install testpypi installtest pypi
+PYTHON_PIP_VER:=$(lastword $(shell pip -V))
+.DEFAULT: install
+.PHONY: clean install test tests lint testpypi testinstall pypi onefile onedir html pyinstaller
 
 clean:
-	$(RM) -r dist/ build/
+	$(RM) -r dist/ build/ docs/_build *.png *.pcap *.pcapng
 
-# Install locally to dist/
-install:
-	python3.6 setup.py sdist
+# Triggers `pip setup.py sdist` prior to install.
+install: clean
+	@echo "INFO: Your pip's python version ($(PYTHON_PIP_VER), 3.5+ required"
+	pip install -r requirements.txt
+	pip install --user .
+
+# Install missing dependencies
+pipdep:
+	pip install --user sphinx pyinstaller twine flake8 pylint yapf pytest
+
+# Use PyInstaller to generate a single file containing all libraries
+# matplotlib is 15MB, numpy is 13MB for executable size
+onefile: clean pyinstaller
+	pyinstaller gateway.py -n pcapgraph --onefile --exclude-module PyQt5 \
+	--exclude-module PyQt4 --exclude-module PySide --clean -y
+
+# Use PyInstaller to generate a dir ideal for a tarfile
+onedir: clean pyinstaller
+	pyinstaller gateway.py -n pcapgraph --onedir --exclude-module PyQt5 \
+	--exclude-module PyQt4 --exclude-module PySide --clean -y
+
+# Run all tests in test directory
+tests: test
+test: clean
+	pytest tests
+
+# Lint using flake8, pylint, yapf
+lint:
+	flake8 pcapgraph tests
+	pylint pcapgraph tests
+	yapf -pri pcapgraph
 
 # Use this first before uploading to pypi to verify that it uploaded correctly.
-testpypi: clean install
+testpypi: clean install test lint
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 # After testpypi, verify that it installs and runs correctly
-installtest:
-	python3.6 -m pip install -U --user --index-url https://test.pypi.org/simple/ pcapgraph
+testinstall:
+	python -m pip install -U --user --index-url \
+	https://test.pypi.org/simple/ pcapgraph
 
 # Use this when you are sure that the test upload (above) looks good.
-pypi: clean install
+pypi: clean install test lint
 	@echo "If this fails, increase __version__"
 	twine upload dist/*
+
+# Trigger Sphinx Makefile in docs/ and open them in a web browser
+open:
+	cd docs && make open

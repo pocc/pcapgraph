@@ -14,7 +14,7 @@
 # limitations under the License.
 """A journey of a thousand miles begins with a hop through your gateway.
 
-This file exists to
+Provides an entry point for pcapgraph.
 """
 from pcapgraph.pcapgraph import run
 

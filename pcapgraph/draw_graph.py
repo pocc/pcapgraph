@@ -16,36 +16,87 @@
 
 import datetime
 import os
+import subprocess as sp
 
 import matplotlib.pyplot as plt
 import numpy as np
 
+import pcapgraph.manipulate_frames as mf
 
-def draw_graph(pcap_times, save_fmt):
+
+def draw_graph(pcap_packets, input_files, output_fmts):
     """Draw a graph using matplotlib and numpy.
 
     Args:
-        pcap_times (dict):
-        save_fmt (str): The save file type. Supported formats are dependent
+        pcap_packets (dict): All packets, where key is pcap filename/operation.
+        input_files (list): List of input files that shouldn't be deleted.
+        output_fmts (list): The save file type. Supported formats are dependent
             on the capabilites of the system: [png, pdf, ps, eps, and svg]. See
             https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
             for more information.
     """
-    if save_fmt == 'txt':
-        output_text = make_text_not_war(pcap_times)
-        print(output_text)
-        with open('pcap_graph.txt', 'w') as file:
-            file.write(output_text)
-            file.close()
-        print("Text file successfully created!")
-    else:
-        start_times, end_times, pcap_names = setup_graph_vars(pcap_times)
+    # So that if no save format is specified, print to screen and stdout
+    if not output_fmts:
+        output_fmts = ['show']
+    pcap_filenames = list(pcap_packets)
+    delete_pcaps = True
+    open_in_wireshark = False
+    if 'pcap' in output_fmts:
+        output_fmts.remove('pcap')
+        delete_pcaps = False
+    if 'pcapng' in output_fmts:
+        output_fmts.remove('pcapng')
+        delete_pcaps = False
+    for save_format in output_fmts:
+        if save_format == 'txt':
+            output_text = make_text_not_war(pcap_packets)
+            print(output_text)
+            with open('pcap_graph.txt', 'w') as file:
+                file.write(output_text)
+                file.close()
+            print("Text file successfully created!")
+        else:
+            graph_vars = {}
+            for filename in pcap_filenames:
+                graph_startstop_dict = get_graph_vars_from_file(filename)
+                if graph_startstop_dict:  # If it's a valid pcap
+                    filename = os.path.basename(os.path.splitext(filename)[0])
+                    graph_vars[filename] = graph_startstop_dict
 
-        generate_graph(pcap_names, start_times, end_times)
-        export_graph(pcap_times, pcap_names, save_fmt)
+            generate_graph(graph_vars)
+            if save_format != 'show':
+                export_graph(list(graph_vars), save_format)
+            else:
+                # Print text version because it's possible.
+                print(make_text_not_war(graph_vars))
+                plt.show()
+    new_files = set(pcap_filenames) - set(input_files)
+    remove_or_open_files(new_files, open_in_wireshark, delete_pcaps)
 
 
-def setup_graph_vars(pcap_times):
+def remove_or_open_files(new_files, open_in_wireshark, delete_pcaps):
+    """Remove or open files.
+
+    delete_pcaps and open_in_wireshark should not both be true, because that
+    would mean that wireshark would try to open deleted files.
+
+    Args:
+        new_files (set): Set of new filenames to do something with
+        open_in_wireshark (bool): Whether to open files in wireshark
+        delete_pcaps (bool): Whether to delete generated pcaps
+    """
+    # Open all created files in wireshark (flag -w)
+    if open_in_wireshark:
+        for file in new_files:
+            sp.Popen(['wireshark', file])
+
+    if delete_pcaps:
+        # Delete temp files if not required.
+        for file in new_files:
+            os.remove(file)
+
+
+def get_graph_vars_from_file(filename):
     """Setup graph variables.
 
     This function exists to decrease the complexity of generate graph.
@@ -54,42 +105,60 @@ def setup_graph_vars(pcap_times):
     same pcap as end_times_array[5] and pcap_names[5].
 
     Args:
-        pcap_times (dict): Packet capture names and start/stop timestamps.
+        filename (str): Name of file
     Returns:
-        start_times_array (list): List of all end times of pcaps.
-        end_times_array (list): List of all start times of pcaps.
-        pcap_names (list): List of pcap names.
+        (dict): File start/stop times if file has 1+ valid packets.
     """
-    start_times = []
-    end_times = []
-    pcap_names = []
-    # Sorted by first timestamp so that graph looks like a staircase.
-    sorted_pcap_names = sorted(
-        pcap_times, key=lambda x: pcap_times[x]['pcap_starttime'])
-    for pcap in sorted_pcap_names:
-        start_times.append(pcap_times[pcap]['pcap_starttime'])
-        end_times.append(pcap_times[pcap]['pcap_endtime'])
-        similarity = ''
-        similarity_percent = pcap_times[pcap]['pivot_similarity']
-        if similarity_percent:
-            similarity = ' (' + str(similarity_percent) + '%)'
-        pcap_names.append(pcap + similarity)  # Add percentage if it exists
+    packet_count = mf.get_packet_count(filename)
 
-    start_times_array = np.array(start_times)
-    end_times_array = np.array(end_times)
+    if packet_count:
+        start_time_cmds = [
+            'tshark', '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
+            'fields', '-e', 'frame.time_epoch'
+        ]
+        end_time_cmds = [
+            'tshark', '-r', filename, '-2', '-Y',
+            'frame.number==' + str(packet_count), '-T', 'fields', '-e',
+            'frame.time_epoch'
+        ]
+        pcap_start_pipe = sp.Popen(
+            start_time_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
+        pcap_end_pipe = sp.Popen(end_time_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
+        pcap_start = float(mf.decode_stdout(pcap_start_pipe))
+        pcap_end = float(mf.decode_stdout(pcap_end_pipe))
+        pcap_start_pipe.kill()
+        pcap_end_pipe.kill()
 
-    return start_times_array, end_times_array, pcap_names
+        tcpdump_release_time = 946684800
+        if pcap_start < tcpdump_release_time or \
+                pcap_end < tcpdump_release_time:
+            print(
+                "!!! Packets from ", filename,
+                " must have traveled via a flux capacitor because they're in"
+                " the past or the future!\n!!! Timestamps predate the "
+                "release of tcpdump or are negative."
+                "\n!!! Excluding from results.\n")
+            return {}
+
+        return {'pcap_start': pcap_start, 'pcap_end': pcap_end}
+    # (else) May need to raise an exception for this as it means input is bad.
+    print("!!! ERROR: Packet capture", filename,
+          " has no packets or cannot be read!\n")
+    return {}
 
 
-def generate_graph(pcap_names, start_times, end_times):
+def generate_graph(pcap_vars):
     """Generate the matplotlib graph.
 
     Args:
-        pcap_names (list(str)): List of pcap file names.
-        start_times (list(float)): List of start times of all pcaps.
-        end_times (list(float)): List of end times of all pcaps.
+        pcap_vars (dict): Contains all data required for the graph
+            {<pcap>: {'pcap_start': <timestamp>, 'pcap_end': <timestamp>}, ...}
     """
     # first and last are the first and last timestamp of all pcaps.
+    pcap_names = list(pcap_vars)
+    start_times = np.array(
+        [pcap_vars[pcap]['pcap_start'] for pcap in pcap_vars])
+    end_times = np.array([pcap_vars[pcap]['pcap_end'] for pcap in pcap_vars])
     first_time = min(start_times)
     last_time = max(end_times)
     # Force padding on left and right sides
@@ -107,11 +176,23 @@ def generate_graph(pcap_names, start_times, end_times):
     # Print all x labels that aren't at the lower corners
     plt.xticks(rotation=45)
     axes.set_xticks(np.round(np.linspace(first, last, 10)))
+    axes.tick_params(axis='y', labelsize=12)  # Set ytick fontsize to 10
     axes.set_xticklabels(x_ticks)
     for tick in axes.xaxis.get_majorticklabels():
         tick.set_horizontalalignment("right")
+    # Each line has text that is 12 point high; 72 point = 1 inch, so for each
+    # additional pcap, add 1/6 inch. Default graph is 3 in high, so y tick text
+    # should start overlapping at 18 lines.
+    # If number of pcaps is greater than 18, remove the names
+    if len(pcap_names) > 18:
+        pcap_names = len(pcap_names) * ['']
+    # adjusted_height = (len(pcap_names) - 18) * 2
+    # fig.set_figheight(5.5 + adjusted_height)
+    # If there's more than 18 packet captures, don't show the names.
+    # pcap_names = len(pcap_names) * ['']
     # Pcap names as y ticks. Position them halfway up the bar.
     plt.yticks(np.arange(len(pcap_names), step=1), pcap_names)
+    axes.set_ylim(-0.5, len(pcap_names) - 0.5)
     # xlabel will be 'Time' if different years, and 'Time (YYYY)' if same year.
     axes.set_xlabel(xlabel, fontsize=16)
     axes.set_ylabel('Pcap Name', fontsize=16)
@@ -127,11 +208,21 @@ def set_horiz_bar_colors(barlist):
     more horiz bars than in the color array, loop and continue to set colors.
 
     Args:
-        barlist
+        barlist (list): List of the horizontal bars.
     """
     colors = [
-        '#2d89ef', '#603cba', '#2b5797', '#b91d47', '#99b433', '#da532c',
-        '#00a300', '#7e3878', '#00aba9', '#1e7145', '#9f00a7', '#e3a21a'
+        '#2d89ef',
+        '#603cba',
+        '#2b5797',
+        '#008B8B',
+        '#3145b4',
+        '#36648B',
+        '#38b0de',
+        '#4d4dff',
+        '#3299cc',
+        '#7f00ff',
+        '#03b4c8',
+        '#5959ab',
     ]
     color_count = len(colors)
     for i, hbar in enumerate(barlist):
@@ -143,11 +234,12 @@ def set_xticks(first, last):
     """Generate the x ticks and return a list of them.
 
     Args:
-        first: Earliest timestamp of pcaps.
-        last: Latest timestamp of pcaps.
+        first (float): Earliest timestamp of pcaps.
+        last (float): Latest timestamp of pcaps.
     Returns:
-        x_ticks (list(float)): List of unix epoch time values as xticks.
-        x_label (string): Text to be used to label X-axis.
+        (tuple):
+            x_ticks (list(float)): List of unix epoch time values as xticks.
+            x_label (string): Text to be used to label X-axis.
     """
     # 10 x ticks chosen for aesthetic reasons.
     xticks_qty = 10
@@ -172,20 +264,20 @@ def set_xticks(first, last):
     return x_ticks, xlabel
 
 
-def export_graph(pcap_times, pcap_names, save_fmt):
-    """Exports the graph to the screen or to a file."""
-    if save_fmt:
-        this_folder = os.getcwd()
-        pivot_file = pcap_names[0].split(' ')[0] + '.'
-        plt.savefig(
-            'pcap_graph-' + pivot_file + save_fmt,
-            format=save_fmt,
-            transparent=True)
-        print(save_fmt, "file successfully created in ", this_folder, "!")
-    else:
-        # Print text version because it's possible.
-        print(make_text_not_war(pcap_times))
-        plt.show()
+def export_graph(pcap_names, save_fmt):
+    """Exports the graph to the screen or to a file.
+
+    Args:
+        pcap_names (list): List of pcap_names
+        save_fmt (str): File extension of output file
+    """
+    this_folder = os.getcwd()
+    last_operation_file = pcap_names[-1].split(' ')[0] + '.'
+    plt.savefig(
+        'pcap_graph-' + last_operation_file + save_fmt,
+        format=save_fmt,
+        transparent=True)
+    print(save_fmt, "file successfully created in ", this_folder, "!")
 
 
 def make_text_not_war(pcap_times):
@@ -194,26 +286,23 @@ def make_text_not_war(pcap_times):
     Args:
         pcap_times (dict): Packet capture names and start/stop timestamps.
     Returns:
-        (string): Full textstring of text to written to file/stdout
+        (str): Full textstring of text to written to file/stdout
     """
-    result_string = 'PCAP NAME           YEAR  DATE 0  DATE $' \
+
+    result_string = '\nPCAP NAME           YEAR  DATE 0  DATE $' \
                     '     TIME 0    TIME $       UTC 0' + 14*' ' + 'UTC $'
     for pcap in sorted(pcap_times.keys()):
-        pcap_year = datetime.datetime.fromtimestamp(pcap_times[pcap][
-            'pcap_starttime']).strftime('%Y')
-        pcap_pretty_startdate = datetime.datetime.fromtimestamp(pcap_times[
-            pcap]['pcap_starttime']).strftime('%b-%d')
-        pcap_pretty_enddate = datetime.datetime.fromtimestamp(pcap_times[pcap][
-            'pcap_endtime']).strftime('%b-%d')
-        pcap_pretty_starttime = datetime.datetime.fromtimestamp(pcap_times[
-            pcap]['pcap_starttime']).strftime('%H:%M:%S')
-        pcap_pretty_endtime = datetime.datetime.fromtimestamp(pcap_times[pcap][
-            'pcap_endtime']).strftime('%H:%M:%S')
-        if pcap_times[pcap]['pivot_similarity']:
-            pcap_name_string = '(' + "{: >3}".format(
-                str(pcap_times[pcap]['pivot_similarity'])) + '%) ' + pcap[:11]
-        else:
-            pcap_name_string = pcap[:17]  # Truncate if too long
+        pcap_year = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_start']).strftime('%Y')
+        pcap_pretty_startdate = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_start']).strftime('%b-%d')
+        pcap_pretty_enddate = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_end']).strftime('%b-%d')
+        pcap_pretty_starttime = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_start']).strftime('%H:%M:%S')
+        pcap_pretty_endtime = datetime.datetime.fromtimestamp(
+            pcap_times[pcap]['pcap_end']).strftime('%H:%M:%S')
+        pcap_name_string = pcap[:17]  # Truncate if too long
 
         # Formatter creates a bunch of columns aligned left with num spacing.
         format_string = "\n{: <19} {: <5} {: <7} " \
@@ -225,7 +314,8 @@ def make_text_not_war(pcap_times):
             pcap_pretty_enddate,
             pcap_pretty_starttime,
             pcap_pretty_endtime,
-            pcap_times[pcap]['pcap_starttime'],
-            pcap_times[pcap]['pcap_endtime'], )
+            pcap_times[pcap]['pcap_start'],
+            pcap_times[pcap]['pcap_end'],
+        )
 
     return result_string

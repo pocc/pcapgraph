@@ -29,6 +29,9 @@ def generate_example_pcaps(interface=None):
     Args:
         interface (string): Optional interface to specify for wireshark.
     """
+    os.mkdir('examples')
+    os.chdir('examples')
+
     second_ct = 0
     tshark_cmd = ['tshark', '-n', '-f', "icmp or port 53", '-a', 'duration:60']
     if interface:
@@ -55,3 +58,5 @@ def generate_example_pcaps(interface=None):
             sp.Popen([*tshark_cmd, '-w', 'simul3.pcap'], stdout=sp.PIPE)
         time.sleep(1)
         second_ct += 1
+
+    os.chdir('..')

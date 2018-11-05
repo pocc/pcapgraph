@@ -1,3 +1,3 @@
 [flake8]
-exclude = __pycache__,.git,.idea,.virtualenv,venv,vendor,build,dist
+exclude = __pycache__,.git,.idea,.virtualenv,venv,vendor,build,dist,docs
 max-complexity = 10
