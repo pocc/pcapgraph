@@ -48,10 +48,6 @@ def parse_cli_args(args):
     if pcap_out and not has_set_operation:
         raise SyntaxError("\nERROR: --output pcap/pcapng needs "
                           "a set operation (-bdeisu).")
-    num_files = len(set(args['<file>']))
-    if has_set_operation and num_files < 2:
-        raise SyntaxError("\nERROR: Set operations require 2 or more different"
-                          " packet captures (" + str(num_files) + " provided)")
 
     directories = []
     files = list(args['<file>'])
@@ -62,6 +58,10 @@ def parse_cli_args(args):
 
     filenames = get_filenames_from_directories(directories)
     filenames.extend(get_filenames(files))
+    num_files = len(filenames)
+    if has_set_operation and num_files < 2:
+        raise SyntaxError("\nERROR: Set operations require 2 or more different"
+                          " packet captures (" + str(num_files) + " provided)")
     return filenames
 
 

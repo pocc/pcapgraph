@@ -21,7 +21,7 @@ PYTHON_PIP_VER:=$(lastword $(shell pip -V))
 clean:
 	$(RM) -r dist/ build/ docs/_build *.png *.pcap *.pcapng
 
-# Triggers `pip setup.py sdist` prior to install.
+# Triggers `python setup.py sdist` prior to install.
 install: clean
 	@echo "INFO: Your pip's python version ($(PYTHON_PIP_VER), 3.5+ required"
 	pip install -r requirements.txt
@@ -54,12 +54,13 @@ lint:
 	yapf -pri pcapgraph
 
 # Use this first before uploading to pypi to verify that it uploaded correctly.
-testpypi: clean install test lint
+testpypi: clean test lint
+	python setup.py sdist
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 # After testpypi, verify that it installs and runs correctly
 testinstall:
-	python -m pip install -U --user --index-url \
+	pip install -U --user --index-url \
 	https://test.pypi.org/simple/ pcapgraph
 
 # Use this when you are sure that the test upload (above) looks good.
