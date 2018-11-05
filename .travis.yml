@@ -19,20 +19,25 @@ matrix:
     sudo: false
     osx_image: xcode9.4
 
+addons:
+  apt:
+    packages:
+      - wireshark
+
 before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update;          ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install wireshark; fi
   - pip install -r requirements.txt
   - pip install pyinstaller twine flake8 pylint yapf pytest
+  # Run tests and verify that code is not terrible.
+  - make lint
+  - make test
 
 install:
   - pyinstaller gateway.py -n pcapgraph --onefile --exclude-module PyQt5
     --exclude-module PyQt4 --exclude-module PySide --clean -y
 
 # Troubleshooting github release + travis ci integration: https://docs.travis-ci.com/user/common-build-problems/#I-pushed-a-commit-and-can%E2%80%99t-find-its-corresponding-build
-
-script:
-  # Run tests and verify that code is not terrible.
-  - make lint
-  - make test
 
 deploy:
   provider: releases
@@ -46,6 +51,8 @@ deploy:
     # We only want the builds from xenial
     dist: xenial
     os: osx
+    # Only build on a new release tag. $TRAVIS_TAG will be set to that tag.
+    tags: true
 
   # Without this, cleaning will remove what you were planning on deploying
   skip_cleanup: true
