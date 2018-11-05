@@ -27,8 +27,9 @@ install: clean
 	pip install -r requirements.txt
 	pip install --user .
 
-pyinstaller:
-	pip install pyinstaller
+# Install missing dependencies
+pipdep:
+	pip install --user sphinx pyinstaller twine flake8 pylint yapf pytest
 
 # Use PyInstaller to generate a single file containing all libraries
 # matplotlib is 15MB, numpy is 13MB for executable size
@@ -44,19 +45,16 @@ onedir: clean pyinstaller
 # Run all tests in test directory
 tests: test
 test: clean
-	pip install pytest
 	pytest tests
 
 # Lint using flake8, pylint, yapf
 lint:
-	pip install --user flake8 pylint yapf
 	flake8 pcapgraph tests
 	pylint pcapgraph tests
 	yapf -pri pcapgraph
 
 # Use this first before uploading to pypi to verify that it uploaded correctly.
 testpypi: clean install test lint
-	pip install twine
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
 # After testpypi, verify that it installs and runs correctly

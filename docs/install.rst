@@ -7,42 +7,59 @@ Install
 
     -- Cisco DevNet
 
-Install Steps
-------------------
-.. comment filler for horizontal rule.
-
 ----
 
-1. Install Wireshark
-~~~~~~~~~~~~~~~~~~~~
+Prerequisites: Wireshark
+------------------------
 * These package managers have it in their repositories:
   ``apt``, ``dnf``, ``pacman``, ``brew``, ``choco``, ``...``
 * To download and install precompiled binaries, visit
   `Wireshark's website <https://www.wireshark.org/download.html>`_.
 
-2. Install Python3
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* This project requires python3.5 or later. ``pip`` is bundled
-  with python starting with python3.4.
-* You can check your version of python with ``python -V`` in a terminal.
-* To download and install precompiled binaries, visit
-  `python's website <https://www.python.org/downloads/>`_.
+----
 
-.. note:: macOS comes with Python 2.7 by default. If installing python3
-          separately, make sure to add ``alias 'python=python3'`` to your
-          .bashrc.
+Installing PcapGraph
+--------------------
 
-3. Install PcapGraph with pip
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-> Install PcapGraph with Python pip
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. code-block:: bash
 
     pip install --user pcapgraph
 
-Install Errors
---------------
-.. comment filler for horizontal rule.
+Notes:
+    * This project requires python3.5 or later. ``pip`` is bundled
+      with Python starting with python3.4.
+    * You can check your version of Python with ``python -V`` in a terminal.
+    * To download and install precompiled Python binaries, visit
+      `python's website <https://www.python.org/downloads/>`_.
+    * macOS comes with Python 2.7 by default. If installing python
+      separately, make sure to add ``alias 'python=python3'`` to your .bashrc.
+
+-OR- Install from source
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: bash
+
+    git clone https://github.com/pocc/pcapgraph
+    cd pcapgraph
+    make install
+
+-OR- Use the standalone executable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Download the latest executable for your OS from the `releases page
+<https://github.com/pocc/pcapgraph/releases/latest>`_ and run:
+
+.. code-block:: bash
+
+    ./pcapgraph
+
+.. note:: Using an executable will have startup lag when PyInstaller extracts
+          required files to a temporary folder.
 
 ----
+
+Install Errors
+--------------
 
 .. note:: These are some misconfiguration errors I came across during testing
           on Ubuntu. If you have trouble installing, please create an
@@ -63,11 +80,10 @@ minor versions of python, you may need to reinstall both.
     python -m pip uninstall -y numpy matplotlib
     python -m pip install --user numpy matplotlib
 
+----
+
 Testing Install
 ---------------
-.. comment filler for horizontal rule.
-
-----
 
 Test whether pcapgraph is working:
 

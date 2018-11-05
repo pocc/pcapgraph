@@ -4,6 +4,10 @@ API Documentation
              is documented here for sake of completeness and is not
              explicity designed to be one.
 
+* :ref:`genindex`
+* :ref:`modindex`
+
+
 ----
 
 pcapgraph module

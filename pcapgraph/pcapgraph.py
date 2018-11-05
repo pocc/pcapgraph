@@ -16,11 +16,14 @@
     Create bar graphs out of packet captures.
 
 USAGE:
+  ::
+
     pcapgraph [-abdeisuvwx23] (<file>)... [--output <format>]...
     pcapgraph (-V | --version)
     pcapgraph (-h | --help)
 
 DESCRIPTION:
+
     Analyze packet captures with graphs and set operations. Graphs will show
     the temporal overlap of packets. Set operations can help with flow-based
     troubleshooting across multiple interfaces or devices.
@@ -88,22 +91,22 @@ OUTPUT:
 
       ``matplotlib.pyplot.gcf().canvas.get_supported_filetypes()``
 
-    pcap and pcapng require a set operation for there to be packets to save.
-    generate-pcaps creates the pcaps simul1 through 3 used in documentation.
-    wireshark opens the pcaps from a set operation in the wireshark GUI.
+    `pcap`, `pcapng`, and `wireshark` require a set operation for there
+    to be a file to save/open. `generate-pcaps` creates the pcaps simul1
+    through 3 used in documentation.
 
-    image:
+    IMAGE:
         `eps, jpeg, jpg, pdf, pgf, png,
         ps, raw, rgba, svg, svgz, tif, tiff`
 
-    text:
+    TEXT:
         `txt`
 
-    packet capture:
+    PACKET CAPTURE:
         `pcap, pcapng, generate-pcaps, wireshark`
 
-EXAMPLE USAGE:
-  1. Gut check whether a group of pcaps were taken at the same time::
+EXAMPLE USE CASES:
+  1. Gut check whether a group of pcaps were taken at the same time
       ::
 
         $ pcapgraph file1.pcap file2.pcap file3.pcap
@@ -127,7 +130,7 @@ EXAMPLE USAGE:
       the same, then use this tool to quickly determine whether additional
       packet captures are necessary.
 
-  2. Intersection to track traffic across multiple interfaces::
+  2. Intersection to track traffic across multiple interfaces
       ::
 
         $ pcapgraph --intersect --strip-l2 file1.pcap file2.pcap --output pcap
@@ -139,7 +142,7 @@ EXAMPLE USAGE:
       and VLAN tag will change. Using intersect with strip L2 will remove
       frame headers so that common traffic can be found.
 
-  3. Intersection to find common traffic across a natting firewall::
+  3. Intersection to find common traffic across a natting firewall
       ::
 
          $ pcapgraph --intersect --strip-l3 file1.pcap file2.pcap --output pcap
@@ -158,7 +161,7 @@ EXAMPLE USAGE:
         <RAW IP>  10.0.0.1 ->  10.0.0.2  UDP  16298 -> 53   DATA2
         <RAW IP>  10.0.0.1 ->  10.0.0.2  TCP  28274 -> 80   DATA3
 
-  4. Difference between traffic on a switchport and the uplink:
+  4. Difference between traffic on a switchport and the uplink
       ::
 
           $ pcapgraph --difference switch_uplink.pcap switchport3.pcap
@@ -181,7 +184,7 @@ EXAMPLE USAGE:
 
       Use spanning tree and set a root bridge once you have figured it out.
 
-  6. Find unique traffic in the same timeframe across all pcaps:
+  6. Find unique traffic in the same timeframe across all pcaps
       ::
 
           $ pcapgraph file1.pcap file2.pcap --inverse-bounded -w
@@ -249,6 +252,8 @@ SEE ALSO:
     matplotlib (https://matplotlib.org/):
         Python package to plot 2D graphs.
 """
+import re
+
 import docopt
 
 import pcapgraph.manipulate_frames as mf
@@ -268,7 +273,10 @@ def run():
     4. Draw the graph/export files
     """
     get_tshark_status()
-    args = docopt.docopt(__doc__)
+    cli_docs = re.sub(r' *:: *\n|`|\*', '', __doc__)  # Remove RST signals.
+    print(cli_docs)
+    exit()
+    args = docopt.docopt(cli_docs)
     filenames = sorted(gf.parse_cli_args(args))
     options = {
         'strip-l2': args['--strip-l2'],

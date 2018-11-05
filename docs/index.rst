@@ -5,15 +5,13 @@
 
 PcapGraph Manual
 ================
-Create bar graphs out of `packet capture <https://en.wikipedia.org/wiki/Pcap>`_
+Create bar graphs with `packet capture <https://en.wikipedia.org/wiki/Pcap>`_
 timestamps.
-
-About
------
-.. comment filler for horizontal rule.
 
 ----
 
+About
+-----
 .. image:: ../examples/pcap_graph.png
    :alt: An example graph
 
@@ -45,7 +43,7 @@ License
    :maxdepth: 2
    :caption: Contents:
 
-   installation.rst
+   install.rst
    cli.rst
    pcap_preparation.rst
    example_usage.rst
