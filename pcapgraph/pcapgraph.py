@@ -289,7 +289,7 @@ def run():
     if args['-w']:
         args['--output'].extend(['wireshark', 'pcap'])
     dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
-                  args['--exclude-empty'])
+                  args['--exclude-empty'], args['--anonymize'])
 
 
 if __name__ == '__main__':

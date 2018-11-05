@@ -238,13 +238,15 @@ def get_homogenized_packet(ip_raw):
     return homogenized_packet
 
 
-def anonymous_pcap_name():
+def anonymous_pcap_names(num_names):
     """Anonymize pcap names.
 
     Creation of funny pcap names like `switch_wireless` is intendeded behavior.
 
+    Args:
+        num_names (int): Number of names to be returned
     Returns:
-        (string): Fake pcap name
+        (list): Fake pcap name list
     """
     fake_city_names = [
         'Hogwarts', 'Quahog', 'Lake Wobegon', 'Narnia', 'Ankh-Morpork',
@@ -258,11 +260,15 @@ def anonymous_pcap_name():
         'turbo encabulator', 'L3 switch', 'HIDS', 'load balancer',
         'packet shaper', 'vpn concentrator', 'content filter', 'CSU/DSU'
     ]
+    fake_names = []
 
-    fake_place = random.choice(fake_city_names)
-    fake_device = random.choice(fake_device_names)
+    for _ in range(num_names):
+        fake_place = random.choice(fake_city_names)
+        fake_device = random.choice(fake_device_names)
+        fake_name = fake_place + '-' + fake_device
+        fake_names.append(fake_name)
 
-    return fake_place + '-' + fake_device
+    return fake_names
 
 
 def decode_stdout(stdout):

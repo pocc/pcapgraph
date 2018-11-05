@@ -24,7 +24,8 @@ import numpy as np
 import pcapgraph.manipulate_frames as mf
 
 
-def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty):
+def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty,
+               anonymize_names):
     """Draw a graph using matplotlib and numpy.
 
     Args:
@@ -35,6 +36,7 @@ def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty):
             https://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig
             for more information.
         exclude_empty (bool): Whether to exclude empty pcaps from graph.
+        anonymize_names (bool): Whether to change filenames to random values.
     """
     # So that if no save format is specified, print to screen and stdout
     if not output_fmts:
@@ -42,6 +44,9 @@ def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty):
     pcap_filenames = list(pcap_packets)
     delete_pcaps = True
     open_in_wireshark = False
+    if 'wireshark' in output_fmts:
+        output_fmts.remove('wireshark')
+        open_in_wireshark = True
     if 'pcap' in output_fmts:
         output_fmts.remove('pcap')
         delete_pcaps = False
@@ -49,34 +54,41 @@ def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty):
         output_fmts.remove('pcapng')
         delete_pcaps = False
     for save_format in output_fmts:
-        if save_format == 'txt':
-            output_text = make_text_not_war(pcap_packets)
-            print(output_text)
-            with open('pcap_graph.txt', 'w') as file:
-                file.write(output_text)
-                file.close()
-            print("Text file successfully created!")
-        else:
-            graph_vars = {}
-            empty_files = []
-            for filename in pcap_filenames:
-                graph_startstop_dict = get_graph_vars_from_file(filename)
-                filename = os.path.basename(os.path.splitext(filename)[0])
-                if graph_startstop_dict:  # If it's a valid pcap
-                    graph_vars[filename] = graph_startstop_dict
-                elif not exclude_empty:
-                    filename += ' (no packets)'
-                    empty_files.append(filename)
+        output_file(save_format, pcap_packets, exclude_empty, anonymize_names)
 
-            generate_graph(graph_vars, empty_files)
-            if save_format != 'show':
-                export_graph(list(graph_vars), save_format)
-            else:
-                # Print text version because it's possible.
-                print(make_text_not_war(graph_vars))
-                plt.show()
     new_files = set(pcap_filenames) - set(input_files)
     remove_or_open_files(new_files, open_in_wireshark, delete_pcaps)
+
+
+def output_file(save_format, pcap_packets, exclude_empty, anonymize_names):
+    """Save the specified file with the specified format."""
+    pcap_filenames = list(pcap_packets)
+    if save_format == 'txt':
+        output_text = make_text_not_war(pcap_packets)
+        print(output_text)
+        with open('pcap_graph.txt', 'w') as file:
+            file.write(output_text)
+            file.close()
+        print("Text file successfully created!")
+    else:
+        graph_vars = {}
+        empty_files = []
+        for filename in pcap_filenames:
+            graph_startstop_dict = get_graph_vars_from_file(filename)
+            filename = os.path.basename(os.path.splitext(filename)[0])
+            if graph_startstop_dict:  # If it's a valid pcap
+                graph_vars[filename] = graph_startstop_dict
+            elif not exclude_empty:
+                filename += ' (no packets)'
+                empty_files.append(filename)
+
+        generate_graph(graph_vars, empty_files, anonymize_names)
+        if save_format != 'show':
+            export_graph(list(graph_vars), save_format)
+        else:
+            # Print text version because it's possible.
+            print(make_text_not_war(graph_vars))
+            plt.show()
 
 
 def remove_or_open_files(new_files, open_in_wireshark, delete_pcaps):
@@ -93,6 +105,7 @@ def remove_or_open_files(new_files, open_in_wireshark, delete_pcaps):
     # Open all created files in wireshark (flag -w)
     if open_in_wireshark:
         for file in new_files:
+            print("Opening", file, "in wireshark.")
             sp.Popen(['wireshark', file])
 
     if delete_pcaps:
@@ -152,16 +165,19 @@ def get_graph_vars_from_file(filename):
     return {}
 
 
-def generate_graph(pcap_vars, empty_files):
+def generate_graph(pcap_vars, empty_files, anonymize_names):
     """Generate the matplotlib graph.
 
     Args:
         pcap_vars (dict): Contains all data required for the graph.
             {<pcap>: {'pcap_start': <timestamp>, 'pcap_end': <timestamp>}, ...}
         empty_files (list): List of filenames of empty files.
+        anonymize_names (bool): Whether to use pseudorandom names for files.
     """
     # first and last are the first and last timestamp of all pcaps.
     pcap_names = list(pcap_vars) + empty_files
+    if anonymize_names:
+        pcap_names = mf.anonymous_pcap_names(len(pcap_names))
     start_times = np.array(
         [pcap_vars[pcap]['pcap_start'] for pcap in pcap_vars])
     end_times = np.array([pcap_vars[pcap]['pcap_end'] for pcap in pcap_vars])

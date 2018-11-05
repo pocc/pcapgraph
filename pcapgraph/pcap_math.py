@@ -64,6 +64,7 @@ class PcapMath:
         """
         new_files = []
         bounded_filelist = []
+        intersect_file = ''
         self.exclude_empty = args['--exclude-empty']
         if args['--difference']:
             generated_file = self.difference_pcap()
@@ -71,8 +72,8 @@ class PcapMath:
             if generated_file:
                 new_files.append(generated_file)
         if args['--intersection']:
-            generated_file = self.intersect_pcap()
-            new_files.append(generated_file)
+            intersect_file = self.intersect_pcap()
+            new_files.append(intersect_file)
         if args['--symmetric-difference']:
             generated_filelist = self.symmetric_difference_pcap()
             new_files.extend(generated_filelist)
@@ -84,8 +85,13 @@ class PcapMath:
             bounded_filelist = self.bounded_intersect_pcap()
             new_files.extend(bounded_filelist)
         if args['--inverse-bounded']:
+            if not intersect_file:
+                intersect_file = self.intersect_pcap()
             generated_filelist = self.inverse_bounded_intersect_pcap(
-                bounded_filelist=bounded_filelist)
+                bounded_filelist=bounded_filelist,
+                intersect_file=intersect_file)
+            if not args['--intersection']:
+                os.remove(intersect_file)
             new_files.extend(generated_filelist)
 
         # Put filenames in a different place in memory so it is not altered.
@@ -280,12 +286,15 @@ class PcapMath:
 
         return names
 
-    def inverse_bounded_intersect_pcap(self, bounded_filelist=False):
+    def inverse_bounded_intersect_pcap(self,
+                                       bounded_filelist=False,
+                                       intersect_file=False):
         """Inverse of bounded intersection = (bounded intersect) - (intersect)
 
         Args:
             bounded_filelist (list): List of existing bounded pcaps generated
                 by bounded_intersect_pcap()
+            intersect_file (string): Location of intersect file.
         Returns:
             (list(string)): Filenames of generated pcaps.
         """
@@ -297,7 +306,6 @@ class PcapMath:
             bounded_filelist = self.bounded_intersect_pcap()
             has_bounded_intersect_flag = True
         backup_filenames = self.filenames
-        intersect_file = self.intersect_pcap()
         for index, bi_file in enumerate(bounded_filelist):
             self.filenames = [bounded_filelist[index], intersect_file]
             self.pcap_json_dict = strip_layers(self.filenames, self.options)
@@ -310,7 +318,6 @@ class PcapMath:
                 # Do not keep bounded-intersect files if they are not necessary
                 os.remove(bi_file)
         # Intersect is only used for comparison, so delete it when done.
-        os.remove(intersect_file)
         self.filenames = backup_filenames
         return generated_filelist
 
