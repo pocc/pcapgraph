@@ -21,7 +21,6 @@ matrix:
 
 before_install:
   pwd
-  cd pcapgraph
   ls
   pip install -r requirements.txt
   pip install pyinstaller
