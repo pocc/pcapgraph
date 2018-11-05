@@ -286,7 +286,7 @@ The symmetric difference includes only unique packets from each packet capture.
 Symmetric Difference Image
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 The symmetric difference is essentially the difference applied between the
-first packet capture and every successive one. Any
+first packet capture and every successive one.
 
 .. code-block:: bash
 
@@ -297,7 +297,7 @@ first packet capture and every successive one. Any
 
 Symmetric Difference Text
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-Doesn't produce any text; however will alert if one packet capture has no
+Doesn't produce any text; however will alert if a packet capture has no
 unique packets.
 
 Symmetric Difference Pcap
