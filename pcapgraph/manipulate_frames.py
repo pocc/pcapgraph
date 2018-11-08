@@ -47,127 +47,11 @@ hex of a packet.
 
 import subprocess as sp
 import random
-import json
+import re
+import os
 
 
-def parse_pcaps(pcaps):
-    """Given pcaps, return all frames and their timestamps.
-
-    Args:
-        pcaps (list): A list of pcap filenames
-    Returns:
-        pcap_json_list (list): All the packet data in json format.
-            [{<pcap>: {PCAP JSON}}, ...]
-    """
-    pcap_json_list = []
-    for pcap in pcaps:
-        pcap_json_list.append(get_pcap_as_json(pcap))
-
-    return pcap_json_list
-
-
-def get_flat_frame_dict(pcap_json_list):
-    """Given the pcap json list, return the frame dict.
-
-    Args:
-        pcap_json_list (list): List of pcap dicts (see parse_pcaps for details)
-    Returns:
-        frame_list (dict): {<frame>: <timestamp>, ...}
-    """
-    frame_dict = {}
-    for pcap in pcap_json_list:
-        for frame in pcap:
-            frame_raw = get_frame_from_json(frame)
-
-            frame_timestamp = \
-                frame['_source']['layers']['frame']['frame.time_epoch']
-            frame_dict[frame_raw] = frame_timestamp
-
-    return frame_dict
-
-
-def get_frame_list_by_pcap(pcap_json_dict):
-    """Like get_flat_frame_dict, but with pcapname as key to each frame list
-
-    Args:
-        pcap_json_dict (dict): List of Pcap JSONs.
-    Returns:
-        (list): [[<frame>, ...], ...]
-    """
-    pcap_frame_list = []
-    for pcap in pcap_json_dict.values():
-        pcap_frames = []
-        for frame in pcap:
-            frame_str = get_frame_from_json(frame)
-            pcap_frames.append(frame_str)
-        pcap_frame_list.append(pcap_frames)
-
-    return pcap_frame_list
-
-
-def get_pcap_frame_dict(pcaps):
-    """Like get_flat_frame_dict, but with pcapname as key to each frame list
-
-    Args:
-        pcaps (list): List of pcap file names.
-    Returns:
-        (dict): {<pcap>: {<frame>:<timestamp>, ...}, ...}
-    """
-    pcap_frame_list = {}
-    for pcap in pcaps:
-        pcap_json_list = parse_pcaps([pcap])
-        pcap_frame_list[pcap] = get_flat_frame_dict(pcap_json_list)
-
-    return pcap_frame_list
-
-
-def get_frame_from_json(frame):
-    """Get/sanitize raw frame from JSON of frame from `tshark -x -T json ...`
-
-    Args:
-        frame (dict): A dict of a single packet from tshark.
-    Returns:
-        (str): The ASCII hexdump value of a packet
-    """
-    if not isinstance(frame, dict):
-        print('frame is type', type(frame))
-        raise TypeError("Frame must be dict!\n" + str(frame)[:120] + '...')
-    frame_raw = frame['_source']['layers']['frame_raw']
-    # Sometimes we get a list including the frame str instead of the frame str.
-    if isinstance(frame_raw, list):
-        frame_raw = frame_raw[0]
-    return frame_raw
-
-
-def get_pcap_as_json(pcap):
-    """Given a pcap, return a json with `tshark -r <file> -x -T json`.
-
-    tshark -r <pcap> -w -
-        Pipes packet capture one packet per line to stdout
-    tshark -r -
-        Read file from stdin
-    tshark -r <in.pcap> -x | text2pcap - <out.pcap>
-        Prints hex of pcap to stdout and then resaves it as a pcap. This
-        WILL delete packet timestamps as that is not encoded in hex output.
-
-    Args:
-        pcap (string): File name.
-    Returns:
-        (list): List of the pcap json provided by tshark.
-    """
-    if not isinstance(pcap, str):
-        raise TypeError("Filename must be string!\n" + str(pcap)[:120] + '...')
-    get_json_cmds = ['tshark', '-r', pcap, '-x', '-T', 'json']
-    pcap_json_pipe = sp.Popen(get_json_cmds, stdout=sp.PIPE)
-    pcap_json_raw = pcap_json_pipe.communicate()[0]
-    pcap_json_pipe.kill()
-    pcap_json_list = []
-    if pcap_json_raw:  # Don't want json.loads to crash due to an empty string.
-        pcap_json_list = json.loads(pcap_json_raw)
-    return pcap_json_list
-
-
-def strip_layers(filenames, options):
+def strip_layers(pcap_framelist, options):
     """Get the PCAP JSON dict stripped per options.
 
     strip-l3:
@@ -176,65 +60,63 @@ def strip_layers(filenames, options):
         Remove all layer 2 fields like FCS, source/dest MAC, VLAN tag...
 
     Args:
-        filenames (list): List of filenames.
+        pcap_framelist (dict): Dict of frames and timestamps with pcap as key.
         options (dict): Whether to strip L2 and L3 headers.
     Returns:
         (dict): The modified packet dict
     """
-    pcap_json_dict = {}
-    for file in filenames:
-        pcap_json = parse_pcaps([file])[0]
+    for pcap in pcap_framelist:
         if options['strip-l3']:
-            for index, packet in enumerate(pcap_json):
-                ip_raw = packet['_source']['layers']['ip_raw']
-                frame_raw = packet['_source']['layers']['frame_raw']
-                # Sometimes, these values will be a list instead of a string.
-                if isinstance(ip_raw, list):
-                    ip_raw = ip_raw[0]
-                if isinstance(frame_raw, list):
-                    frame_raw = frame_raw[0]
-                homogenized_packet = get_homogenized_packet(ip_raw)
-                pcap_json[index]['_source']['layers']['frame_raw'] = \
-                    homogenized_packet + frame_raw.split(ip_raw)[1]
+            for index, frame in enumerate(pcap_framelist[pcap]['frames']):
+                frame_header_end = 16
+                has_vlan_tag = (frame[12:16] == '8100')
+                if has_vlan_tag:
+                    frame_header_end = 24
+                ip_version = int(frame[frame_header_end])
+                if ip_version == 4:
+                    ip_header_nibbles = 8 * int(frame[frame_header_end + 1])
+                else:  # IPv6 header is ALWAYS 40 octets.
+                    ip_header_nibbles = 80
+                ip_header_end = frame_header_end + ip_header_nibbles
+                ip_header = frame[frame_header_end: ip_header_end]
+                homogenized_packet = get_homogenized_packet(ip_header)
+                pcap_framelist[pcap]['frames'][index] = \
+                    homogenized_packet + frame.split(ip_header)[1]
         elif options['strip-l2']:
-            for index, packet in enumerate(pcap_json):
-                eth_raw = packet['_source']['layers']['eth_raw']
-                if isinstance(eth_raw, list):
-                    eth_raw = eth_raw[0]  # Correct to string if list
-                eth_len = len(eth_raw)
-                frame_raw = packet['_source']['layers']['frame_raw']
-                if isinstance(frame_raw, list):
-                    frame_raw = frame_raw[0]  # Correct to string if list
-                pcap_json[index]['_source']['layers']['frame_raw'] = \
-                    frame_raw[eth_len:]
-        pcap_json_dict[file] = pcap_json
+            for index, frame in enumerate(pcap_framelist[pcap]['frames']):
+                eth_len = len(frame)
+                pcap_framelist[pcap]['frames'][index] = frame[eth_len:]
 
-    return pcap_json_dict
+    return pcap_framelist
 
 
 def get_homogenized_packet(ip_raw):
-    """Change an IPw4 packet's fields to the same, homogenized values.
+    """Change an IPv4 packet's fields to the same, homogenized values.
 
     Replace TTL, header checksum, and IP src/dst with generic values.
     This function is designed to replace all IP data that would change
     on a layer 3 boundary
 
-    Note that these options are found only in IPv4.
     TTL is expected to change at every hop along with header
-    checksum. IPs are expected to change for NAT.
+    checksum. IPs are expected to change for NAT. In IPv6, only the next
+    hop field is changed as IPv6 does not have NAT or checksums.
 
     Args:
         ip_raw (str): ASCII hex of packet.
     Returns:
         (str): Packet with fields that would be altered by l3 boundary replaced
     """
-    ttl = 'ff'
-    ip_proto = ip_raw[18:20]
-    ip_header_checksum = '1337'
-    src_ip = '0a010101'
-    dst_ip = '0a020202'
-    homogenized_packet = ip_raw[:16] + ttl + ip_proto + \
-        ip_header_checksum + src_ip + dst_ip + ip_raw[40:]
+    if ip_raw[0] == '4':
+        ttl = 'ff'
+        ip_proto = ip_raw[18:20]
+        ip_header_checksum = '1337'
+        src_ip = '0a010101'
+        dst_ip = '0a020202'
+        homogenized_packet = ip_raw[:16] + ttl + ip_proto + \
+            ip_header_checksum + src_ip + dst_ip + ip_raw[40:]
+    else:
+        homogenized_packet = ip_raw[:14] + '2a' + ip_raw[16:]
+
     return homogenized_packet
 
 
@@ -276,23 +158,97 @@ def decode_stdout(stdout):
     return stdout.communicate()[0].decode('utf-8').strip()
 
 
-def get_packet_count(filename):
-    """Given a file, get the packet count.
+def get_pcap_info(filenames):
+    """Given a list of file, get the packet count and start/stop times per file
 
     Args:
-        filename (str): Path of a file, including extension
+        filenames (list): Paths of all files, including extension
     Returns:
-        packet_count (int): How many packets were in that pcap
+        pcap_info (dict): Pcap info dict following this format:
+            {<PCAP NAME>: {
+                'packet_count': <int>,
+                'pcap_start': <float>,
+                'pcap_end': <float>
+            }}
     """
-    packet_count_cmds = ['-r', filename, '-2']
+    pcap_formats = ['pcapng', 'pcap', 'cap', 'dmp', '5vw', 'TRC0', 'TRC1',
+                    'enc', 'trc', 'fdc', 'syc', 'bfr', 'tr1', 'snoop']
+    # Remove files that are not packet captures from list.
+    for filename in filenames:
+        if os.path.splitext(filename)[1][1:] not in pcap_formats:
+            filenames.remove(filename)
 
-    pcap_text_pipe = sp.Popen(['tshark', *packet_count_cmds],
-                              stdout=sp.PIPE,
-                              stderr=sp.PIPE)
-    pcap_text = decode_stdout(pcap_text_pipe)
-    pcap_text_pipe.kill()
-    # Split text like so in order that we capture 1-line text with no newline
-    packet_list = pcap_text.split('\n')
-    # Filter out any packets that are the empty string
-    packet_count = len(list(filter(None, packet_list)))
-    return packet_count
+    pcap_info = {}
+    packet_count_cmds = ['capinfos', '-aceS'] + filenames
+
+    packet_count_pipe = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
+    packet_count_text = decode_stdout(packet_count_pipe)
+    packet_count_pipe.kill()
+
+    # Output of capinfos is tabular with below as keys.
+    count_list = re.findall(r'Number of packets:\s*(\d+)', packet_count_text)
+    start_times = re.findall(r'First packet time:\s*(\d+)', packet_count_text)
+    end_times = re.findall(r'Last packet time:\s*(\d+)', packet_count_text)
+    for index, filename in enumerate(filenames):
+        name = os.path.basename(os.path.splitext(filename)[0])
+        if count_list[index] == 0:
+            print("!!! ERROR: Packet capture ", filename,
+                  " has no packets or cannot be read!\n")
+            name += ' (no packets)'
+        pcap_info[name] = {
+            'packet_count': int(count_list[index]),
+            'pcap_start': float(start_times[index]),
+            'pcap_end': float(end_times[index])
+        }
+    if not count_list:
+        raise FileNotFoundError(
+            '\nERROR: No valid packet captures found!'
+            '\nValid types: ' + ', '.join(pcap_formats))
+
+    return pcap_info
+
+
+def get_frametext_from_files(filenames):
+    """ Get the hex frametext from all packet captures.
+
+    Tshark input looks like this:
+          0000  24 77 03 51 13 44 88 15 44 ab bf dd 08 00 45 20
+          0010  00 54 2b bc 00 00 79 01 e8 fd 08 08 08 08 0a 30
+          ...
+
+    Frametext looks like this:
+              247703511344881544abbfdd0800452000542bbc00007901e8fd08...
+
+    Args:
+        filenames (list): List of all files
+    Returns:
+        (dict): {<pcap>:
+                    {
+                        'frames': [<frame>, ...],
+                        'timestamps': [<timestamp>, ...]
+                    },
+                ...
+                }
+    """
+    pcap_frames = {}
+
+    get_hex_cmds = 'tshark -x -r'.split()
+    timestamp_cmds = 'tshark -T fields -e frame.time_epoch -r'.split()
+    for filename in filenames:
+        pcap_frames[filename] = {'frames': [], 'timestamps': []}
+        sp_hex_output = sp.Popen(get_hex_cmds + [filename], stdout=sp.PIPE)
+        hex_output = sp_hex_output.communicate()[0].decode('utf-8')
+        frame_list = hex_output.split('\n\n')
+
+        sp_timestamps = sp.Popen(timestamp_cmds + [filename], stdout=sp.PIPE)
+        timestamps = sp_timestamps.communicate()[0].decode('utf-8').split('\n')
+
+        for index, frame in enumerate(frame_list):
+            framehex = ''
+            frame_lines = frame.split('\n')
+            for frame_line in frame_lines:
+                framehex += frame_line[6:53].replace(' ', '')
+            pcap_frames[filename]['frames'].append(framehex)
+            pcap_frames[filename]['timestamps'].append(timestamps[index])
+
+    return pcap_frames

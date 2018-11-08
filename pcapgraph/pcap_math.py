@@ -18,10 +18,8 @@ import os
 import time
 
 from pcapgraph.manipulate_frames import strip_layers
-from pcapgraph.manipulate_frames import get_flat_frame_dict
-from pcapgraph.manipulate_frames import get_frame_list_by_pcap
-from pcapgraph.manipulate_frames import get_frame_from_json
-from pcapgraph.save_file import convert_to_pcaptext
+from pcapgraph.manipulate_frames import get_frametext_from_files
+from pcapgraph.save_file import get_canonical_hex_from_frametext
 import pcapgraph.save_file as save
 
 
@@ -43,10 +41,17 @@ class PcapMath:
             options (dict): Whether to strip L2 and L3 headers.
         """
         self.filenames = filenames
-        self.pcap_json_dict = strip_layers(filenames, options)
-        pcap_json_list = [*self.pcap_json_dict.values()]
-        self.frame_timestamp_dict = get_flat_frame_dict(pcap_json_list)
-        self.frame_list_by_pcap = []
+        pcap_frame_list = get_frametext_from_files(filenames)
+        self.pcap_frame_list = strip_layers(pcap_frame_list, options)
+        self.frame_list = []
+        self.timestamp_list = []
+        for pcap in self.pcap_frame_list:
+            self.frame_list += self.pcap_frame_list[pcap]['frames']
+            self.timestamp_list += self.pcap_frame_list[pcap]['timestamps']
+        self.frame_list = list(filter(None, self.frame_list))
+        self.timestamp_list = list(filter(None, self.timestamp_list))
+        self.frame_dict = {k: v for k, v in
+                           zip(self.frame_list, self.timestamp_list)}
         self.exclude_empty = False
         self.options = options
 
@@ -109,17 +114,11 @@ class PcapMath:
         Returns:
             (string): Name of generated pcap.
         """
-        raw_packet_list = []
-        for pcap in self.pcap_json_dict.values():
-            for frame in pcap:
-                raw_frame = get_frame_from_json(frame)
-                raw_packet_list.append(raw_frame)
-
-        self.print_10_most_common_frames(raw_packet_list)
+        self.print_10_most_common_frames(self.frame_list)
 
         union_frame_dict = {}
-        for frame in raw_packet_list:
-            union_frame_dict[frame] = self.frame_timestamp_dict[frame]
+        for index, frame in enumerate(self.frame_list):
+            union_frame_dict[frame] = self.timestamp_list[index]
         save.save_pcap(
             pcap_dict=union_frame_dict,
             name='union.pcap',
@@ -157,7 +156,7 @@ class PcapMath:
             counter += 1
             if counter == 10:
                 break
-            packet_text = convert_to_pcaptext(packet)
+            packet_text = get_canonical_hex_from_frametext(packet)
 
             print("Count: {: <7}\n{: <}".format(packet_stats[packet],
                                                 packet_text))
@@ -171,24 +170,26 @@ class PcapMath:
         Returns:
             (str): Fileame of generated pcap.
         """
-        # Generate intersection set of frames
-        if not self.frame_list_by_pcap:
-            self.frame_list_by_pcap = \
-                get_frame_list_by_pcap(self.pcap_json_dict)
-        frame_list = self.frame_list_by_pcap
-        frame_intersection = set(frame_list[0]).intersection(*frame_list[1:])
+        pcap_frame_list = dict(self.pcap_frame_list)
+        first_pcap = list(pcap_frame_list)[0]
+        first_pcap_frames = self.pcap_frame_list[first_pcap]['frames']
+        del pcap_frame_list[first_pcap]
+        other_pcap_frames = [pcap_frame_list[pcap]['frames'] for pcap in
+                             pcap_frame_list if pcap != first_pcap]
+        frame_intersection = set(first_pcap_frames).intersection(
+            *other_pcap_frames)
 
         # Print intersection output like in docstring
-        intersection_count = len(frame_intersection)
+        intersection_ct = len(frame_intersection)
         print("{: <12} {: <}".format('\nSAME %', 'PCAP NAME'))
         for pcap in self.filenames:
             same_percent = str(
-                round(100 * (intersection_count / len(frame_list[0])))) + '%'
+                round(100 * (intersection_ct / len(first_pcap_frames)))) + '%'
             print("{: <12} {: <}".format(same_percent, pcap))
 
         intersect_frame_dict = {}
         for frame in frame_intersection:
-            intersect_frame_dict[frame] = self.frame_timestamp_dict[frame]
+            intersect_frame_dict[frame] = self.frame_dict[frame]
         save.save_pcap(
             pcap_dict=intersect_frame_dict,
             name='intersect.pcap',
@@ -334,7 +335,7 @@ class PcapMath:
 
         bounded_pcaps = []
         # Each frame_list corresponds to one pcap.
-        for frame_list in self.frame_list_by_pcap:
+        for frame_list in self.pcap_frame_list:
             min_frame_index = -1
             max_frame_index = -1
             for frame in frame_list:
@@ -373,11 +374,15 @@ class PcapMath:
             assert: If intersection is empty.
         """
         # Generate intersection set of frames
-        if not self.frame_list_by_pcap:
-            self.frame_list_by_pcap = \
-                get_frame_list_by_pcap(self.pcap_json_dict)
-        frame_list = self.frame_list_by_pcap
-        frame_intersection = set(frame_list[0]).intersection(*frame_list[1:])
+        # TODO move this to its own function
+        pcap_frame_list = dict(self.pcap_frame_list)
+        first_pcap = list(pcap_frame_list)[0]
+        first_pcap_frames = self.pcap_frame_list[first_pcap]['frames']
+        del pcap_frame_list[first_pcap]
+        other_pcap_frames = [pcap_frame_list[pcap]['frames'] for pcap in
+                             pcap_frame_list if pcap != first_pcap]
+        frame_intersection = set(first_pcap_frames).intersection(
+            *other_pcap_frames)
 
         # Set may reorder packets, so search for first/last.
         unix_32bit_end_of_time = 4294967296
@@ -386,7 +391,8 @@ class PcapMath:
         max_frame = ''
         min_frame = ''
         for frame in frame_intersection:
-            frame_time = float(self.frame_timestamp_dict[frame])
+            print(frame, self.frame_dict[frame], type(self.frame_dict[frame]))
+            frame_time = float(self.frame_dict[frame])
             if frame_time > time_max:
                 time_max = frame_time
                 max_frame = frame

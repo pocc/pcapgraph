@@ -21,7 +21,7 @@ from tests import setup_testenv, DEFAULT_CLI_ARGS, SINGLE_FRAME_JSON, \
     EXPECTED_PCAP_JSON_LIST, EXPECTED_STRIPPED_PCAP
 from pcapgraph.manipulate_frames import parse_pcaps, get_pcap_frame_dict, \
     get_homogenized_packet, get_pcap_as_json, get_frame_from_json, \
-    get_frame_list_by_pcap, get_packet_count, get_flat_frame_dict, strip_layers
+    get_frame_list_by_pcap, get_pcap_info, get_flat_frame_dict, strip_layers
 
 
 class TestManipulateFrames(unittest.TestCase):
@@ -184,5 +184,5 @@ class TestManipulateFrames(unittest.TestCase):
 
     def test_get_packet_count(self):
         """Test whether a 2 packet pcap is counted as having 2 packets."""
-        count = get_packet_count('tests/files/in_order_packets.pcap')
+        count = get_pcap_info('tests/files/in_order_packets.pcap')
         self.assertEqual(count, 2)

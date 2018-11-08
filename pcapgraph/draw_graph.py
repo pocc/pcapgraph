@@ -72,17 +72,9 @@ def output_file(save_format, pcap_packets, exclude_empty, anonymize_names):
         print("Text file successfully created!")
     else:
         graph_vars = {}
-        empty_files = []
-        for filename in pcap_filenames:
-            graph_startstop_dict = get_graph_vars_from_file(filename)
-            filename = os.path.basename(os.path.splitext(filename)[0])
-            if graph_startstop_dict:  # If it's a valid pcap
-                graph_vars[filename] = graph_startstop_dict
-            elif not exclude_empty:
-                filename += ' (no packets)'
-                empty_files.append(filename)
+        graph_startstop_dict = mf.get_pcap_info(pcap_filenames)
 
-        generate_graph(graph_vars, empty_files, anonymize_names)
+        generate_graph(graph_startstop_dict, anonymize_names)
         if save_format != 'show':
             export_graph(list(graph_vars), save_format)
         else:
@@ -114,68 +106,16 @@ def remove_or_open_files(new_files, open_in_wireshark, delete_pcaps):
             os.remove(file)
 
 
-def get_graph_vars_from_file(filename):
-    """Setup graph variables.
-
-    This function exists to decrease the complexity of generate graph.
-    The order of return vars start_times_array, end_times_array, and pcap_names
-    should all match. In other words, the start_times_array[5] is for the
-    same pcap as end_times_array[5] and pcap_names[5].
-
-    Args:
-        filename (str): Name of file
-    Returns:
-        (dict): File start/stop times if file has 1+ valid packets.
-    """
-    packet_count = mf.get_packet_count(filename)
-
-    if packet_count:
-        start_time_cmds = [
-            'tshark', '-r', filename, '-2', '-Y', 'frame.number==1', '-T',
-            'fields', '-e', 'frame.time_epoch'
-        ]
-        end_time_cmds = [
-            'tshark', '-r', filename, '-2', '-Y',
-            'frame.number==' + str(packet_count), '-T', 'fields', '-e',
-            'frame.time_epoch'
-        ]
-        pcap_start_pipe = sp.Popen(
-            start_time_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
-        pcap_end_pipe = sp.Popen(end_time_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
-        pcap_start = float(mf.decode_stdout(pcap_start_pipe))
-        pcap_end = float(mf.decode_stdout(pcap_end_pipe))
-        pcap_start_pipe.kill()
-        pcap_end_pipe.kill()
-
-        tcpdump_release_time = 946684800
-        if pcap_start < tcpdump_release_time or \
-                pcap_end < tcpdump_release_time:
-            print(
-                "!!! Packets from ", filename,
-                " must have traveled via a flux capacitor because they're in"
-                " the past or the future!\n!!! Timestamps predate the "
-                "release of tcpdump or are negative."
-                "\n!!! Excluding from results.\n")
-            return {}
-
-        return {'pcap_start': pcap_start, 'pcap_end': pcap_end}
-    # (else) May need to raise an exception for this as it means input is bad.
-    print("!!! ERROR: Packet capture", filename,
-          " has no packets or cannot be read!\n")
-    return {}
-
-
-def generate_graph(pcap_vars, empty_files, anonymize_names):
+def generate_graph(pcap_vars, anonymize_names):
     """Generate the matplotlib graph.
 
     Args:
         pcap_vars (dict): Contains all data required for the graph.
             {<pcap>: {'pcap_start': <timestamp>, 'pcap_end': <timestamp>}, ...}
-        empty_files (list): List of filenames of empty files.
         anonymize_names (bool): Whether to use pseudorandom names for files.
     """
     # first and last are the first and last timestamp of all pcaps.
-    pcap_names = list(pcap_vars) + empty_files
+    pcap_names = list(pcap_vars)
     if anonymize_names:
         pcap_names = mf.anonymous_pcap_names(len(pcap_names))
     start_times = np.array(

@@ -18,7 +18,7 @@ import subprocess as sp
 import os
 
 
-def convert_to_pcaptext(raw_packet, timestamp=''):
+def get_canonical_hex_from_frametext(raw_packet, timestamp=''):
     """Convert the raw pcap hex to a form that text2cap can read from stdin.
 
     hexdump and xxd can do this on unix-like platforms, but not on Windows.
@@ -107,7 +107,7 @@ def save_pcap(pcap_dict, name, options):
     pcap_text = ''
     for frame in pcap_dict:
         frame_timestamp = pcap_dict[frame]
-        pcap_text += convert_to_pcaptext(frame, frame_timestamp)
+        pcap_text += get_canonical_hex_from_frametext(frame, frame_timestamp)
     save_pcap_cmds = ['text2pcap', '-', '-t', '%s.']
     if options['strip-l2'] or options['strip-l3']:
         # 101 is the link-type for raw-ip (IPv4 & IPv6)

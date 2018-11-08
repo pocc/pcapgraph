@@ -65,8 +65,9 @@ OPTIONS:
                             802.3/802.11 frames).
       -3, --strip-l3        Remove IP header and encode dummy ethernet/IP
                             headers. Use if pcaps track flows across IPv4 NAT.
-                            -3 implies -2. This flag is IPv4 only as IPv6
-                            should not have NAT.
+                            -3 implies -2. For both IPv4 and IPv6, this will
+                            insert a dummy TTL so identical packets are
+                            treated as such.
 
     MISC OPTIONS:
       -h, --help            Show this screen.
@@ -173,7 +174,7 @@ EXAMPLE USE CASES:
       coming out of switchport3 is noise for what you are looking for.
       Difference is generally helpful as another means to filter pcaps.
 
-  5. Union to help diagnose a broadcast storm:
+  5. Union to help diagnose a broadcast storm
       ::
 
           $ pcapgraph --union pcap_dir/
