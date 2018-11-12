@@ -95,9 +95,9 @@ class TestPcapMath(unittest.TestCase):
         diff1and3 = PcapMath(['examples/simul1.pcap', 'examples/simul3.pcap'],
                              self.options)
         diff_filename = diff1and3.difference_pcap()
-        self.assertTrue(
-            filecmp.cmp(diff_filename, 'examples/set_ops/'
-                        'diff_simul1-simul3.pcap'))
+        self.assertTrue(filecmp.cmp(
+            diff_filename,
+            'examples/set_ops/diff_simul1-simul3.pcap'))
         os.remove('diff_simul1.pcap')
 
     def test_symmetric_difference(self):

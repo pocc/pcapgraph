@@ -20,7 +20,7 @@ import os
 import pickle
 
 from pcapgraph.draw_graph import remove_or_open_files, set_xticks, \
-    make_text_not_war, get_graph_vars_from_file, set_horiz_bar_colors, \
+    make_text_not_war, set_horiz_bar_colors, \
     get_x_minmax
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
@@ -72,14 +72,6 @@ class TestManipulateFrames(unittest.TestCase):
             new_files=filenames, open_in_wireshark=False, delete_pcaps=True)
         for file in filenames:
             assert not os.path.isfile(file)
-
-    def test_get_graph_vars_from_files(self):
-        """Testing get_graphs_vars_from_files."""
-        input_filename = 'tests/files/in_order_packets.pcap'
-        expected_result = {'pcap_start': 1537945792.65536,
-                           'pcap_end': 1537945792.720895}
-        actual_result = get_graph_vars_from_file(input_filename)
-        self.assertEqual(expected_result, actual_result)
 
     def test_generate_graph(self):
         """Do not test generate_graph as it needs a matplotlib.pyplot object.

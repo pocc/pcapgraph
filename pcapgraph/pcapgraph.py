@@ -286,7 +286,7 @@ def run():
     }
     pcap_math = pm.PcapMath(filenames, options)
     all_filenames = pcap_math.parse_set_args(args)
-    pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)
+    pcaps_frame_dict = mf.get_frametext_from_files(all_filenames)
     if args['-w']:
         args['--output'].extend(['wireshark', 'pcap'])
     dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],

@@ -19,7 +19,8 @@ import filecmp
 import shutil
 import os
 
-from pcapgraph.save_file import get_canonical_hex_from_frametext, reorder_packets, save_pcap
+from pcapgraph.save_file import get_canonical_hex_from_frametext, \
+    reorder_packets, save_pcap
 from tests import setup_testenv
 
 

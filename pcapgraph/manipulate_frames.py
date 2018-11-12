@@ -14,32 +14,6 @@
 # limitations under the License.
 """Parse the frames from files based upon options.
 
-Create the same JSON style with `tshark -r examples/simul1.pcap -T json -x`
-Note that the <var>_raw is due to the -x flag.
-
-::
-
-    Frame JSON looks like this:
-    {
-        '_index': 'packets-2018-11-03',
-        '_type': 'pcap_file',
-        '_score': None,
-        '_source': {
-            'layers': {
-                'frame_raw': ['881544abbfdd2477035113440800450000380b5d0000...
-                'frame': {'frame.encap_type': '1', 'frame.time': 'Sep 26, 2...
-                'eth_raw': ['881544abbfdd2477035113440800', 0, 14, 0, 1],
-                'eth': {'eth.dst_raw': ['881544abbfdd', 0, 6, 0, 29], 'eth...
-                'ip_raw': ['450000380b5d00004011c7980a3012900a808080', 14, 2...
-                'ip': {'ip.version_raw': ['4', 14, 1, 240, 4], 'ip.version'...
-                'udp_raw': ['ea6200350024a492', 34, 8, 0, 1],
-                'udp': ['udp.srcport_raw': ['ea62', 34, 2, 0, 5], 'udp.srcp...
-                'dns_raw': ['9b130100000100000000000006616d617a6f6e03636f6d...
-                'dns': {'dns.id_raw': ['9b13', 42, 2, 0, 5], 'dns.id': '0x00...
-            }
-        }
-    }
-
 Many of these functions interact with this frame dict format or directly with
 the frame string (seen in 'frame_raw'). The frame string is a string of the
 hex of a packet.
@@ -78,7 +52,7 @@ def strip_layers(pcap_framelist, options):
                 else:  # IPv6 header is ALWAYS 40 octets.
                     ip_header_nibbles = 80
                 ip_header_end = frame_header_end + ip_header_nibbles
-                ip_header = frame[frame_header_end: ip_header_end]
+                ip_header = frame[frame_header_end:ip_header_end]
                 homogenized_packet = get_homogenized_packet(ip_header)
                 pcap_framelist[pcap]['frames'][index] = \
                     homogenized_packet + frame.split(ip_header)[1]
@@ -171,8 +145,10 @@ def get_pcap_info(filenames):
                 'pcap_end': <float>
             }}
     """
-    pcap_formats = ['pcapng', 'pcap', 'cap', 'dmp', '5vw', 'TRC0', 'TRC1',
-                    'enc', 'trc', 'fdc', 'syc', 'bfr', 'tr1', 'snoop']
+    pcap_formats = [
+        'pcapng', 'pcap', 'cap', 'dmp', '5vw', 'TRC0', 'TRC1', 'enc', 'trc',
+        'fdc', 'syc', 'bfr', 'tr1', 'snoop'
+    ]
     # Remove files that are not packet captures from list.
     for filename in filenames:
         if os.path.splitext(filename)[1][1:] not in pcap_formats:
@@ -187,23 +163,28 @@ def get_pcap_info(filenames):
 
     # Output of capinfos is tabular with below as keys.
     count_list = re.findall(r'Number of packets:\s*(\d+)', packet_count_text)
-    start_times = re.findall(r'First packet time:\s*(\d+)', packet_count_text)
-    end_times = re.findall(r'Last packet time:\s*(\d+)', packet_count_text)
+    start_times = re.findall(r'First packet time:\s*(\d+\.\d+|n\/a)',
+                             packet_count_text)
+    end_times = re.findall(r'Last packet time:\s*(\d+\.\d+|n\/a)',
+                           packet_count_text)
     for index, filename in enumerate(filenames):
         name = os.path.basename(os.path.splitext(filename)[0])
-        if count_list[index] == 0:
+        is_invalid_pcap = (count_list[index] == '0'
+                           or start_times[index] == 'n/a'
+                           or end_times[index] == 'n/a')
+        if is_invalid_pcap:
             print("!!! ERROR: Packet capture ", filename,
                   " has no packets or cannot be read!\n")
             name += ' (no packets)'
-        pcap_info[name] = {
-            'packet_count': int(count_list[index]),
-            'pcap_start': float(start_times[index]),
-            'pcap_end': float(end_times[index])
-        }
+        else:
+            pcap_info[name] = {
+                'packet_count': int(count_list[index]),
+                'pcap_start': float(start_times[index]),
+                'pcap_end': float(end_times[index])
+            }
     if not count_list:
-        raise FileNotFoundError(
-            '\nERROR: No valid packet captures found!'
-            '\nValid types: ' + ', '.join(pcap_formats))
+        raise FileNotFoundError('\nERROR: No valid packet captures found!'
+                                '\nValid types: ' + ', '.join(pcap_formats))
 
     return pcap_info
 
@@ -238,7 +219,8 @@ def get_frametext_from_files(filenames):
         pcap_frames[filename] = {'frames': [], 'timestamps': []}
         sp_hex_output = sp.Popen(get_hex_cmds + [filename], stdout=sp.PIPE)
         hex_output = sp_hex_output.communicate()[0].decode('utf-8')
-        frame_list = hex_output.split('\n\n')
+        # Split -x output into frame strings and filter out empty values
+        frame_list = filter(None, hex_output.split('\n\n'))
 
         sp_timestamps = sp.Popen(timestamp_cmds + [filename], stdout=sp.PIPE)
         timestamps = sp_timestamps.communicate()[0].decode('utf-8').split('\n')

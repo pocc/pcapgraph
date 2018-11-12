@@ -1,0 +1,11 @@
+# For developers who want to generate documenatation or executables,
+# Upload to PyPI, lint, or test.
+sphinx
+pyinstaller
+twine
+flake8
+pylint
+yapf
+pytest
+
+-r requirements.txt

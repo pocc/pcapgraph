@@ -49,7 +49,8 @@ class TestDrawGraph(unittest.TestCase):
         self.args['<file>'] = [
             'examples/simul1.pcap',
             'examples/simul2.pcap',
-            'examples/simul3.pcap'
+            'examples/simul3.pcap',
+            'tests/files/empty.pcap'
         ]
         if os.name == 'posix':  # Graphs are generated differently on Windows
             self.mock_main(self.args)
@@ -68,6 +69,6 @@ class TestDrawGraph(unittest.TestCase):
         options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
         pcap_math = pm.PcapMath(filenames, options)
         all_filenames = pcap_math.parse_set_args(args)
-        pcaps_frame_dict = mf.get_pcap_frame_dict(all_filenames)
+        pcaps_frame_dict = mf.get_frametext_from_files(all_filenames)
         dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
                       True, False)

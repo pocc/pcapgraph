@@ -43,15 +43,17 @@ class PcapMath:
         self.filenames = filenames
         pcap_frame_list = get_frametext_from_files(filenames)
         self.pcap_frame_list = strip_layers(pcap_frame_list, options)
-        self.frame_list = []
-        self.timestamp_list = []
+        self.frame_list = []  # Flat ordered list of all frames
+        self.timestamp_list = []  # Flat ordered list of all timestamps
         for pcap in self.pcap_frame_list:
             self.frame_list += self.pcap_frame_list[pcap]['frames']
             self.timestamp_list += self.pcap_frame_list[pcap]['timestamps']
         self.frame_list = list(filter(None, self.frame_list))
         self.timestamp_list = list(filter(None, self.timestamp_list))
-        self.frame_dict = {k: v for k, v in
-                           zip(self.frame_list, self.timestamp_list)}
+        self.frame_timestamp_dict = {
+            k: v
+            for k, v in zip(self.frame_list, self.timestamp_list)
+        }
         self.exclude_empty = False
         self.options = options
 
@@ -167,17 +169,15 @@ class PcapMath:
     def intersect_pcap(self):
         """Save pcap intersection. First filename is pivot packet capture.
 
+        generate_intersection also exists as the frame intersect part is
+        used by other functions.
+
         Returns:
             (str): Fileame of generated pcap.
         """
-        pcap_frame_list = dict(self.pcap_frame_list)
-        first_pcap = list(pcap_frame_list)[0]
+        first_pcap = list(self.pcap_frame_list)[0]
         first_pcap_frames = self.pcap_frame_list[first_pcap]['frames']
-        del pcap_frame_list[first_pcap]
-        other_pcap_frames = [pcap_frame_list[pcap]['frames'] for pcap in
-                             pcap_frame_list if pcap != first_pcap]
-        frame_intersection = set(first_pcap_frames).intersection(
-            *other_pcap_frames)
+        frame_intersection = self.generate_intersection()
 
         # Print intersection output like in docstring
         intersection_ct = len(frame_intersection)
@@ -189,7 +189,7 @@ class PcapMath:
 
         intersect_frame_dict = {}
         for frame in frame_intersection:
-            intersect_frame_dict[frame] = self.frame_dict[frame]
+            intersect_frame_dict[frame] = self.frame_timestamp_dict[frame]
         save.save_pcap(
             pcap_dict=intersect_frame_dict,
             name='intersect.pcap',
@@ -201,6 +201,20 @@ class PcapMath:
               ' contains no packets!')
         return ''
 
+    def generate_intersection(self):
+        """Return the intersection of 2 or more pcaps."""
+        pcap_frame_list = dict(self.pcap_frame_list)
+        first_pcap = list(pcap_frame_list)[0]
+        first_pcap_frames = self.pcap_frame_list[first_pcap]['frames']
+        del pcap_frame_list[first_pcap]
+        other_pcap_frames = [
+            pcap_frame_list[pcap]['frames'] for pcap in pcap_frame_list
+            if pcap != first_pcap
+        ]
+        frame_intersection = set(first_pcap_frames).intersection(
+            *other_pcap_frames)
+        return frame_intersection
+
     def difference_pcap(self, pivot_index=0):
         """Given sets A = (1, 2, 3), B = (2, 3, 4), C = (3, 4, 5), A-B-C = (1).
 
@@ -210,23 +224,19 @@ class PcapMath:
         Returns:
             (string): Name of generated pcap.
         """
-        pcap_json_list = [*self.pcap_json_dict.values()]
-        minuend_pcap_json = pcap_json_list[pivot_index]
-        minuend_name = self.filenames[pivot_index]
-        # pcap json list - minuend json. With index 0, remove 1st pcap json.
-        diff_pcap_json_list = pcap_json_list[:pivot_index] + \
-            pcap_json_list[pivot_index+1:]
+        minuend_name = list(self.pcap_frame_list)[pivot_index]
+        minuend_frame_list = self.pcap_frame_list[minuend_name]['frames']
+        other_frame_list = []
+        for pcap in self.pcap_frame_list:
+            if pcap != minuend_name:
+                other_frame_list.extend(self.pcap_frame_list[pcap]['frames'])
 
-        minuend_frame_dict = get_flat_frame_dict([minuend_pcap_json])
-        minuend_frame_list = list(minuend_frame_dict.keys())
-        diff_frame_dict = get_flat_frame_dict(diff_pcap_json_list)
-        diff_frame_list = list(diff_frame_dict.keys())
-        packet_diff = set(minuend_frame_list).difference(set(diff_frame_list))
+        packet_diff = set(minuend_frame_list).difference(set(other_frame_list))
 
         diff_frame_dict = {}
         for frame in packet_diff:
-            # Minuend frame dict should have all values we care about.
-            diff_frame_dict[frame] = minuend_frame_dict[frame]
+            # Minuend frame list should have all values we care about.
+            diff_frame_dict[frame] = self.frame_timestamp_dict[frame]
         diff_filename = 'diff_' + os.path.basename(minuend_name)
         # Save only if there are packets or -x flag is not used.
         if not packet_diff:
@@ -309,9 +319,6 @@ class PcapMath:
         backup_filenames = self.filenames
         for index, bi_file in enumerate(bounded_filelist):
             self.filenames = [bounded_filelist[index], intersect_file]
-            self.pcap_json_dict = strip_layers(self.filenames, self.options)
-            pcap_json_list = [*self.pcap_json_dict.values()]
-            self.frame_timestamp_dict = get_flat_frame_dict(pcap_json_list)
             difference_file = self.difference_pcap()
             if difference_file:
                 generated_filelist.append(difference_file)
@@ -335,10 +342,11 @@ class PcapMath:
 
         bounded_pcaps = []
         # Each frame_list corresponds to one pcap.
-        for frame_list in self.pcap_frame_list:
+        for pcap in self.pcap_frame_list:
             min_frame_index = -1
             max_frame_index = -1
-            for frame in frame_list:
+            frame_list = self.pcap_frame_list[pcap]['frames']
+            for frame in self.frame_list:
                 if frame == min_frame:
                     min_frame_index = frame_list.index(frame)
                     break
@@ -374,15 +382,7 @@ class PcapMath:
             assert: If intersection is empty.
         """
         # Generate intersection set of frames
-        # TODO move this to its own function
-        pcap_frame_list = dict(self.pcap_frame_list)
-        first_pcap = list(pcap_frame_list)[0]
-        first_pcap_frames = self.pcap_frame_list[first_pcap]['frames']
-        del pcap_frame_list[first_pcap]
-        other_pcap_frames = [pcap_frame_list[pcap]['frames'] for pcap in
-                             pcap_frame_list if pcap != first_pcap]
-        frame_intersection = set(first_pcap_frames).intersection(
-            *other_pcap_frames)
+        frame_intersection = self.generate_intersection()
 
         # Set may reorder packets, so search for first/last.
         unix_32bit_end_of_time = 4294967296
@@ -391,8 +391,7 @@ class PcapMath:
         max_frame = ''
         min_frame = ''
         for frame in frame_intersection:
-            print(frame, self.frame_dict[frame], type(self.frame_dict[frame]))
-            frame_time = float(self.frame_dict[frame])
+            frame_time = float(self.frame_timestamp_dict[frame])
             if frame_time > time_max:
                 time_max = frame_time
                 max_frame = frame

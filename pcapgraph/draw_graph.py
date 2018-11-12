@@ -61,7 +61,14 @@ def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty,
 
 
 def output_file(save_format, pcap_packets, exclude_empty, anonymize_names):
-    """Save the specified file with the specified format."""
+    """Save the specified file with the specified format.
+
+    Args:
+        save_format (str): Extension of file to be saved.
+        pcap_packets (dict): All packets, where key is pcap filename/operation.
+        exclude_empty (bool): Whether to exclude empty pcaps from graph.
+        anonymize_names (bool): Whether to change filenames to random values.
+    """
     pcap_filenames = list(pcap_packets)
     if save_format == 'txt':
         output_text = make_text_not_war(pcap_packets)
@@ -71,15 +78,19 @@ def output_file(save_format, pcap_packets, exclude_empty, anonymize_names):
             file.close()
         print("Text file successfully created!")
     else:
-        graph_vars = {}
         graph_startstop_dict = mf.get_pcap_info(pcap_filenames)
-
-        generate_graph(graph_startstop_dict, anonymize_names)
+        empty_files = []
+        if not exclude_empty:
+            for pcap in pcap_packets:
+                if not pcap_packets[pcap]['frames']:
+                    pcap_name = os.path.basename(os.path.splitext(pcap)[0])
+                    empty_files += [pcap_name]
+        generate_graph(graph_startstop_dict, empty_files, anonymize_names)
         if save_format != 'show':
-            export_graph(list(graph_vars), save_format)
+            export_graph(pcap_filenames, save_format)
         else:
             # Print text version because it's possible.
-            print(make_text_not_war(graph_vars))
+            print(make_text_not_war(graph_startstop_dict))
             plt.show()
 
 
@@ -106,16 +117,17 @@ def remove_or_open_files(new_files, open_in_wireshark, delete_pcaps):
             os.remove(file)
 
 
-def generate_graph(pcap_vars, anonymize_names):
+def generate_graph(pcap_vars, empty_files, anonymize_names):
     """Generate the matplotlib graph.
 
     Args:
         pcap_vars (dict): Contains all data required for the graph.
             {<pcap>: {'pcap_start': <timestamp>, 'pcap_end': <timestamp>}, ...}
+        empty_files (list): List of filenames of empty files.
         anonymize_names (bool): Whether to use pseudorandom names for files.
     """
     # first and last are the first and last timestamp of all pcaps.
-    pcap_names = list(pcap_vars)
+    pcap_names = list(pcap_vars) + empty_files
     if anonymize_names:
         pcap_names = mf.anonymous_pcap_names(len(pcap_names))
     start_times = np.array(
@@ -250,7 +262,8 @@ def export_graph(pcap_names, save_fmt):
         save_fmt (str): File extension of output file
     """
     this_folder = os.getcwd()
-    last_operation_file = pcap_names[-1].split(' ')[0] + '.'
+    pcap_name = pcap_names[-1].split('.pcap')[0]
+    last_operation_file = pcap_name.split(' ')[0] + '.'
     plt.savefig(
         'pcap_graph-' + last_operation_file + save_fmt,
         format=save_fmt,
