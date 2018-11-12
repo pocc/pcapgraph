@@ -70,8 +70,11 @@ def get_canonical_hex_from_frametext(raw_packet, timestamp=''):
         for byte_sep in range(0, hex_chars_per_line, hex_chars_per_byte):
             line += raw_line[byte_sep:byte_sep + hex_chars_per_byte] + ' '
         line = line[:-1]  # get rid of trailing space
-        line_sep_hex = line_sep // 32 * 10  # Offsets need to be in hex.
-        formatted_string += '{:>04d}'.format(line_sep_hex) + '  ' + line + '\n'
+        # Offsets need to be in hex.
+        line_sep_hex = hex(line_sep // 32 * 16).replace('x', '0')
+        if line_sep == 0:
+            line_sep_hex = '0' + line_sep_hex
+        formatted_string += '{:>4s}'.format(line_sep_hex) + '  ' + line + '\n'
 
     return formatted_string
 
@@ -108,6 +111,9 @@ def save_pcap(pcap_dict, name, options):
     for frame in pcap_dict:
         frame_timestamp = pcap_dict[frame]
         pcap_text += get_canonical_hex_from_frametext(frame, frame_timestamp)
+    with open('file.txt', 'w') as file:
+        file.write(pcap_text)
+        file.close()
     save_pcap_cmds = ['text2pcap', '-', '-t', '%s.']
     if options['strip-l2'] or options['strip-l3']:
         # 101 is the link-type for raw-ip (IPv4 & IPv6)

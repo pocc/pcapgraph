@@ -35,6 +35,11 @@ setup(
     packages=['pcapgraph'],
     python_requires='>=3.5',
     provides=['pcapgraph'],
+    install_requires=[
+        'docopt',
+        'numpy',
+        'matplotlib'
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: Apache Software License',

@@ -169,10 +169,10 @@ def get_pcap_info(filenames):
                            packet_count_text)
     for index, filename in enumerate(filenames):
         name = os.path.basename(os.path.splitext(filename)[0])
-        is_invalid_pcap = (count_list[index] == '0'
-                           or start_times[index] == 'n/a'
-                           or end_times[index] == 'n/a')
-        if is_invalid_pcap:
+        is_invalid_packet = (count_list[index] == '0'
+                             or start_times[index] == 'n/a'
+                             or end_times[index] == 'n/a')
+        if is_invalid_packet:
             print("!!! ERROR: Packet capture ", filename,
                   " has no packets or cannot be read!\n")
             name += ' (no packets)'
