@@ -15,11 +15,9 @@
 """Test draw_graph.py."""
 
 import unittest
-import subprocess as sp
-import os
 import pickle
 
-from pcapgraph.draw_graph import remove_or_open_files, set_xticks, \
+from pcapgraph.draw_graph import set_xticks, \
     make_text_not_war, set_horiz_bar_colors, \
     get_x_minmax
 from tests import setup_testenv, DEFAULT_CLI_ARGS
@@ -31,7 +29,7 @@ class TestManipulateFrames(unittest.TestCase):
     def setUp(self):
         """set directory to project root."""
         setup_testenv()
-        self.args = DEFAULT_CLI_ARGS
+        self.args = dict(DEFAULT_CLI_ARGS)
 
     def test_draw_graph(self):
         """Test draw_graph in the following ways:
@@ -45,33 +43,6 @@ class TestManipulateFrames(unittest.TestCase):
         Depending on integration and pcap_math tests to test this function.
         """
         pass
-
-    @staticmethod
-    def test_remove_or_open_files():
-        """Test whether deleting specified files works.
-
-        * Test: Create and delete pcaps. This can check for creation/deletion
-                permission errors (i.e. sudo required where it shouldn't be).
-        """
-        filenames = {'test1.pcap', 'test2.pcapng'}
-        for filename in filenames:
-            # Encode an empty packet capture that can be opened in wireshark
-            send_empty_text = ['echo', '-e', '""']
-            encode_pcap = ['text2pcap', '-', filename]
-            # wireshark_cmds = ['wireshark', '-r', filename]
-            if filename.endswith('pcapng'):
-                encode_pcap += ['-n']
-            text = sp.Popen(send_empty_text, stdout=sp.PIPE, stderr=sp.PIPE)
-            encode = sp.Popen(
-                encode_pcap, stdin=text.stdout, stdout=sp.PIPE, stderr=sp.PIPE)
-            encode.communicate()
-            text.kill()
-            encode.kill()
-
-        remove_or_open_files(
-            new_files=filenames, open_in_wireshark=False, delete_pcaps=True)
-        for file in filenames:
-            assert not os.path.isfile(file)
 
     def test_generate_graph(self):
         """Do not test generate_graph as it needs a matplotlib.pyplot object.

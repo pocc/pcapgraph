@@ -80,8 +80,8 @@ class TestManipulateFrames(unittest.TestCase):
         expected_frame_dict = {
             'tests/files/in_order_packets.pcap': {
                 'frames': [
-                    '0000  88 15 44 ab bf dd 24 77 03 51 13 44 08 00 45 00\n' \
-                    '0010  00 38 0b 5d 00 00 40 11 c7 98 0a 30 12 90 0a 80\n' \
+                    '0000  88 15 44 ab bf dd 24 77 03 51 13 44 08 00 45 00\n'
+                    '0010  00 38 0b 5d 00 00 40 11 c7 98 0a 30 12 90 0a 80\n'
                     '0020  80 80 ea 62 00 35 00 24 a4 92 9b 13 01 00 00 01\n'
                     '0030  00 00 00 00 00 00 06 61 6d 61 7a 6f 6e 03 63 6f\n'
                     '0040  6d 00 00 01 00 01                              \n',

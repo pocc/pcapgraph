@@ -148,6 +148,8 @@ def decode_stdout(stdout):
 def get_pcap_info(filenames):
     """Given a list of file, get the packet count and start/stop times per file
 
+    NOTE: A file in `filenames` MUST have a valid path.
+
     Args:
         filenames (list): Paths of all files, including extension
     Returns:

@@ -26,7 +26,7 @@ class TestGetFilenames(unittest.TestCase):
     def setUp(self):
         """Set up vars."""
         setup_testenv()
-        self.args = DEFAULT_CLI_ARGS
+        self.args = dict(DEFAULT_CLI_ARGS)
 
     def test_parse_cli_args(self):
         """Test parse_cli_args."""

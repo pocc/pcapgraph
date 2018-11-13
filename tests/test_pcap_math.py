@@ -22,6 +22,7 @@ import re
 from contextlib import redirect_stdout
 
 from pcapgraph.pcap_math import PcapMath
+import pcapgraph.save_file as sf
 from tests import setup_testenv, DEFAULT_CLI_ARGS, EXPECTED_UNION_STDOUT
 
 
@@ -46,16 +47,16 @@ class TestPcapMath(unittest.TestCase):
         If we do not save that packet capture and remove it from the filelist,
         it should not appear in the return filelist.
         """
-        args = DEFAULT_CLI_ARGS
+        args = dict(DEFAULT_CLI_ARGS)
         args['--exclude-empty'] = True
         args['--difference'] = True
-        args['--union'] = False  # Required to avoid unexpected pytest behavior
         # Have to specify filename in 2 ways because filename is key in dict.
         filenames = [
             'examples/simul1.pcap', '../pcapgraph/examples/simul1.pcap'
         ]
         exclude_set_obj = PcapMath(filenames, self.options)
-        excluded_filenames = exclude_set_obj.parse_set_args(args)
+        excluded_pcap_frames = exclude_set_obj.parse_set_args(args)
+        excluded_filenames = list(excluded_pcap_frames)
         self.assertEqual(filenames, excluded_filenames)
 
     def test_union_pcap(self):
@@ -63,13 +64,14 @@ class TestPcapMath(unittest.TestCase):
         # These 4 lines will save generated_stdout from union()
         f_stream = io.StringIO()
         with redirect_stdout(f_stream):
-            self.set_obj.union_pcap()
+            pcap_frame_list = self.set_obj.union_pcap()
         generated_stdout = f_stream.getvalue()
         # Remove all whitespace at end of lines to match expected
         generated_stdout = re.sub(r' +$', '', generated_stdout, flags=re.M)
 
         # Tests print_10_most_common_frames
         self.assertEqual(EXPECTED_UNION_STDOUT, generated_stdout)
+        sf.save_pcap(pcap_frame_list, 'union.pcap', self.options)
         self.assertTrue(
             filecmp.cmp('union.pcap', 'examples/set_ops/union.pcap'))
         os.remove('union.pcap')
@@ -77,33 +79,39 @@ class TestPcapMath(unittest.TestCase):
     def test_intersect_pcap(self):
         """Test union_pcap using the pcaps in examples."""
         # This will generate intersect.pcap in tests/
-        self.set_obj.intersect_pcap()
+        intersect_frame_dict = self.set_obj.intersect_pcap()
         # The generated file should be the same as examples/union.pcap
+        sf.save_pcap(intersect_frame_dict, 'intersect.pcap', self.options)
         self.assertTrue(
             filecmp.cmp('intersect.pcap', 'examples/set_ops/intersect.pcap'))
         # examples/intersect.pcap is from all 3 simul pcaps, so using
         # 2 of 3 should fail as the generated intersection will be different.
         two_thirds = PcapMath(['examples/simul1.pcap', 'examples/simul2.pcap'],
                               options=self.options)
-        two_thirds.intersect_pcap()
+        two_thirds_frame_dict = two_thirds.intersect_pcap()
+        sf.save_pcap(two_thirds_frame_dict, 'two_thirds.pcap', self.options)
         self.assertFalse(
-            filecmp.cmp('intersect.pcap', 'examples/set_ops/intersect.pcap'))
+            filecmp.cmp('two_thirds.pcap', 'examples/set_ops/intersect.pcap'))
         os.remove('intersect.pcap')
+        os.remove('two_thirds.pcap')
 
     def test_difference_pcap(self):
         """Test the difference_pcap method with multiple pcaps."""
         diff1and3 = PcapMath(['examples/simul1.pcap', 'examples/simul3.pcap'],
                              self.options)
-        diff_filename = diff1and3.difference_pcap()
+        diff_pcap_frames = diff1and3.difference_pcap()
+        sf.save_pcap(diff_pcap_frames, 'diff_simul1.pcap', self.options)
         self.assertTrue(filecmp.cmp(
-            diff_filename,
+            'diff_simul1.pcap',
             'examples/set_ops/diff_simul1-simul3.pcap'))
         os.remove('diff_simul1.pcap')
 
     def test_symmetric_difference(self):
         """Test the symmetric difference method with muliple pcaps."""
-        self.set_obj.symmetric_difference_pcap()
+        sym_diff_pcap_frames = self.set_obj.symmetric_difference_pcap()
         # The generated file should be the same as examples/union.pcap
+        for pcap in sym_diff_pcap_frames:
+            sf.save_pcap(sym_diff_pcap_frames[pcap], pcap, self.options)
         self.assertTrue(
             filecmp.cmp('symdiff_simul1.pcap',
                         'examples/set_ops/symdiff_simul1.pcap'))
@@ -146,7 +154,9 @@ class TestPcapMath(unittest.TestCase):
         equal to the intersect.pcap. This is due to the traffic being the
         same and there being no infixed traffic from other sources.
         """
-        self.set_obj.bounded_intersect_pcap()
+        bounded_pcap_frames = self.set_obj.bounded_intersect_pcap()
+        for pcap in bounded_pcap_frames:
+            sf.save_pcap(bounded_pcap_frames[pcap], pcap, self.options)
         self.assertTrue(
             filecmp.cmp('bounded_intersect-simul1.pcap',
                         'examples/set_ops/intersect.pcap'))

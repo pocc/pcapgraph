@@ -17,7 +17,6 @@ import unittest
 import os
 import filecmp
 
-import pcapgraph.manipulate_frames as mf
 import pcapgraph.get_filenames as gf
 import pcapgraph.draw_graph as dg
 import pcapgraph.pcap_math as pm
@@ -30,7 +29,7 @@ class TestDrawGraph(unittest.TestCase):
     def setUp(self):
         """set directory to project root."""
         setup_testenv()
-        self.args = DEFAULT_CLI_ARGS
+        self.args = dict(DEFAULT_CLI_ARGS)
         self.args['--output'] = ['png']
 
     def test_draw_all(self):
@@ -68,7 +67,6 @@ class TestDrawGraph(unittest.TestCase):
         filenames = sorted(gf.parse_cli_args(args))
         options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
         pcap_math = pm.PcapMath(filenames, options)
-        all_filenames = pcap_math.parse_set_args(args)
-        pcaps_frame_dict = mf.get_frametext_from_files(all_filenames)
+        pcaps_frame_dict = pcap_math.parse_set_args(args)
         dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
                       True, False)
