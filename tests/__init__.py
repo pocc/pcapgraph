@@ -24,6 +24,7 @@ DEFAULT_CLI_ARGS = {
     '--intersection': False,
     '--inverse-bounded': False,
     '--output': [],
+    '--show-packets': False,
     '--strip-l2': False,
     '--strip-l3': False,
     '--symmetric-difference': False,

@@ -18,7 +18,7 @@ import unittest
 import pickle
 
 from pcapgraph.draw_graph import set_xticks, \
-    make_text_not_war, set_horiz_bar_colors, \
+    make_text_not_war, set_horiz_bars, \
     get_x_minmax
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
@@ -66,12 +66,12 @@ class TestManipulateFrames(unittest.TestCase):
         self.assertEqual(x_max, 102.0)
 
     def test_set_horiz_bar_colors(self):
-        """Testing set_horiz_bar_colors.
+        """Testing set_horiz_bars.
 
         Loading as pickle because a barlist is a complex matplotlib object.
         """
         barlist = pickle.load(open('tests/files/barlist.pickle', 'rb'))
-        set_horiz_bar_colors(barlist)
+        set_horiz_bars(barlist)
         colors = ['#2d89ef', '#603cba', '#2b5797']
         self.assertEqual(
             colors[0],
