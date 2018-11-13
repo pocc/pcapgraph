@@ -19,7 +19,7 @@ import time
 
 from pcapgraph.manipulate_frames import strip_layers
 from pcapgraph.manipulate_frames import get_frametext_from_files
-from pcapgraph.save_file import get_canonical_hex_from_frametext
+from pcapgraph.save_file import get_canonical_hex
 import pcapgraph.save_file as save
 
 
@@ -158,10 +158,7 @@ class PcapMath:
             counter += 1
             if counter == 10:
                 break
-            packet_text = get_canonical_hex_from_frametext(packet)
-
-            print("Count: {: <7}\n{: <}".format(packet_stats[packet],
-                                                packet_text))
+            print("Count: {: <7}\n{: <}".format(packet_stats[packet], packet))
         print("To view the content of these packets, subtract the count lines,"
               "\nadd and save to <textfile>, and then run "
               "\n\ntext2pcap <textfile> out.pcap\nwireshark out.pcap\n")

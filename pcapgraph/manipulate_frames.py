@@ -24,6 +24,8 @@ import random
 import re
 import os
 
+from .save_file import get_canonical_hex
+
 
 def strip_layers(pcap_framelist, options):
     """Get the PCAP JSON dict stripped per options.
@@ -41,27 +43,38 @@ def strip_layers(pcap_framelist, options):
     """
     for pcap in pcap_framelist:
         if options['strip-l3']:
+            # Convert to frame hex i.e. 'abc123' and then back to 'ab c1 23'.
             for index, frame in enumerate(pcap_framelist[pcap]['frames']):
-                frame_header_end = 16
-                has_vlan_tag = (frame[12:16] == '8100')
-                if has_vlan_tag:
-                    frame_header_end = 24
-                ip_version = int(frame[frame_header_end])
+                frame_hex = re.sub(r' |\\n|\n|\d{4,}', '', frame)
+                frame_header_end = get_frame_len(frame_hex)
+                ip_version = int(frame_hex[frame_header_end])
                 if ip_version == 4:
-                    ip_header_nibbles = 8 * int(frame[frame_header_end + 1])
+                    # IPv4 Internet Header Length = 8 nibbles * hex digit
+                    ihl_index = frame_header_end + 1
+                    ip_header_nibbles = 8 * int(frame_hex[ihl_index])
                 else:  # IPv6 header is ALWAYS 40 octets.
                     ip_header_nibbles = 80
                 ip_header_end = frame_header_end + ip_header_nibbles
-                ip_header = frame[frame_header_end:ip_header_end]
-                homogenized_packet = get_homogenized_packet(ip_header)
-                pcap_framelist[pcap]['frames'][index] = \
-                    homogenized_packet + frame.split(ip_header)[1]
+                ip_header = frame_hex[frame_header_end:ip_header_end]
+                homogenized_packet = get_homogenized_packet(ip_header) \
+                    + frame_hex.split(ip_header)[1]
+                canonical_packet = get_canonical_hex(homogenized_packet)
+                pcap_framelist[pcap]['frames'][index] = canonical_packet
         elif options['strip-l2']:
             for index, frame in enumerate(pcap_framelist[pcap]['frames']):
-                eth_len = len(frame)
+                eth_len = get_frame_len(frame)
                 pcap_framelist[pcap]['frames'][index] = frame[eth_len:]
 
     return pcap_framelist
+
+
+def get_frame_len(frame):
+    """Get the length of the ethernet header from a frame."""
+    frame_header_end = 28
+    has_vlan_tag = (frame[24:28] == '8100')
+    if has_vlan_tag:
+        frame_header_end = 36
+    return frame_header_end
 
 
 def get_homogenized_packet(ip_raw):
@@ -155,7 +168,7 @@ def get_pcap_info(filenames):
             filenames.remove(filename)
 
     pcap_info = {}
-    packet_count_cmds = ['capinfos', '-aceS'] + filenames
+    packet_count_cmds = ['capinfos', '-MaceS'] + filenames
 
     packet_count_pipe = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
     packet_count_text = decode_stdout(packet_count_pipe)
@@ -163,9 +176,9 @@ def get_pcap_info(filenames):
 
     # Output of capinfos is tabular with below as keys.
     count_list = re.findall(r'Number of packets:\s*(\d+)', packet_count_text)
-    start_times = re.findall(r'First packet time:\s*(\d+\.\d+|n\/a)',
+    start_times = re.findall(r'First packet time:\s*(\d+\.\d+|n/a)',
                              packet_count_text)
-    end_times = re.findall(r'Last packet time:\s*(\d+\.\d+|n\/a)',
+    end_times = re.findall(r'Last packet time:\s*(\d+\.\d+|n/a)',
                            packet_count_text)
     for index, filename in enumerate(filenames):
         name = os.path.basename(os.path.splitext(filename)[0])
@@ -229,7 +242,10 @@ def get_frametext_from_files(filenames):
             framehex = ''
             frame_lines = frame.split('\n')
             for frame_line in frame_lines:
-                framehex += frame_line[6:53].replace(' ', '')
+                # As long as this line is not tshark commentary like
+                # "Reassembled TCP (...)" or "Frame (...)"...
+                if not frame_line[0].isupper():
+                    framehex += frame_line[0:53] + '\n'
             pcap_frames[filename]['frames'].append(framehex)
             pcap_frames[filename]['timestamps'].append(timestamps[index])
 

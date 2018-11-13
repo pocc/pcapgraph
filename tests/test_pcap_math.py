@@ -116,14 +116,22 @@ class TestPcapMath(unittest.TestCase):
 
     def test_get_minmax_common_frames(self):
         """Test get_minmax_common against expected frame outputs"""
-        min_frame = '881544abbfdd2477035113440800450000547baf40004001922a0a3' \
-                    '01290080808080800ae46628b0001e830ab5b0000000088cd0c0000' \
-                    '000000101112131415161718191a1b1c1d1e1f20212223242526272' \
-                    '8292a2b2c2d2e2f3031323334353637'
-        max_frame = '247703511344881544abbfdd0800452000542bbc00007901e8fd080' \
-                    '808080a301290000082a563110001f930ab5b00000000a9e80d0000' \
-                    '000000101112131415161718191a1b1c1d1e1f20212223242526272' \
-                    '8292a2b2c2d2e2f3031323334353637'
+        min_frame = '0000  88 15 44 ab bf dd 24 77 03 51 13 44 08 00 45 00\n' \
+                    '0010  00 54 7b af 40 00 40 01 92 2a 0a 30 12 90 08 08\n' \
+                    '0020  08 08 08 00 ae 46 62 8b 00 01 e8 30 ab 5b 00 00\n' \
+                    '0030  00 00 88 cd 0c 00 00 00 00 00 10 11 12 13 14 15\n' \
+                    '0040  16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24 25\n' \
+                    '0050  26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35\n' \
+                    '0060  36 37                                          \n'
+
+        max_frame = '0000  24 77 03 51 13 44 88 15 44 ab bf dd 08 00 45 20\n' \
+                    '0010  00 54 2b bc 00 00 79 01 e8 fd 08 08 08 08 0a 30\n' \
+                    '0020  12 90 00 00 82 a5 63 11 00 01 f9 30 ab 5b 00 00\n' \
+                    '0030  00 00 a9 e8 0d 00 00 00 00 00 10 11 12 13 14 15\n' \
+                    '0040  16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24 25\n' \
+                    '0050  26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35\n' \
+                    '0060  36 37                                          \n'
+
         actual_min_frame, actual_max_frame = \
             self.set_obj.get_minmax_common_frames()
         self.assertEqual(min_frame, actual_min_frame)

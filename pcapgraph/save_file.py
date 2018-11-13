@@ -18,7 +18,7 @@ import subprocess as sp
 import os
 
 
-def get_canonical_hex_from_frametext(raw_packet, timestamp=''):
+def get_canonical_hex(raw_packet, timestamp=''):
     """Convert the raw pcap hex to a form that text2cap can read from stdin.
 
     hexdump and xxd can do this on unix-like platforms, but not on Windows.
@@ -70,7 +70,7 @@ def get_canonical_hex_from_frametext(raw_packet, timestamp=''):
         for byte_sep in range(0, hex_chars_per_line, hex_chars_per_byte):
             line += raw_line[byte_sep:byte_sep + hex_chars_per_byte] + ' '
         line = line[:-1]  # get rid of trailing space
-        # Offsets need to be in hex.
+        # Offsets need to be in hex without 'x'.
         line_sep_hex = hex(line_sep // 32 * 16).replace('x', '0')
         if line_sep == 0:
             line_sep_hex = '0' + line_sep_hex
@@ -110,10 +110,7 @@ def save_pcap(pcap_dict, name, options):
     pcap_text = ''
     for frame in pcap_dict:
         frame_timestamp = pcap_dict[frame]
-        pcap_text += get_canonical_hex_from_frametext(frame, frame_timestamp)
-    with open('file.txt', 'w') as file:
-        file.write(pcap_text)
-        file.close()
+        pcap_text += frame_timestamp + '\n' + frame
     save_pcap_cmds = ['text2pcap', '-', '-t', '%s.']
     if options['strip-l2'] or options['strip-l3']:
         # 101 is the link-type for raw-ip (IPv4 & IPv6)

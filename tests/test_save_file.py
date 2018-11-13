@@ -19,7 +19,7 @@ import filecmp
 import shutil
 import os
 
-from pcapgraph.save_file import get_canonical_hex_from_frametext, \
+from pcapgraph.save_file import get_canonical_hex, \
     reorder_packets, save_pcap
 from tests import setup_testenv
 
@@ -47,7 +47,7 @@ class TestSaveFile(unittest.TestCase):
 
     def test_convert_to_pcaptext(self):
         """test the conversion of ASCII hexdump to text2pcap-readable"""
-        actual = get_canonical_hex_from_frametext(self.test_packet)
+        actual = get_canonical_hex(self.test_packet)
         expected = self.result_packet
         self.assertEqual(expected, actual)
 
@@ -66,7 +66,7 @@ class TestSaveFile(unittest.TestCase):
 
     def test_save_pcap(self):
         """test save_pacp."""
-        pcap_dict = {self.test_packet: '1537945792.667334763'}
+        pcap_dict = {self.result_packet: '1537945792.667334763'}
         save_pcap(pcap_dict=pcap_dict, name='test.pcap', options=self.options)
         self.assertTrue(filecmp.cmp('test.pcap', 'tests/files/test.pcap'))
         os.remove('test.pcap')
