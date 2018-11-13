@@ -89,9 +89,10 @@ def output_file(save_format, pcap_packets, new_files, exclude_empty,
         input_files = sorted(set(pcap_packets) - set(new_files))
         graph_startstop_dict = mf.get_pcap_info(input_files)
         for pcap in new_files:
-            float_timestamps = [
-                float(timestamp) for timestamp in pcap_packets[pcap].values()
-            ]
+            float_timestamps = []
+            if pcap_packets[pcap]:
+                float_timestamps = [float(timestamp) for timestamp
+                                    in pcap_packets[pcap].values()]
             pcap_name = os.path.splitext(pcap)[0]
             if float_timestamps:
                 graph_startstop_dict[pcap_name] = {
@@ -102,10 +103,11 @@ def output_file(save_format, pcap_packets, new_files, exclude_empty,
 
         empty_files = []
         if not exclude_empty:
-            for pcap in pcap_filenames:
-                pcap = os.path.basename(os.path.splitext(pcap)[0])
-                if graph_startstop_dict[pcap]['packet_count'] == 0:
-                    empty_files += [pcap]
+            for pcap in pcap_packets:
+                pcap_name = os.path.basename(os.path.splitext(pcap)[0])
+                if not pcap_packets[pcap] \
+                        or not graph_startstop_dict[pcap_name]['packet_count']:
+                    empty_files += [pcap_name]
         generate_graph(graph_startstop_dict, empty_files, anonymize_names)
         if save_format != 'show':
             export_graph(pcap_filenames, save_format)
@@ -125,13 +127,14 @@ def generate_graph(pcap_vars, empty_files, anonymize_names):
         anonymize_names (bool): Whether to use pseudorandom names for files.
     """
     # first and last are the first and last timestamp of all pcaps.
-    pcap_names = list(pcap_vars) + empty_files
+    pcap_names = list(pcap_vars)
     if anonymize_names:
         pcap_names = mf.anonymous_pcap_names(len(pcap_names))
     start_times = np.array(
         [pcap_vars[pcap]['pcap_start'] for pcap in pcap_names])
     end_times = np.array([pcap_vars[pcap]['pcap_end'] for pcap in pcap_names])
     x_min, x_max = get_x_minmax(start_times, end_times)
+    pcap_names += empty_files
 
     fig, axes = plt.subplots()
     barlist = plt.barh(

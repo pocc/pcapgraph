@@ -91,7 +91,7 @@ class PcapMath:
             inv_bounded_pcap_frames = self.inverse_bounded_intersect_pcap(
                 generated_pcap_frames,
                 bounded_intersect_filenames,
-                args['--intersect'],
+                args['--intersection'],
             )
             generated_pcap_frames = {
                 **generated_pcap_frames,
@@ -253,12 +253,12 @@ class PcapMath:
 
         return diff_frame_list
 
-    def inverse_bounded_intersect_pcap(self, generated_pcap_frames,
+    def inverse_bounded_intersect_pcap(self, new_pcap_frames,
                                        bounded_filenames, has_intersection):
         """Inverse of bounded intersection = (bounded intersect) - (intersect)
 
         Args:
-            generated_pcap_frames (dict): All frames and timestamps created
+            new_pcap_frames (dict): All frames and timestamps created
                 by other operations thus far.
             bounded_filenames (list): Filenames of bounded intersections
             has_intersection (bool): Whether an intersection has been done
@@ -270,16 +270,17 @@ class PcapMath:
         if bounded_filenames:
             bounded_frame_dict = {}
             for file in bounded_filenames:
-                bounded_frame_dict[file] = generated_pcap_frames[file]
+                bounded_frame_dict[file] = dict(new_pcap_frames[file])
         else:
             bounded_frame_dict = self.bounded_intersect_pcap()
         if has_intersection:
-            intersect_frame_dict = generated_pcap_frames['intersect.pcap']
+            intersect_frame_dict = new_pcap_frames['intersect.pcap']
         else:
             intersect_frame_dict = self.intersect_pcap()
+        intersect_set = set(intersect_frame_dict)
         for file in bounded_frame_dict:
-            inv_bounded_frame_dict[file] = \
-                set(bounded_frame_dict[file]).difference(intersect_frame_dict)
+            inv_bounded_frame_dict['inv_' + file] = \
+                set(bounded_frame_dict[file]).difference(intersect_set)
 
         return inv_bounded_frame_dict
 
