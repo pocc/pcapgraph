@@ -117,11 +117,13 @@ def get_filenames(files):
     cwd = os.getcwd() + '/'
     filenames = []
     for filename in files:
-        file_string = filename
-        if "C:\\" not in filename.upper() and os.name == 'nt':
-            file_string = cwd + filename
-        if not os.path.isfile(file_string):
-            print("ERROR: File", file_string, "not found!")
+        if os.name == 'posix':
+            # Expand ~ to full filepath
+            filename = os.path.expanduser(filename)
+        if os.name == 'nt' and "C:\\" not in filename.upper():
+            filename = cwd + filename
+        if not os.path.isfile(filename):
+            print("ERROR: File", filename, "not found!")
             sys.exit()
         file_ext = os.path.splitext(filename)[1]
         if file_ext not in pcap_extensions:

@@ -231,6 +231,7 @@ def get_frametext_from_files(filenames):
     get_hex_cmds = 'tshark -x -r'.split()
     timestamp_cmds = 'tshark -T fields -e frame.time_epoch -r'.split()
     for filename in filenames:
+        print('Loading', filename, '...')
         pcap_frames[filename] = {'frames': [], 'timestamps': []}
         sp_hex_output = sp.Popen(get_hex_cmds + [filename], stdout=sp.PIPE)
         hex_output = sp_hex_output.communicate()[0].decode('utf-8')
@@ -251,4 +252,5 @@ def get_frametext_from_files(filenames):
             pcap_frames[filename]['frames'].append(framehex)
             pcap_frames[filename]['timestamps'].append(timestamps[index])
 
+    print('Done loading pcaps!')
     return pcap_frames

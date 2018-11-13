@@ -16,8 +16,7 @@
 import collections
 import os
 
-from pcapgraph.manipulate_frames import strip_layers
-from pcapgraph.manipulate_frames import get_frametext_from_files
+from pcapgraph.manipulate_frames import strip_layers, get_frametext_from_files
 
 
 class PcapMath:
@@ -179,8 +178,15 @@ class PcapMath:
             print("{: <12} {: <}".format(same_percent, pcap))
 
         intersect_frame_dict = {}
+        arp_ethertype = '0806'
+        lacp_ethertype = '8809'
+        lldp_ethertype = '88CC'
+        nonunique_ethertypes = [arp_ethertype, lldp_ethertype, lacp_ethertype]
         for frame in frame_intersection:
-            intersect_frame_dict[frame] = self.frame_timestamp_dict[frame]
+            ethertype = frame[42:44] + frame[45:47]
+            # Filter out ARP because they are not unique enough
+            if ethertype not in nonunique_ethertypes:
+                intersect_frame_dict[frame] = self.frame_timestamp_dict[frame]
 
         if frame_intersection:
             return intersect_frame_dict

@@ -102,10 +102,10 @@ def output_file(save_format, pcap_packets, new_files, exclude_empty,
 
         empty_files = []
         if not exclude_empty:
-            for pcap in pcap_packets:
+            for pcap in pcap_filenames:
+                pcap = os.path.basename(os.path.splitext(pcap)[0])
                 if graph_startstop_dict[pcap]['packet_count'] == 0:
-                    pcap_name = os.path.basename(os.path.splitext(pcap)[0])
-                    empty_files += [pcap_name]
+                    empty_files += [pcap]
         generate_graph(graph_startstop_dict, empty_files, anonymize_names)
         if save_format != 'show':
             export_graph(pcap_filenames, save_format)
