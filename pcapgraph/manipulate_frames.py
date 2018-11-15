@@ -212,8 +212,8 @@ def get_frametext_from_files(filenames):
           0010  00 54 2b bc 00 00 79 01 e8 fd 08 08 08 08 0a 30
           ...
 
-    Frametext looks like this:
-              247703511344881544abbfdd0800452000542bbc00007901e8fd08...
+    Save to files as tshark stdout -> file -> python data structure
+    is faster than tshark stdout -> python data structure
 
     Args:
         filenames (list): List of all files
@@ -228,29 +228,45 @@ def get_frametext_from_files(filenames):
     """
     pcap_frames = {}
 
-    get_hex_cmds = 'tshark -x -r'.split()
+    def save_output(cmd_list, filename_str, data_name):
+        """Save tshark output into a file and wait for process to finish."""
+        with open(data_name + '.txt', 'w') as writefile:
+            sp_pipe = sp.Popen(cmd_list + [filename_str], stdout=writefile)
+            try:
+                sp_pipe.wait(10)
+            except sp.TimeoutExpired:
+                print("--> WARNING: >10s required to load " + data_name +
+                      " from " + filename + "!\n--> Consider filtering your "
+                      "pcaps for relevant traffic.\n")
+            sp_pipe.wait()
+            writefile.close()
+
+    frame_cmds = 'tshark -x -r'.split()
     timestamp_cmds = 'tshark -T fields -e frame.time_epoch -r'.split()
     for filename in filenames:
         print('Loading', filename, '...')
-        pcap_frames[filename] = {'frames': [], 'timestamps': []}
-        sp_hex_output = sp.Popen(get_hex_cmds + [filename], stdout=sp.PIPE)
-        hex_output = sp_hex_output.communicate()[0].decode('utf-8')
-        # Split -x output into frame strings and filter out empty values
-        frame_list = filter(None, hex_output.split('\n\n'))
+        # Will create frames.txt and timestamps.txt
+        save_output(frame_cmds, filename, 'frames')
+        save_output(timestamp_cmds, filename, 'timestamps')
 
-        sp_timestamps = sp.Popen(timestamp_cmds + [filename], stdout=sp.PIPE)
-        timestamps = sp_timestamps.communicate()[0].decode('utf-8').split('\n')
+        with open('frames.txt') as framefile_read:
+            # 53 is where ASCII representation of packet hex can be cut off
+            framelines = [line[:53] + '\n' for line in framefile_read]
+            frameline_str = ''.join(framelines)
+            frames = list(filter(None, frameline_str.split('\n\n\n')))
+            framefile_read.close()
+        with open('timestamps.txt') as tsfile_read:
+            timestamps = [line[:-1] for line in tsfile_read]
+            tsfile_read.close()
 
-        for index, frame in enumerate(frame_list):
-            framehex = ''
-            frame_lines = frame.split('\n')
-            for frame_line in frame_lines:
-                # As long as this line is not tshark commentary like
-                # "Reassembled TCP (...)" or "Frame (...)"...
-                if not frame_line[0].isupper():
-                    framehex += frame_line[0:53] + '\n'
-            pcap_frames[filename]['frames'].append(framehex)
-            pcap_frames[filename]['timestamps'].append(timestamps[index])
+        pcap_frames[filename] = {
+            'frames': list(frames),
+            'timestamps': list(timestamps)
+        }
+
+    # Remove temporary files.
+    os.remove('frames.txt')
+    os.remove('timestamps.txt')
 
     print('Done loading pcaps!')
     return pcap_frames

@@ -141,17 +141,17 @@ class PcapMath:
         Args:
             raw_frame_list (list): List of raw frames
         """
-        packet_stats = collections.Counter(raw_frame_list)
+        packet_ct = collections.Counter(raw_frame_list)
         # It's not a common frame if it is only seen once.
-        packet_stats = {k: v for k, v in packet_stats.items() if v > 1}
+        packet_ct = {k: v for k, v in packet_ct.items() if v > 1}
         sorted_packets = sorted(
-            packet_stats, key=packet_stats.__getitem__, reverse=True)
+            packet_ct, key=packet_ct.__getitem__, reverse=True)
         counter = 0
         for packet in sorted_packets:
             counter += 1
             if counter == 10:
                 break
-            print("Count: {: <7}\n{: <}".format(packet_stats[packet], packet))
+            print("Count: {: <7}\n{: <}\n".format(packet_ct[packet], packet))
         print("To view the content of these packets, subtract the count lines,"
               "\nadd and save to <textfile>, and then run "
               "\n\ntext2pcap <textfile> out.pcap\nwireshark out.pcap\n")

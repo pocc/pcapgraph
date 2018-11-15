@@ -69,4 +69,4 @@ class TestDrawGraph(unittest.TestCase):
         pcap_math = pm.PcapMath(filenames, options)
         pcaps_frame_dict = pcap_math.parse_set_args(args)
         dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
-                      True, False)
+                      True, False, False)
