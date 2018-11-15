@@ -95,6 +95,63 @@ class TestPcapMath(unittest.TestCase):
         os.remove('intersect.pcap')
         os.remove('two_thirds.pcap')
 
+    def test_strip_l2_intersect(self):
+        """test strip l2 intersect
+
+        In the produced intersect, we should see only packets of type raw-ip.
+        """
+        args = dict(DEFAULT_CLI_ARGS)
+        args['--output'] = ['pcap']
+        args['--intersect'] = True
+        filenames = [
+                        'examples/simul1.pcap',
+                        'examples/simul2.pcap',
+                        'examples/simul3.pcap'
+                     ]
+        options = {'strip-l2': True, 'strip-l3': False, 'pcapng': False}
+        pcap_math = PcapMath(filenames, options)
+        pcaps_frame_dict = pcap_math.parse_set_args(args)
+        frame_timestamp_dict = {}
+        for pcap in filenames:
+            new_dict = {
+                k: v for k, v in zip(pcaps_frame_dict[pcap]['frames'],
+                                     pcaps_frame_dict[pcap]['timestamps'])
+             }
+            frame_timestamp_dict = {**frame_timestamp_dict, **new_dict}
+        sf.save_pcap(frame_timestamp_dict, 'intersect.pcap', options)
+        self.assertFalse(filecmp.cmp('intersect.pcap',
+                                     'tests/files/l2_stripped_intersect.pcap'))
+        os.remove('intersect.pcap')
+
+    def test_strip_l3_intersect(self):
+        """test strip l3 intersect
+
+        In the produced intersect, we should see only packets that are not
+        distinguishable at l3.
+        """
+        args = dict(DEFAULT_CLI_ARGS)
+        args['--output'] = ['pcap']
+        args['--intersect'] = True
+        filenames = [
+                        'examples/simul1.pcap',
+                        'examples/simul2.pcap',
+                        'examples/simul3.pcap'
+                     ]
+        options = {'strip-l2': False, 'strip-l3': True, 'pcapng': False}
+        pcap_math = PcapMath(filenames, options)
+        pcaps_frame_dict = pcap_math.parse_set_args(args)
+        frame_timestamp_dict = {}
+        for pcap in filenames:
+            new_dict = {
+                k: v for k, v in zip(pcaps_frame_dict[pcap]['frames'],
+                                     pcaps_frame_dict[pcap]['timestamps'])
+             }
+            frame_timestamp_dict = {**frame_timestamp_dict, **new_dict}
+        sf.save_pcap(frame_timestamp_dict, 'intersect.pcap', options)
+        self.assertFalse(filecmp.cmp('intersect.pcap',
+                                     'tests/files/l3_stripped_intersect.pcap'))
+        os.remove('intersect.pcap')
+
     def test_difference_pcap(self):
         """Test the difference_pcap method with multiple pcaps."""
         diff1and3 = PcapMath(['examples/simul1.pcap', 'examples/simul3.pcap'],

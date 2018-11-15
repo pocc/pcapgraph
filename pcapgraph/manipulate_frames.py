@@ -62,8 +62,10 @@ def strip_layers(pcap_framelist, options):
                 pcap_framelist[pcap]['frames'][index] = canonical_packet
         elif options['strip-l2']:
             for index, frame in enumerate(pcap_framelist[pcap]['frames']):
-                eth_len = get_frame_len(frame)
-                pcap_framelist[pcap]['frames'][index] = frame[eth_len:]
+                frame_hex = re.sub(r' |\\n|\n|\d{4,}', '', frame)
+                eth_len = get_frame_len(frame_hex)
+                canonical_packet = get_canonical_hex(frame_hex[eth_len:])
+                pcap_framelist[pcap]['frames'][index] = canonical_packet
 
     return pcap_framelist
 

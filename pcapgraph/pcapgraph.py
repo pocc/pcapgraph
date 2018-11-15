@@ -279,7 +279,8 @@ def run():
     4. Draw the graph/export files
     """
     get_tshark_status()
-    cli_docs = re.sub(r' *:: *\n\n|`|\*', '', __doc__)  # Remove RST signals.
+    # Remove ReStructuredText signals.
+    cli_docs = re.sub(r' *:: *\n\n|`|\*', '', __doc__)
     args = docopt.docopt(cli_docs)
     filenames = sorted(gf.parse_cli_args(args))
     options = {
@@ -293,7 +294,7 @@ def run():
         args['--output'].extend(['wireshark', 'pcap'])
     dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
                   args['--exclude-empty'], args['--anonymize'],
-                  args['--show-packets'])
+                  args['--show-packets'], options)
 
 
 if __name__ == '__main__':

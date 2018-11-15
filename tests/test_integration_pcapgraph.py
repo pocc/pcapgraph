@@ -51,7 +51,9 @@ class TestDrawGraph(unittest.TestCase):
             'examples/simul3.pcap',
             'tests/files/empty.pcap'
         ]
-        if os.name == 'posix':  # Graphs are generated differently on Windows
+        # Graphs are generated differently on Windows.
+        # This would incorrectly break tests based on file comparisons.
+        if os.name == 'posix':
             self.mock_main(self.args)
             # Alphabetically first file will be union.pcap per list
             self.assertTrue(
@@ -69,4 +71,4 @@ class TestDrawGraph(unittest.TestCase):
         pcap_math = pm.PcapMath(filenames, options)
         pcaps_frame_dict = pcap_math.parse_set_args(args)
         dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
-                      True, False)
+                      True, False, False, options)

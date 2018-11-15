@@ -26,7 +26,7 @@ import pcapgraph.save_file as sf
 
 
 def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty,
-               anonymize_names, show_packets):
+               anonymize_names, show_packets, options):
     """Draw a graph using matplotlib and numpy.
 
     Args:
@@ -59,7 +59,7 @@ def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty,
     new_files = sorted(set(pcap_filenames) - set(input_files))
     for save_format in output_fmts:
         output_file(save_format, pcap_packets, new_files, exclude_empty,
-                    anonymize_names, show_packets)
+                    anonymize_names, show_packets, options)
 
     if open_in_wireshark:
         for file in new_files:
@@ -68,7 +68,7 @@ def draw_graph(pcap_packets, input_files, output_fmts, exclude_empty,
 
 
 def output_file(save_format, pcap_packets, new_files, exclude_empty,
-                anonymize_names, show_packets):
+                anonymize_names, show_packets, options):
     """Save the specified file with the specified format.
 
     Args:
@@ -81,11 +81,6 @@ def output_file(save_format, pcap_packets, new_files, exclude_empty,
             or vertical lines to show packets.
     """
     pcap_filenames = list(pcap_packets)
-    options = {
-        'strip-l2': False,
-        'strip-l3': False,
-        'pcapng': save_format == 'pcapng'
-    }
     if save_format == 'txt':
         output_text = make_text_not_war(pcap_packets)
         print(output_text)

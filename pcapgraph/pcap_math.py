@@ -61,8 +61,7 @@ class PcapMath:
         Args:
             args (dict): Dict of all arguments (including set args).
         Returns:
-            filenames (list): List of all files, including ones generated
-                by set operations.
+            Return generated pcap frames dict with timestamps.
         """
         exclude_empty = args['--exclude-empty']
         generated_pcap_frames = {}
