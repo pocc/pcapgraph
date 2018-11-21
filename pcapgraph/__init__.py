@@ -36,3 +36,11 @@ def get_tshark_status():
         time.sleep(2)
         webbrowser.open('https://www.wireshark.org/download.html')
         sys.exit()
+
+
+def get_wireshark_version():
+    """Get the wireshark version in the form of '1.2.3'"""
+    command_list = 'wireshark -v'.split()
+    sp_pipe = sp.Popen(command_list, stdout=sp.PIPE, stderr=sp.PIPE)
+    wireshark_v = sp_pipe.communicate()[0].decode('utf-8')
+    return wireshark_v.split(' ')[1]  # Version is 2nd word

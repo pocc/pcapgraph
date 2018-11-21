@@ -16,7 +16,8 @@
 import collections
 import os
 
-from pcapgraph.manipulate_frames import strip_layers, get_frametext_from_files
+from pcapgraph.manipulate_framehex import strip_layers, \
+    get_frametext_from_files
 
 
 class PcapMath:
@@ -247,7 +248,8 @@ class PcapMath:
         diff_frame_list = {}
         for index, file in enumerate(self.filenames):
             diff_frames = self.difference_pcap(pivot_index=index)
-            symdiff_filename = 'symdiff_' + os.path.basename(file)
+            basename = os.path.splitext(os.path.basename(file))[0]
+            symdiff_filename = 'symdiff_' + basename + '.pcap'
             diff_frame_list[symdiff_filename] = diff_frames
 
         return diff_frame_list
@@ -322,7 +324,8 @@ class PcapMath:
             for frame in bounded_frame_list:
                 bounded_pcap_with_timestamps[frame] = \
                     self.frame_timestamp_dict[frame]
-            bounded_filename = 'bounded_intersect-' + os.path.basename(pcap)
+            basename = os.path.splitext(os.path.basename(pcap))[0]
+            bounded_filename = 'bounded_intersect-' + basename + '.pcap'
             bounded_pcaps[bounded_filename] = bounded_pcap_with_timestamps
 
         return bounded_pcaps

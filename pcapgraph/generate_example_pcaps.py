@@ -51,11 +51,11 @@ def generate_example_pcaps(interface=None):
         sp.Popen(['ping', '8.8.8.8', ping_once_flag, '1'], stdout=sp.PIPE)
         sp.Popen(['nslookup', 'amazon.com'], stdout=sp.PIPE, stderr=sp.PIPE)
         if second_ct == 0:
-            sp.Popen([*tshark_cmd, '-w', 'simul1.pcap'], stdout=sp.PIPE)
+            sp.Popen([*tshark_cmd, '-w', 'simul1.pcapng'], stdout=sp.PIPE)
         if second_ct == 20:
-            sp.Popen([*tshark_cmd, '-w', 'simul2.pcap'], stdout=sp.PIPE)
+            sp.Popen([*tshark_cmd, '-w', 'simul2.pcapng'], stdout=sp.PIPE)
         if second_ct == 40:
-            sp.Popen([*tshark_cmd, '-w', 'simul3.pcap'], stdout=sp.PIPE)
+            sp.Popen([*tshark_cmd, '-w', 'simul3.pcapng'], stdout=sp.PIPE)
         time.sleep(1)
         second_ct += 1
 

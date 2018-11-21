@@ -220,9 +220,9 @@ Intersection will alert you if the intersection has no packets.
 .. code-block:: text
 
     SAME %      PCAP NAME
-    31%          examples/simul1.pcap
-    31%          examples/simul2.pcap
-    31%          examples/simul3.pcap
+    31%         examples/simul1.pcapng
+    31%         examples/simul2.pcapng
+    31%         examples/simul3.pcapng
 
 Intersection Pcap
 ~~~~~~~~~~~~~~~~~

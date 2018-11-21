@@ -12,12 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test manipulate_frames"""
+"""Test manipulate_framehex"""
 
 import unittest
 
 from tests import setup_testenv, DEFAULT_CLI_ARGS, EXPECTED_STRIPPED_PCAP
-from pcapgraph.manipulate_frames import get_homogenized_packet, \
+from pcapgraph.manipulate_framehex import get_homogenized_packet, \
     get_pcap_info, get_frametext_from_files, strip_layers
 
 

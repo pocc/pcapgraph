@@ -34,9 +34,9 @@ class TestPcapMath(unittest.TestCase):
         setup_testenv()
         self.options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
         filenames = [
-            'examples/simul1.pcap',
-            'examples/simul2.pcap',
-            'examples/simul3.pcap'
+            'examples/simul1.pcapng',
+            'examples/simul2.pcapng',
+            'examples/simul3.pcapng'
         ]
         self.set_obj = PcapMath(filenames, self.options)
 
@@ -52,7 +52,7 @@ class TestPcapMath(unittest.TestCase):
         args['--difference'] = True
         # Have to specify filename in 2 ways because filename is key in dict.
         filenames = [
-            'examples/simul1.pcap', '../pcapgraph/examples/simul1.pcap'
+            'examples/simul1.pcapng', '../pcapgraph/examples/simul1.pcapng'
         ]
         exclude_set_obj = PcapMath(filenames, self.options)
         excluded_pcap_frames = exclude_set_obj.parse_set_args(args)
@@ -86,7 +86,8 @@ class TestPcapMath(unittest.TestCase):
             filecmp.cmp('intersect.pcap', 'examples/set_ops/intersect.pcap'))
         # examples/intersect.pcap is from all 3 simul pcaps, so using
         # 2 of 3 should fail as the generated intersection will be different.
-        two_thirds = PcapMath(['examples/simul1.pcap', 'examples/simul2.pcap'],
+        two_thirds = PcapMath(['examples/simul1.pcapng',
+                               'examples/simul2.pcapng'],
                               options=self.options)
         two_thirds_frame_dict = two_thirds.intersect_pcap()
         sf.save_pcap(two_thirds_frame_dict, 'two_thirds.pcap', self.options)
@@ -104,10 +105,10 @@ class TestPcapMath(unittest.TestCase):
         args['--output'] = ['pcap']
         args['--intersect'] = True
         filenames = [
-                        'examples/simul1.pcap',
-                        'examples/simul2.pcap',
-                        'examples/simul3.pcap'
-                     ]
+            'examples/simul1.pcapng',
+            'examples/simul2.pcapng',
+            'examples/simul3.pcapng'
+        ]
         options = {'strip-l2': True, 'strip-l3': False, 'pcapng': False}
         pcap_math = PcapMath(filenames, options)
         pcaps_frame_dict = pcap_math.parse_set_args(args)
@@ -116,7 +117,7 @@ class TestPcapMath(unittest.TestCase):
             new_dict = {
                 k: v for k, v in zip(pcaps_frame_dict[pcap]['frames'],
                                      pcaps_frame_dict[pcap]['timestamps'])
-             }
+            }
             frame_timestamp_dict = {**frame_timestamp_dict, **new_dict}
         sf.save_pcap(frame_timestamp_dict, 'intersect.pcap', options)
         self.assertFalse(filecmp.cmp('intersect.pcap',
@@ -133,10 +134,10 @@ class TestPcapMath(unittest.TestCase):
         args['--output'] = ['pcap']
         args['--intersect'] = True
         filenames = [
-                        'examples/simul1.pcap',
-                        'examples/simul2.pcap',
-                        'examples/simul3.pcap'
-                     ]
+            'examples/simul1.pcapng',
+            'examples/simul2.pcapng',
+            'examples/simul3.pcapng'
+        ]
         options = {'strip-l2': False, 'strip-l3': True, 'pcapng': False}
         pcap_math = PcapMath(filenames, options)
         pcaps_frame_dict = pcap_math.parse_set_args(args)
@@ -145,7 +146,7 @@ class TestPcapMath(unittest.TestCase):
             new_dict = {
                 k: v for k, v in zip(pcaps_frame_dict[pcap]['frames'],
                                      pcaps_frame_dict[pcap]['timestamps'])
-             }
+            }
             frame_timestamp_dict = {**frame_timestamp_dict, **new_dict}
         sf.save_pcap(frame_timestamp_dict, 'intersect.pcap', options)
         self.assertFalse(filecmp.cmp('intersect.pcap',
@@ -154,7 +155,8 @@ class TestPcapMath(unittest.TestCase):
 
     def test_difference_pcap(self):
         """Test the difference_pcap method with multiple pcaps."""
-        diff1and3 = PcapMath(['examples/simul1.pcap', 'examples/simul3.pcap'],
+        diff1and3 = PcapMath(['examples/simul1.pcapng',
+                              'examples/simul3.pcapng'],
                              self.options)
         diff_pcap_frames = diff1and3.difference_pcap()
         sf.save_pcap(diff_pcap_frames, 'diff_simul1.pcap', self.options)

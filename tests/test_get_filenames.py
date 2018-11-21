@@ -49,6 +49,7 @@ class TestGetFilenames(unittest.TestCase):
         pcap_filenames = sorted(gf.get_filenames_from_directories(directories))
         expected_result = ['tests/files/empty.pcap',
                            'tests/files/in_order_packets.pcap',
+                           'tests/files/in_order_packets.pcapng',
                            'tests/files/l2_stripped_intersect.pcap',
                            'tests/files/l3_stripped_intersect.pcap',
                            'tests/files/out_of_order_packets.pcap',

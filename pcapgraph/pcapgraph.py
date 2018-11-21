@@ -292,9 +292,7 @@ def run():
     pcaps_frame_dict = pcap_math.parse_set_args(args)
     if args['-w']:
         args['--output'].extend(['wireshark', 'pcap'])
-    dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
-                  args['--exclude-empty'], args['--anonymize'],
-                  args['--show-packets'], options)
+    dg.draw_graph(pcaps_frame_dict, filenames, args, options)
 
 
 if __name__ == '__main__':
