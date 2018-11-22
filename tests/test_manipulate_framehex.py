@@ -24,7 +24,7 @@ from pcapgraph.manipulate_framehex import get_homogenized_packet, \
 class TestManipulateFrames(unittest.TestCase):
     """Test manipulate_frames"""
 
-    def skip_setUp(self):
+    def setUp(self):
         """set directory to project root."""
         setup_testenv()
         self.args = DEFAULT_CLI_ARGS

@@ -16,7 +16,7 @@
 import os
 
 from pcapgraph.manipulate_framebytes import get_bytes_from_pcaps,\
-    print_10_most_common_frames, get_ts_as_float
+    print_10_most_common_frames, get_ts_as_float, strip_l2, strip_l3
 
 
 class PcapMath:
@@ -38,8 +38,12 @@ class PcapMath:
         """
         self.filenames = filenames
         pcap_frame_list = get_bytes_from_pcaps(filenames)
-        # self.pcap_frame_list = strip_layers(pcap_frame_list, options)
-        self.pcap_frame_list = pcap_frame_list
+        if options['strip-l2']:
+            self.pcap_frame_list = strip_l2(pcap_frame_list)
+        elif options['strip-l3']:
+            self.pcap_frame_list = strip_l3(pcap_frame_list)
+        else:
+            self.pcap_frame_list = pcap_frame_list
         self.frame_list = []  # Flat ordered list of all frames
         self.timestamp_list = []  # Flat ordered list of all timestamps
         for pcap in self.pcap_frame_list:

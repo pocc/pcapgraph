@@ -25,7 +25,7 @@ import pcapgraph.manipulate_framehex as mfh
 import pcapgraph.manipulate_framebytes as mfb
 
 
-def draw_graph(pcap_packets, input_files, args, options):
+def draw_graph(pcap_packets, input_files, args):
     """Draw a graph using matplotlib and numpy.
 
     Args:
@@ -40,7 +40,6 @@ def draw_graph(pcap_packets, input_files, args, options):
             anonymize_names (bool): Whether to change filenames to random vals.
             show_packets (bool): Whether to use a horizontal bar to show a pcap
                 or vertical lines to show packets.
-        options: Special options like l2 only, l3 only, or pcapng.
     """
     # Reformat main pcap dictionary to meet expectations. Make consistent
     # at some point.
@@ -93,9 +92,8 @@ def output_file(save_format, pcap_packets, new_files, args):
         print("Text file successfully created!")
     elif 'pcap' in save_format or 'pcapng' in save_format:
         for file in new_files:
-            # sf.save_pcap(pcap_packets[file], file, options)
             mfb.write_file_bytes(file, pcap_packets[file]['frames'],
-                                 pcap_packets[file]['timestamps'])
+                                 pcap_packets[file]['timestamps'], 1)
     else:
         graph_startstop_dict = get_graph_vars(pcap_packets, new_files)
         empty_files = []

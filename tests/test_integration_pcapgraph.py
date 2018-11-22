@@ -46,10 +46,8 @@ class TestDrawGraph(unittest.TestCase):
         self.args['--symmetric-difference'] = True
         self.args['--union'] = True
         self.args['<file>'] = [
-            'examples/simul1.pcapng',
-            'examples/simul2.pcapng',
-            'examples/simul3.pcapng',
-            'tests/files/empty.pcap'
+            'examples/simul1.pcapng', 'examples/simul2.pcapng',
+            'examples/simul3.pcapng', 'tests/files/empty.pcap'
         ]
         # Graphs are generated differently on Windows.
         # This would incorrectly break tests based on file comparisons.
@@ -70,4 +68,4 @@ class TestDrawGraph(unittest.TestCase):
         options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
         pcap_math = pm.PcapMath(filenames, options)
         pcaps_frame_dict = pcap_math.parse_set_args(args)
-        dg.draw_graph(pcaps_frame_dict, filenames, args, options)
+        dg.draw_graph(pcaps_frame_dict, filenames, args)

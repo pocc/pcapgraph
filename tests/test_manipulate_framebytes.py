@@ -61,8 +61,7 @@ class TestParsePackets(unittest.TestCase):
             b' !"#$%&\'()*+,-./01234567'
         ]
         self.expected_timestamp_list = [
-            b'\xc00\xab[\x00\x00\n\x00',
-            b'\xc00\xab[\xff\xff\n\x00'
+            b'\xc00\xab[\x00\x00\n\x00', b'\xc00\xab[\xff\xff\n\x00'
         ]
 
     def test_get_bytes_from_pcaps(self):

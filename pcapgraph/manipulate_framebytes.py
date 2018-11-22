@@ -50,25 +50,23 @@ def strip_l3(pcap_framelist):
     """Get the PCAP JSON dict stripped per options.
 
     Args:
-        pcap_framelist (dict): Dict of frames and timestamps with pcap as key.
-            {<PCAP>: {<FRAME>: <TIMESTAMP>, ...}, ...}
+        pcap_framelist (dict): Lists of frames and timestamps with pcap as key.
     Returns:
-        (dict): The modified frame dict
-            {<PCAP>: {<FRAME>: <TIMESTAMP>, ...}, ...}
+        (dict): The modified frame/timestamp lists by pcap
     """
     for pcap in pcap_framelist:
-        # Convert to frame hex i.e. 'abc123' and then back to 'ab c1 23'.
         for index, frame in enumerate(pcap_framelist[pcap]['frames']):
-            frame_header_end = get_frame_len(frame)
-            ip_version = int(frame[frame_header_end])
-            if ip_version == 4:
-                # IPv4 Internet Header Length = 8 nibbles * hex digit
-                ihl_index = frame_header_end + 1
-                ip_header_nibbles = 8 * int(frame[ihl_index])
-            else:  # IPv6 header is ALWAYS 40 octets.
+            frame_end = get_frame_len(frame)
+            # Valid IP versions: 4, 6.
+            # IPv4 Internet Header Length = 4 bytes * hex digit.
+            # Example byte = '45' => IPv4 with 20 bytes (i.e. no options).
+            ip_version, ihl_index = frame[frame_end:frame_end + 1].hex()
+            if ip_version == '4':
+                ip_header_nibbles = 4 * int(ihl_index)
+            else:  # IPv6 header is ALWAYS 40 bytes.
                 ip_header_nibbles = 80
-            ip_header_end = frame_header_end + ip_header_nibbles
-            ip_header = frame[frame_header_end:ip_header_end]
+            ip_header_end = frame_end + ip_header_nibbles
+            ip_header = frame[frame_end:ip_header_end]
             homogenized_packet = get_homogenized_packet(ip_header) \
                 + frame.split(ip_header)[1]
             pcap_framelist[pcap]['frames'][index] = homogenized_packet
@@ -111,15 +109,15 @@ def get_homogenized_packet(ip_raw):
     ip_raw_hex = ip_raw.hex()
     if ip_raw_hex[0] == '4':
         ttl = b'\xff'  # TTL = 256
-        ip_proto = ip_raw[18:20]
+        ip_proto = ip_raw[9:10]
         ip_header_checksum = b'\x13\x37'  # Checksum = 0x1337
         src_ip = b'\x0a\x01\x01\x01'  # IP = 10.1.1.1
         dst_ip = b'\x0a\x02\x02\x02'  # IP = 10.2.2.2
-        homogenized_packet = ip_raw[:16] + ttl + ip_proto + \
-            ip_header_checksum + src_ip + dst_ip + ip_raw[40:]
+        homogenized_packet = ip_raw[:8] + ttl + ip_proto + \
+            ip_header_checksum + src_ip + dst_ip + ip_raw[20:]
     else:
         # For IPv6, NAT is not a problem so only remove hop limit.
-        homogenized_packet = ip_raw[:14] + b'\x2a' + ip_raw[16:]
+        homogenized_packet = ip_raw[:7] + b'\x2a' + ip_raw[8:]
 
     return homogenized_packet
 
@@ -161,13 +159,8 @@ def print_10_most_common_frames(raw_frame_list):
             if counter == 10:
                 break
             print("Count: {: <7}\n{: <}\n{: <}".format(
-                packet_stats[packet],
-                'Frame hex: ' + frame_hex,
-                formatted_packet
-            ))
-    print("To view the content of these packets, subtract the count lines,"
-          "\nadd and save to <textfile>, and then run "
-          "\n\ntext2pcap <textfile> out.pcap\nwireshark out.pcap\n")
+                packet_stats[packet], 'Frame hex: ' + frame_hex,
+                formatted_packet))
 
 
 def get_ts_as_float(timestamp):
@@ -209,7 +202,7 @@ def get_frame_ts_bytes(file_bytes, endianness):
             timestamp_bytes = struct.pack(endianness + 'I', timestamp_sec)\
                 + file_bytes[b_index + 4: b_index + 8]
         else:
-            timestamp_bytes = file_bytes[b_index: b_index + 8]
+            timestamp_bytes = file_bytes[b_index:b_index + 8]
         timestamps.append(timestamp_bytes)
         frame_len = struct.unpack(endianness + 'I',
                                   file_bytes[b_index + 12:b_index + 16])[0]
@@ -249,6 +242,11 @@ def get_bytes_from_pcaps(filenames):
         filenames (list): Files to be parsed into bytes.
     Returns:
         (dict): List of frame bytes and list of timestamp bytes by pcap
+            {<PCAP>: {
+                    'frames': [<FRAME>, ...],
+                    'timestamps': [<TIMESTAMP>, ...]
+                }, ...
+            }
     """
     # If not pcap, convert to pcap. All editcap types will now be supported.
     pcap_dict = {}
@@ -277,6 +275,35 @@ def get_bytes_from_pcaps(filenames):
         pcap_dict[filename]['timestamps'] = timestamps
 
     return pcap_dict
+
+
+def generate_frame_bytes(frame_list, timestamp_list):
+    """Generates a bytes object that can then be sent to file.
+
+    Does what reordercap does (and more!), and does not read/write to files.
+
+    Args:
+        frame_list (list): List of frames in this pcap
+        timestamp_list (list): List of timestamps in this pcap
+    Returns:
+        (bytes): Resultant text to encode to file
+    """
+    frame_bytes = b''
+    # Reorder frames that are out-of-order. Key assumption is that
+    # frames and timestamps are in the same order and correspond.
+    # timestamps are in little-endian bytes, so needs conversion before sorting
+    timestamp_floats = [float(0)] * len(timestamp_list)
+    for index, timestamp in enumerate(timestamp_list):
+        timestamp_floats[index] = get_ts_as_float(timestamp)
+    sort_order = sorted(
+        range(len(timestamp_floats)), key=timestamp_floats.__getitem__)
+    # Index is the ordinal of the timestamp that is next numerically
+    for i in sort_order:
+        frame_len = len(frame_list[i])
+        frame_lengths = struct.pack('<II', frame_len, frame_len)
+        frame_bytes += timestamp_list[i] + frame_lengths + frame_list[i]
+
+    return frame_bytes
 
 
 def write_file_bytes(filename, frame_list, timestamp_list, link_layer_type):
@@ -317,20 +344,7 @@ def write_file_bytes(filename, frame_list, timestamp_list, link_layer_type):
     pcap_header = struct.pack(endianness_char + 'IHHIiII',
                               *list(pcap_header_dict.values()))
 
-    frame_bytes = b''
-    # Reorder frames that are out-of-order. Key assumption is that
-    # frames and timestamps are in the same order and correspond.
-    # timestamps are in little-endian bytes, so needs conversion before sorting
-    timestamp_floats = [float(0)] * len(timestamp_list)
-    for index, timestamp in enumerate(timestamp_list):
-        timestamp_floats[index] = get_ts_as_float(timestamp)
-    sort_order = sorted(range(len(timestamp_floats)),
-                        key=timestamp_floats.__getitem__)
-    # Index is the ordinal of the timestamp that is next numerically
-    for i in sort_order:
-        frame_len = len(frame_list[i])
-        frame_lengths = struct.pack('<II', frame_len, frame_len)
-        frame_bytes += timestamp_list[i] + frame_lengths + frame_list[i]
+    frame_bytes = generate_frame_bytes(frame_list, timestamp_list)
 
     with open(filename, 'wb') as file:
         file.write(pcap_header + frame_bytes)

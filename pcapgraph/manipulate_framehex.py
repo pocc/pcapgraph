@@ -17,6 +17,9 @@
 Many of these functions interact with this frame dict format or directly with
 the frame string (seen in 'frame_raw'). The frame string is a string of the
 hex of a packet.
+
+Not using this in favor of framebytes, but leaving intact as
+manipulating frame ASCII is still relevant for this project.
 """
 
 import subprocess as sp
