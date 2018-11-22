@@ -17,11 +17,59 @@ import struct
 import subprocess as sp
 import os
 import sys
+import tempfile
+import collections
 
 from . import get_wireshark_version
 
 
-def parse_pcap(file_bytes, endianness_char):
+def print_10_most_common_frames(raw_frame_list):
+    """After doing a packet union, find/print the 10 most common packets.
+
+    This is a work in progress and may eventually use this bash:
+
+    <packets> | text2pcap - - | tshark -r - -o 'gui.column.format:"No.",
+    "%m","VLAN","%q","Src MAC","%uhs","Dst MAC","%uhd","Src IP","%us",
+    "Dst IP","%ud","Protocol","%p","Src port","%uS","Dst port","%uD"'
+
+    Alternatively, just use the existing information in pcap_dict.
+
+    The goal is to print
+    frame#, VLAN, src/dst MAC, src/dst IP, L4 src/dst ports, protocol
+
+    This should likely be its own CLI flag in future.
+
+    Args:
+        raw_frame_list (list): List of raw frames
+    """
+    packet_stats = collections.Counter(raw_frame_list)
+    # It's not a common frame if it is only seen once.
+    packet_stats = {k: v for k, v in packet_stats.items() if v > 1}
+    sorted_packets = sorted(
+        packet_stats, key=packet_stats.__getitem__, reverse=True)
+    counter = 0
+    for packet in sorted_packets:
+        frame_hex = packet.hex()
+        with tempfile.NamedTemporaryFile() as temp_file:
+            zero_timestamp = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+            write_file_bytes(temp_file.name, [packet], [zero_timestamp])
+            tshark_cmds = ('tshark -r' + temp_file.name).split(' ')
+            sp_pipe = sp.Popen(tshark_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
+            formatted_packet = sp_pipe.communicate()[0].decode('utf-8')
+            counter += 1
+            if counter == 10:
+                break
+            print("Count: {: <7}\n{: <}\n{: <}".format(
+                packet_stats[packet],
+                'Frame hex: ' + frame_hex,
+                formatted_packet
+            ))
+    print("To view the content of these packets, subtract the count lines,"
+          "\nadd and save to <textfile>, and then run "
+          "\n\ntext2pcap <textfile> out.pcap\nwireshark out.pcap\n")
+
+
+def get_frame_ts_bytes(file_bytes, endianness):
     """Parse .pcap files
     Format: https://wiki.wireshark.org/Development/LibpcapFileFormat
     Example: http://www.kroosec.com/2012/10/a-look-at-pcap-file-format.html
@@ -31,14 +79,22 @@ def parse_pcap(file_bytes, endianness_char):
     # (i) Timezone Offset | (I) Timestamp Accuracy |
     # (I) Snapshot Length | (I) Link-Layer Header Type
 
-    # Unpack the header like so: struct.unpack('<IHHiIII', file_bytes[:24])
+    pcap_header = struct.unpack(endianness + 'IHHiIII', file_bytes[:24])
     b_index = 24
     pcap_end = len(file_bytes)
     frames = []
     timestamps = []
     while b_index < pcap_end:
-        timestamps.append(file_bytes[b_index:b_index + 8])
-        frame_len = struct.unpack(endianness_char + 'I',
+        if pcap_header[3]:  # If there is a timezone offset, add to timestamp
+            timestamp_sec = struct.unpack(endianness + 'I',
+                                          file_bytes[b_index:b_index + 4])
+            timestamp_sec += int(pcap_header[3])
+            timestamp_bytes = struct.pack(endianness + 'I', timestamp_sec)\
+                + file_bytes[b_index + 4: b_index + 8]
+        else:
+            timestamp_bytes = file_bytes[b_index: b_index + 8]
+        timestamps.append(timestamp_bytes)
+        frame_len = struct.unpack(endianness + 'I',
                                   file_bytes[b_index + 12:b_index + 16])[0]
         b_index += 16  # Move index 16 bytes for timestamp
         frames.append(file_bytes[b_index:b_index + frame_len])
@@ -47,47 +103,63 @@ def parse_pcap(file_bytes, endianness_char):
     return frames, timestamps
 
 
-def convert_to_pcap(filename):
-    """Convert other formats to pcap."""
-    filename_base = os.path.splitext(os.path.basename(filename))[0]
-    new_file = filename_base + '.pcap'
-    editcap_cmds = ('editcap -F pcap ' + filename + ' ' + new_file).split(' ')
-    sp.Popen(editcap_cmds)
-    return new_file
+def get_pcap_bytes_from_non_pcap(filename):
+    """For a file that doesn't end in .pcap, convert to .pcap
+
+    Use a temproray file as a destination for whatever fileytpe this
+    and then read from it into a bytes object.
+
+    Args:
+        filename (str): Path to file that is not a pcap
+    Returns:
+        (bytes): Bytes object of converted pcap file
+    """
+    with tempfile.NamedTemporaryFile() as temp_file:
+        editcap_cmd_str = 'editcap -F pcap ' + filename + ' ' + temp_file.name
+        editcap_cmds = editcap_cmd_str.split(' ')
+        sp_pipe = sp.Popen(editcap_cmds)
+        sp_pipe.communicate()
+        with open(temp_file.name, 'rb') as file_obj:
+            pcap_bytes = file_obj.read()
+
+    return pcap_bytes
 
 
-def parse_pcaps(filename):
+def get_bytes_from_pcaps(filenames):
     """Parse pcap into bytes object and convert to pcap as necessary.
 
     Args:
-        filename (str): File to be parsed into bytes.
+        filenames (list): Files to be parsed into bytes.
     Returns:
-        (tuple): List of frame bytes and list of timestamp bytes.
+        (dict): List of frame bytes and list of timestamp bytes by pcap
     """
     # If not pcap, convert to pcap. All editcap types will now be supported.
-    old_filename = ''
-    if os.path.splitext(filename)[1] != '.pcap':
-        old_filename = str(filename)
-        filename = convert_to_pcap(filename)
-        while not os.path.isfile(filename):  # Wait for file to be written
-            pass
-    with open(filename, 'rb') as file_obj:
-        pcap_bytes = file_obj.read()
-    if old_filename:  # If we created a temporary pcap file, detele it
-        os.remove(filename)
-    # .pcap files must start with a magic number.
-    magic_number = pcap_bytes[0:4]
-    is_little_endian = (magic_number == b'\xd4\xc3\xb2\xa1')
-    is_big_endian = (magic_number == b'\xa1\xb2\xc3\xd4')
-    if is_little_endian:
-        endianness_char = '<'
-    elif is_big_endian:
-        endianness_char = '>'
-    else:
-        raise FileNotFoundError('ERROR: Invalid packet capture encoding. '
-                                'Now exiting...')
+    pcap_dict = {}
+    for filename in filenames:
+        if os.path.splitext(filename)[1] != '.pcap':
+            # If not pcap, convert to pcap and get bytes
+            pcap_bytes = get_pcap_bytes_from_non_pcap(filename)
+        else:
+            with open(filename, 'rb') as file_obj:
+                pcap_bytes = file_obj.read()
+        # .pcap files must start with a magic number.
+        magic_number = pcap_bytes[0:4]
+        is_little_endian = (magic_number == b'\xd4\xc3\xb2\xa1')
+        is_big_endian = (magic_number == b'\xa1\xb2\xc3\xd4')
+        if is_little_endian:
+            endianness_char = '<'
+        elif is_big_endian:
+            endianness_char = '>'
+        else:
+            raise FileNotFoundError('ERROR: Invalid packet capture encoding. ',
+                                    magic_number, 'Now exiting...')
 
-    return parse_pcap(pcap_bytes, endianness_char)
+        pcap_dict[filename] = {}
+        frames, timestamps = get_frame_ts_bytes(pcap_bytes, endianness_char)
+        pcap_dict[filename]['frames'] = frames
+        pcap_dict[filename]['timestamps'] = timestamps
+
+    return pcap_dict
 
 
 def write_file_bytes(filename, frame_list, timestamp_list):
@@ -109,6 +181,8 @@ def write_file_bytes(filename, frame_list, timestamp_list):
     else:
         endianness_char = '>'
     version = get_wireshark_version().split('.')
+    # Do not use this version - for some reason wireshark does not properly
+    # encode it's own version and will always put 2.4.
 
     pcap_header_dict = {
         'magic_number': 0xa1b2c3d4,
@@ -123,9 +197,21 @@ def write_file_bytes(filename, frame_list, timestamp_list):
                               *list(pcap_header_dict.values()))
 
     frame_bytes = b''
-    for index, frame in enumerate(frame_list):
-        frame_lengths = struct.pack('<II', len(frame), len(frame))
-        frame_bytes += timestamp_list[index] + frame_lengths + frame
+    # Reorder frames that are out-of-order. Key assumption is that
+    # frames and timestamps are in the same order and correspond.
+    # timestamps are in little-endian bytes, so needs conversion before sorting
+    timestamp_floats = [float(0)] * len(timestamp_list)
+    for index, timestamp in enumerate(timestamp_list):
+        seconds, fraction = struct.unpack(endianness_char + 'II', timestamp)
+        microseconds = str(fraction).zfill(6)
+        timestamp_floats[index] = float(str(seconds) + '.' + microseconds)
+    sort_order = sorted(range(len(timestamp_floats)),
+                        key=timestamp_floats.__getitem__)
+    # Index is the ordinal of the timestamp that is next numerically
+    for i in sort_order:
+        frame_len = len(frame_list[i])
+        frame_lengths = struct.pack('<II', frame_len, frame_len)
+        frame_bytes += timestamp_list[i] + frame_lengths + frame_list[i]
 
     with open(filename, 'wb') as file:
         file.write(pcap_header + frame_bytes)

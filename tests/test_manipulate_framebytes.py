@@ -17,7 +17,8 @@ import unittest
 import os
 import filecmp
 
-from pcapgraph.manipulate_framebytes import parse_pcaps, write_file_bytes
+from pcapgraph.manipulate_framebytes import get_bytes_from_pcaps, \
+    write_file_bytes
 
 
 class TestParsePackets(unittest.TestCase):
@@ -64,27 +65,32 @@ class TestParsePackets(unittest.TestCase):
             b'\xc00\xab[\xff\xff\n\x00'
         ]
 
-    def test_parse_pcap(self):
-        """test parse_pcaps for pcap files."""
+    def test_get_bytes_from_pcaps(self):
+        """test get_bytes_from_pcaps for pcap files."""
         filename = 'tests/files/in_order_packets.pcap'
-        frame_list, timestamp_list = parse_pcaps(filename)
+        frame_ts_dict_by_pcap = get_bytes_from_pcaps([filename])
+        frame_list = frame_ts_dict_by_pcap[filename]['frames']
+        timestamp_list = frame_ts_dict_by_pcap[filename]['timestamps']
         self.assertListEqual(frame_list, self.expected_frame_list)
         self.assertListEqual(timestamp_list, self.expected_timestamp_list)
 
-    def test_parse_pcapng(self):
-        """test parse_pcaps for pcapng files."""
+    def test_get_bytes_from_pcapng(self):
+        """test get_bytes_from_pcaps for pcapng files."""
         filename = 'tests/files/in_order_packets.pcapng'
-        frame_list, timestamp_list = parse_pcaps(filename)
+        frame_ts_dict_by_pcap = get_bytes_from_pcaps([filename])
+        new_filename = list(frame_ts_dict_by_pcap)[0]
+        frame_list = frame_ts_dict_by_pcap[new_filename]['frames']
+        timestamp_list = frame_ts_dict_by_pcap[new_filename]['timestamps']
         self.assertListEqual(frame_list, self.expected_frame_list)
         self.assertListEqual(timestamp_list, self.expected_timestamp_list)
 
-    @staticmethod
-    def test_write_file_bytes():
+    def test_write_file_bytes(self):
         """test write_file_bytes."""
-        print(os.getcwd())
         filename = 'tests/files/in_order_packets.pcap'
-        frame_list, timestamp_list = parse_pcaps(filename)
+        frame_ts_dict_by_pcap = get_bytes_from_pcaps([filename])
+        frame_list = frame_ts_dict_by_pcap[filename]['frames']
+        timestamp_list = frame_ts_dict_by_pcap[filename]['timestamps']
         temp_file = 'temp_delete.pcap'
         write_file_bytes(temp_file, frame_list, timestamp_list)
-        filecmp.cmp(filename, temp_file)
+        self.assertFalse(filecmp.cmp(filename, temp_file))
         os.remove(temp_file)

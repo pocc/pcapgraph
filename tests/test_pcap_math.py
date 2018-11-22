@@ -20,8 +20,10 @@ import os
 import io
 import re
 from contextlib import redirect_stdout
+import tempfile
 
 from pcapgraph.pcap_math import PcapMath
+import pcapgraph.manipulate_framebytes as mfb
 import pcapgraph.save_file as sf
 from tests import setup_testenv, DEFAULT_CLI_ARGS, EXPECTED_UNION_STDOUT
 
@@ -68,33 +70,39 @@ class TestPcapMath(unittest.TestCase):
         generated_stdout = f_stream.getvalue()
         # Remove all whitespace at end of lines to match expected
         generated_stdout = re.sub(r' +$', '', generated_stdout, flags=re.M)
-
         # Tests print_10_most_common_frames
         self.assertEqual(EXPECTED_UNION_STDOUT, generated_stdout)
-        sf.save_pcap(pcap_frame_list, 'union.pcap', self.options)
-        self.assertTrue(
-            filecmp.cmp('union.pcap', 'examples/set_ops/union.pcap'))
-        os.remove('union.pcap')
+
+        frame_list = list(pcap_frame_list)
+        timestamp_list = list(pcap_frame_list.values())
+        with tempfile.NamedTemporaryFile() as temp_file:
+            mfb.write_file_bytes(temp_file.name, frame_list, timestamp_list)
+            self.assertTrue(
+                filecmp.cmp(temp_file.name, 'examples/set_ops/union.pcap'))
 
     def test_intersect_pcap(self):
         """Test union_pcap using the pcaps in examples."""
-        # This will generate intersect.pcap in tests/
+        # Dicts of form {<frame>: <timestamp>, ...}
         intersect_frame_dict = self.set_obj.intersect_pcap()
         # The generated file should be the same as examples/union.pcap
-        sf.save_pcap(intersect_frame_dict, 'intersect.pcap', self.options)
-        self.assertTrue(
-            filecmp.cmp('intersect.pcap', 'examples/set_ops/intersect.pcap'))
+        with tempfile.NamedTemporaryFile() as temp_file:
+            mfb.write_file_bytes(temp_file.name,
+                                 list(intersect_frame_dict),  # frames
+                                 list(intersect_frame_dict.values()))  # ts
+            self.assertTrue(
+                filecmp.cmp(temp_file.name, 'examples/set_ops/intersect.pcap'))
         # examples/intersect.pcap is from all 3 simul pcaps, so using
         # 2 of 3 should fail as the generated intersection will be different.
         two_thirds = PcapMath(['examples/simul1.pcapng',
                                'examples/simul2.pcapng'],
                               options=self.options)
         two_thirds_frame_dict = two_thirds.intersect_pcap()
-        sf.save_pcap(two_thirds_frame_dict, 'two_thirds.pcap', self.options)
-        self.assertFalse(
-            filecmp.cmp('two_thirds.pcap', 'examples/set_ops/intersect.pcap'))
-        os.remove('intersect.pcap')
-        os.remove('two_thirds.pcap')
+        with tempfile.NamedTemporaryFile() as temp_file:
+            mfb.write_file_bytes(temp_file.name,
+                                 list(two_thirds_frame_dict),  # frames
+                                 list(two_thirds_frame_dict.values()))  # ts
+            self.assertFalse(
+                filecmp.cmp(temp_file.name, 'examples/set_ops/intersect.pcap'))
 
     def test_strip_l2_intersect(self):
         """test strip l2 intersect
@@ -159,11 +167,12 @@ class TestPcapMath(unittest.TestCase):
                               'examples/simul3.pcapng'],
                              self.options)
         diff_pcap_frames = diff1and3.difference_pcap()
-        sf.save_pcap(diff_pcap_frames, 'diff_simul1.pcap', self.options)
-        self.assertTrue(filecmp.cmp(
-            'diff_simul1.pcap',
-            'examples/set_ops/diff_simul1-simul3.pcap'))
-        os.remove('diff_simul1.pcap')
+        expected_diff_file = 'examples/set_ops/diff_simul1-simul3.pcap'
+        frame_list = list(diff_pcap_frames)
+        timestamp_list = list(diff_pcap_frames.values())
+        with tempfile.NamedTemporaryFile() as temp_file:
+            mfb.write_file_bytes(temp_file.name, frame_list, timestamp_list)
+            self.assertTrue(filecmp.cmp(temp_file.name, expected_diff_file))
 
     def test_symmetric_difference(self):
         """Test the symmetric difference method with muliple pcaps."""

@@ -13,11 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Do algebraic operations on sets like union, intersect, difference."""
-import collections
 import os
 
-from pcapgraph.manipulate_framehex import strip_layers, \
-    get_frametext_from_files
+from pcapgraph.manipulate_framebytes import get_bytes_from_pcaps,\
+    print_10_most_common_frames
 
 
 class PcapMath:
@@ -38,8 +37,9 @@ class PcapMath:
             options (dict): Whether to strip L2 and L3 headers.
         """
         self.filenames = filenames
-        pcap_frame_list = get_frametext_from_files(filenames)
-        self.pcap_frame_list = strip_layers(pcap_frame_list, options)
+        pcap_frame_list = get_bytes_from_pcaps(filenames)
+        # self.pcap_frame_list = strip_layers(pcap_frame_list, options)
+        self.pcap_frame_list = pcap_frame_list
         self.frame_list = []  # Flat ordered list of all frames
         self.timestamp_list = []  # Flat ordered list of all timestamps
         for pcap in self.pcap_frame_list:
@@ -114,47 +114,12 @@ class PcapMath:
         Returns:
             (dict): {<FRAME>: <TIMESTAMP>, ...}
         """
-        self.print_10_most_common_frames(self.frame_list)
+        print_10_most_common_frames(self.frame_list)
 
         union_frame_dict = {}
         for index, frame in enumerate(self.frame_list):
             union_frame_dict[frame] = self.timestamp_list[index]
         return union_frame_dict
-
-    @staticmethod
-    def print_10_most_common_frames(raw_frame_list):
-        """After doing a packet union, find/print the 10 most common packets.
-
-        This is a work in progress and may eventually use this bash:
-
-        <packets> | text2pcap - - | tshark -r - -o 'gui.column.format:"No.",
-        "%m","VLAN","%q","Src MAC","%uhs","Dst MAC","%uhd","Src IP","%us",
-        "Dst IP","%ud","Protocol","%p","Src port","%uS","Dst port","%uD"'
-
-        Alternatively, just use the existing information in pcap_dict.
-
-        The goal is to print
-        frame#, VLAN, src/dst MAC, src/dst IP, L4 src/dst ports, protocol
-
-        This should likely be its own CLI flag in future.
-
-        Args:
-            raw_frame_list (list): List of raw frames
-        """
-        packet_stats = collections.Counter(raw_frame_list)
-        # It's not a common frame if it is only seen once.
-        packet_stats = {k: v for k, v in packet_stats.items() if v > 1}
-        sorted_packets = sorted(
-            packet_stats, key=packet_stats.__getitem__, reverse=True)
-        counter = 0
-        for packet in sorted_packets:
-            counter += 1
-            if counter == 10:
-                break
-            print("Count: {: <7}\n{: <}".format(packet_stats[packet], packet))
-        print("To view the content of these packets, subtract the count lines,"
-              "\nadd and save to <textfile>, and then run "
-              "\n\ntext2pcap <textfile> out.pcap\nwireshark out.pcap\n")
 
     def intersect_pcap(self):
         """Save pcap intersection. First filename is pivot packet capture.

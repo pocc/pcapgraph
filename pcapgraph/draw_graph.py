@@ -17,12 +17,13 @@
 import datetime
 import os
 import subprocess as sp
+import struct
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pcapgraph.manipulate_framehex as mf
-import pcapgraph.save_file as sf
+import pcapgraph.manipulate_framehex as mfh
+import pcapgraph.manipulate_framebytes as mfb
 
 
 def draw_graph(pcap_packets, input_files, args, options):
@@ -93,7 +94,9 @@ def output_file(save_format, pcap_packets, new_files, args, options):
         print("Text file successfully created!")
     elif 'pcap' in save_format or 'pcapng' in save_format:
         for file in new_files:
-            sf.save_pcap(pcap_packets[file], file, options)
+            # sf.save_pcap(pcap_packets[file], file, options)
+            mfb.write_file_bytes(file, pcap_packets[file]['frames'],
+                                 pcap_packets[file]['timestamps'])
     else:
         graph_startstop_dict = get_graph_vars(pcap_packets, new_files)
         empty_files = []
@@ -121,13 +124,17 @@ def get_graph_vars(pcap_packets, new_files):
         new_files (list): User inputted filenames
     """
     input_files = sorted(set(pcap_packets) - set(new_files))
-    graph_startstop_dict = mf.get_pcap_info(input_files)
+    graph_startstop_dict = mfh.get_pcap_info(input_files)
     for pcap in new_files:
+        # Convert timestamp
+        timestamp_list = list(pcap_packets[pcap].values())
         float_timestamps = []
         if pcap_packets[pcap]:
-            float_timestamps = [
-                float(timestamp) for timestamp in pcap_packets[pcap].values()
-            ]
+            for index, timestamp in enumerate(timestamp_list):
+                seconds, fraction = struct.unpack('=II', timestamp)
+                microseconds = str(fraction).zfill(6)
+                float_timestamps.append(float(
+                    str(seconds) + '.' + microseconds))
         pcap_name = os.path.splitext(pcap)[0]
         if float_timestamps:
             graph_startstop_dict[pcap_name] = {
@@ -154,7 +161,7 @@ def generate_graph(pcap_packets, pcap_vars, empty_files, anonymize_names,
     # first and last are the first and last timestamp of all pcaps.
     pcap_names = list(pcap_vars)
     if anonymize_names:
-        pcap_names = mf.anonymous_pcap_names(len(pcap_names))
+        pcap_names = mfh.anonymous_pcap_names(len(pcap_names))
     # Each line has text that is 12 point high; 72 point = 1 inch, so for each
     # additional pcap, add 1/6 inch. Default graph is 3 in high, so y tick text
     # should start overlapping at 18 lines.
