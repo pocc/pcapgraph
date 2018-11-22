@@ -17,7 +17,6 @@
 import datetime
 import os
 import subprocess as sp
-import struct
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -63,7 +62,7 @@ def draw_graph(pcap_packets, input_files, args, options):
         open_in_wireshark = True
     new_files = sorted(set(pcap_filenames) - set(input_files))
     for save_format in output_fmts:
-        output_file(save_format, pcap_packets, new_files, args, options)
+        output_file(save_format, pcap_packets, new_files, args)
 
     if open_in_wireshark:
         for file in new_files:
@@ -71,7 +70,7 @@ def draw_graph(pcap_packets, input_files, args, options):
             sp.Popen(['wireshark', file])
 
 
-def output_file(save_format, pcap_packets, new_files, args, options):
+def output_file(save_format, pcap_packets, new_files, args):
     """Save the specified file with the specified format.
 
     Args:
@@ -130,11 +129,8 @@ def get_graph_vars(pcap_packets, new_files):
         timestamp_list = list(pcap_packets[pcap].values())
         float_timestamps = []
         if pcap_packets[pcap]:
-            for index, timestamp in enumerate(timestamp_list):
-                seconds, fraction = struct.unpack('=II', timestamp)
-                microseconds = str(fraction).zfill(6)
-                float_timestamps.append(float(
-                    str(seconds) + '.' + microseconds))
+            for timestamp in timestamp_list:
+                float_timestamps.append(mfb.get_ts_as_float(timestamp))
         pcap_name = os.path.splitext(pcap)[0]
         if float_timestamps:
             graph_startstop_dict[pcap_name] = {

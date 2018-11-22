@@ -69,6 +69,22 @@ def print_10_most_common_frames(raw_frame_list):
           "\n\ntext2pcap <textfile> out.pcap\nwireshark out.pcap\n")
 
 
+def get_ts_as_float(timestamp):
+    """Convert timestamp from bytes object to float.
+
+    Note that little-endian encodings make reading bytes look like 43214321
+    Microseconds require left-justification with zeroes to 6 places.
+
+    Args:
+        timestamp (bytes): 4 bytes for seconds and 4 bytes for microseconds.
+    Returns:
+        (float): Timestamp
+    """
+    seconds, fraction = struct.unpack('=II', timestamp)
+    microseconds = str(fraction).zfill(6)
+    return float(str(seconds) + '.' + microseconds)
+
+
 def get_frame_ts_bytes(file_bytes, endianness):
     """Parse .pcap files
     Format: https://wiki.wireshark.org/Development/LibpcapFileFormat
@@ -202,9 +218,7 @@ def write_file_bytes(filename, frame_list, timestamp_list):
     # timestamps are in little-endian bytes, so needs conversion before sorting
     timestamp_floats = [float(0)] * len(timestamp_list)
     for index, timestamp in enumerate(timestamp_list):
-        seconds, fraction = struct.unpack(endianness_char + 'II', timestamp)
-        microseconds = str(fraction).zfill(6)
-        timestamp_floats[index] = float(str(seconds) + '.' + microseconds)
+        timestamp_floats[index] = get_ts_as_float(timestamp)
     sort_order = sorted(range(len(timestamp_floats)),
                         key=timestamp_floats.__getitem__)
     # Index is the ordinal of the timestamp that is next numerically

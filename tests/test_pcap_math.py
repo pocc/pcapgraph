@@ -61,18 +61,21 @@ class TestPcapMath(unittest.TestCase):
         excluded_filenames = list(excluded_pcap_frames)
         self.assertEqual(filenames, excluded_filenames)
 
-    def test_union_pcap(self):
-        """Test union_pcap using the pcaps in examples."""
+    def skip_test_10_most_common_frames(self):
+        """Test 10 most common frames. Skip as it takes 5s with stdout use."""
         # These 4 lines will save generated_stdout from union()
         f_stream = io.StringIO()
         with redirect_stdout(f_stream):
-            pcap_frame_list = self.set_obj.union_pcap()
+            mfb.print_10_most_common_frames(self.set_obj.frame_list)
         generated_stdout = f_stream.getvalue()
         # Remove all whitespace at end of lines to match expected
         generated_stdout = re.sub(r' +$', '', generated_stdout, flags=re.M)
         # Tests print_10_most_common_frames
         self.assertEqual(EXPECTED_UNION_STDOUT, generated_stdout)
 
+    def test_union_pcap(self):
+        """Test union_pcap using the pcaps in examples."""
+        pcap_frame_list = self.set_obj.union_pcap()
         frame_list = list(pcap_frame_list)
         timestamp_list = list(pcap_frame_list.values())
         with tempfile.NamedTemporaryFile() as temp_file:
@@ -178,17 +181,17 @@ class TestPcapMath(unittest.TestCase):
         """Test the symmetric difference method with muliple pcaps."""
         sym_diff_pcap_frames = self.set_obj.symmetric_difference_pcap()
         # The generated file should be the same as examples/union.pcap
-        for pcap in sym_diff_pcap_frames:
-            sf.save_pcap(sym_diff_pcap_frames[pcap], pcap, self.options)
-        self.assertTrue(
-            filecmp.cmp('symdiff_simul1.pcap',
-                        'examples/set_ops/symdiff_simul1.pcap'))
-        self.assertTrue(
-            filecmp.cmp('symdiff_simul3.pcap',
-                        'examples/set_ops/symdiff_simul3.pcap'))
-        os.remove('symdiff_simul1.pcap')
-        os.remove('symdiff_simul2.pcap')
-        os.remove('symdiff_simul3.pcap')
+        for index, pcap in enumerate(sym_diff_pcap_frames):
+            frame_list = list(sym_diff_pcap_frames[pcap])
+            ts_list = list(sym_diff_pcap_frames[pcap].values())
+            expected_symdiff_file = \
+                'examples/set_ops/symdiff_simul' + str(index + 1) + '.pcap'
+
+            with tempfile.NamedTemporaryFile() as temp_file:
+                mfb.write_file_bytes(temp_file.name, frame_list, ts_list)
+                if index != 1:  # Symdiff 2 is expected to be empty
+                    self.assertTrue(
+                       filecmp.cmp(temp_file.name, expected_symdiff_file))
 
     def test_get_minmax_common_frames(self):
         """Test get_minmax_common against expected frame outputs"""
@@ -223,17 +226,12 @@ class TestPcapMath(unittest.TestCase):
         same and there being no infixed traffic from other sources.
         """
         bounded_pcap_frames = self.set_obj.bounded_intersect_pcap()
-        for pcap in bounded_pcap_frames:
-            sf.save_pcap(bounded_pcap_frames[pcap], pcap, self.options)
-        self.assertTrue(
-            filecmp.cmp('bounded_intersect-simul1.pcap',
-                        'examples/set_ops/intersect.pcap'))
-        self.assertTrue(
-            filecmp.cmp('bounded_intersect-simul2.pcap',
-                        'examples/set_ops/intersect.pcap'))
-        self.assertTrue(
-            filecmp.cmp('bounded_intersect-simul3.pcap',
-                        'examples/set_ops/intersect.pcap'))
-        os.remove('bounded_intersect-simul1.pcap')
-        os.remove('bounded_intersect-simul2.pcap')
-        os.remove('bounded_intersect-simul3.pcap')
+        for index, pcap in enumerate(bounded_pcap_frames):
+            frame_list = list(bounded_pcap_frames[pcap])
+            ts_list = list(bounded_pcap_frames[pcap].values())
+            expected_symdiff_file = 'examples/set_ops/intersect.pcap'
+
+            with tempfile.NamedTemporaryFile() as temp_file:
+                mfb.write_file_bytes(temp_file.name, frame_list, ts_list)
+                self.assertTrue(
+                    filecmp.cmp(temp_file.name, expected_symdiff_file))

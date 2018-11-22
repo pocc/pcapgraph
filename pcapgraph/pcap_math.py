@@ -16,7 +16,7 @@
 import os
 
 from pcapgraph.manipulate_framebytes import get_bytes_from_pcaps,\
-    print_10_most_common_frames
+    print_10_most_common_frames, get_ts_as_float
 
 
 class PcapMath:
@@ -80,6 +80,8 @@ class PcapMath:
             }
         if args['--union']:
             generated_pcap_frames['union.pcap'] = self.union_pcap()
+        if args['--most-common-frames']:
+            print_10_most_common_frames(self.frame_list)
         if args['--bounded-intersection']:
             bounded_intersect_frames = self.bounded_intersect_pcap()
             bounded_intersect_filenames = list(bounded_intersect_frames)
@@ -114,8 +116,6 @@ class PcapMath:
         Returns:
             (dict): {<FRAME>: <TIMESTAMP>, ...}
         """
-        print_10_most_common_frames(self.frame_list)
-
         union_frame_dict = {}
         for index, frame in enumerate(self.frame_list):
             union_frame_dict[frame] = self.timestamp_list[index]
@@ -315,7 +315,8 @@ class PcapMath:
         max_frame = ''
         min_frame = ''
         for frame in frame_intersection:
-            frame_time = float(self.frame_timestamp_dict[frame])
+            timestamp_bytes = self.frame_timestamp_dict[frame]
+            frame_time = get_ts_as_float(timestamp_bytes)
             if frame_time > time_max:
                 time_max = frame_time
                 max_frame = frame

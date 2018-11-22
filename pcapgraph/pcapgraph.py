@@ -51,6 +51,9 @@ OPTIONS:
     OUTPUT OPTIONS:
       -a, --anonymize       Anonymize packet capture file names with fictional
                             place names and devices.
+      -m, --most-common-frames
+                            Print the 10 most common frames with count, frame
+                            hex, and tshark summary.
       -o, --output <format>
                             Output results as a file with format type.
       -p, --show-packets    When graphing, show a vertical line for each
