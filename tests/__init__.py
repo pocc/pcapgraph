@@ -23,6 +23,7 @@ DEFAULT_CLI_ARGS = {
     '--help': False,
     '--intersection': False,
     '--inverse-bounded': False,
+    '--most-common-frames': False,
     '--output': [],
     '--show-packets': False,
     '--strip-l2': False,

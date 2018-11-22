@@ -35,12 +35,12 @@ class TestPcapMath(unittest.TestCase):
         """Make sure that tshark is in PATH."""
         setup_testenv()
         self.options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
-        filenames = [
+        self.filenames = [
             'examples/simul1.pcapng',
             'examples/simul2.pcapng',
             'examples/simul3.pcapng'
         ]
-        self.set_obj = PcapMath(filenames, self.options)
+        self.set_obj = PcapMath(self.filenames, self.options)
 
     def test_exclude_empty(self):
         """Verify --exclude-empty option. Relevant for pcap differences.
@@ -79,7 +79,7 @@ class TestPcapMath(unittest.TestCase):
         frame_list = list(pcap_frame_list)
         timestamp_list = list(pcap_frame_list.values())
         with tempfile.NamedTemporaryFile() as temp_file:
-            mfb.write_file_bytes(temp_file.name, frame_list, timestamp_list)
+            mfb.write_file_bytes(temp_file.name, frame_list, timestamp_list, 1)
             self.assertTrue(
                 filecmp.cmp(temp_file.name, 'examples/set_ops/union.pcap'))
 
@@ -91,7 +91,8 @@ class TestPcapMath(unittest.TestCase):
         with tempfile.NamedTemporaryFile() as temp_file:
             mfb.write_file_bytes(temp_file.name,
                                  list(intersect_frame_dict),  # frames
-                                 list(intersect_frame_dict.values()))  # ts
+                                 list(intersect_frame_dict.values()), #ts
+                                 1)
             self.assertTrue(
                 filecmp.cmp(temp_file.name, 'examples/set_ops/intersect.pcap'))
         # examples/intersect.pcap is from all 3 simul pcaps, so using
@@ -103,7 +104,8 @@ class TestPcapMath(unittest.TestCase):
         with tempfile.NamedTemporaryFile() as temp_file:
             mfb.write_file_bytes(temp_file.name,
                                  list(two_thirds_frame_dict),  # frames
-                                 list(two_thirds_frame_dict.values()))  # ts
+                                 list(two_thirds_frame_dict.values()),  # ts
+                                 1)
             self.assertFalse(
                 filecmp.cmp(temp_file.name, 'examples/set_ops/intersect.pcap'))
 
@@ -112,28 +114,25 @@ class TestPcapMath(unittest.TestCase):
 
         In the produced intersect, we should see only packets of type raw-ip.
         """
-        args = dict(DEFAULT_CLI_ARGS)
-        args['--output'] = ['pcap']
-        args['--intersect'] = True
-        filenames = [
-            'examples/simul1.pcapng',
-            'examples/simul2.pcapng',
-            'examples/simul3.pcapng'
-        ]
-        options = {'strip-l2': True, 'strip-l3': False, 'pcapng': False}
-        pcap_math = PcapMath(filenames, options)
-        pcaps_frame_dict = pcap_math.parse_set_args(args)
-        frame_timestamp_dict = {}
-        for pcap in filenames:
-            new_dict = {
-                k: v for k, v in zip(pcaps_frame_dict[pcap]['frames'],
-                                     pcaps_frame_dict[pcap]['timestamps'])
+        strip_l2_opts = {'strip-l2': True, 'strip-l3': False, 'pcapng': False}
+        strip_l2_obj = PcapMath(self.filenames, strip_l2_opts)
+        intersect_frame_dict = strip_l2_obj.intersect_pcap()
+        intersect_frames = list(intersect_frame_dict)
+        intersect_timestamps = list(intersect_frame_dict.values())
+        frame_ts_lists = {
+            'dummy_pcap': {
+                'frames': intersect_frames,
+                'timestamps': intersect_timestamps
             }
-            frame_timestamp_dict = {**frame_timestamp_dict, **new_dict}
-        sf.save_pcap(frame_timestamp_dict, 'intersect.pcap', options)
-        self.assertFalse(filecmp.cmp('intersect.pcap',
-                                     'tests/files/l2_stripped_intersect.pcap'))
-        os.remove('intersect.pcap')
+        }
+        stripped_intersect_dict = mfb.strip_l2(frame_ts_lists)
+        frame_list = stripped_intersect_dict['dummy_pcap']['frames']
+        ts_list = stripped_intersect_dict['dummy_pcap']['timestamps']
+        expected_l2_stripped = 'tests/files/l2_stripped_intersect.pcap'
+        with tempfile.NamedTemporaryFile() as temp_file:
+            mfb.write_file_bytes(temp_file.name, frame_list, ts_list, 101)
+            self.assertTrue(filecmp.cmp(temp_file.name,
+                                        expected_l2_stripped))
 
     def test_strip_l3_intersect(self):
         """test strip l3 intersect
@@ -174,7 +173,7 @@ class TestPcapMath(unittest.TestCase):
         frame_list = list(diff_pcap_frames)
         timestamp_list = list(diff_pcap_frames.values())
         with tempfile.NamedTemporaryFile() as temp_file:
-            mfb.write_file_bytes(temp_file.name, frame_list, timestamp_list)
+            mfb.write_file_bytes(temp_file.name, frame_list, timestamp_list, 1)
             self.assertTrue(filecmp.cmp(temp_file.name, expected_diff_file))
 
     def test_symmetric_difference(self):
@@ -188,28 +187,15 @@ class TestPcapMath(unittest.TestCase):
                 'examples/set_ops/symdiff_simul' + str(index + 1) + '.pcap'
 
             with tempfile.NamedTemporaryFile() as temp_file:
-                mfb.write_file_bytes(temp_file.name, frame_list, ts_list)
+                mfb.write_file_bytes(temp_file.name, frame_list, ts_list, 1)
                 if index != 1:  # Symdiff 2 is expected to be empty
                     self.assertTrue(
                        filecmp.cmp(temp_file.name, expected_symdiff_file))
 
     def test_get_minmax_common_frames(self):
         """Test get_minmax_common against expected frame outputs"""
-        min_frame = '0000  88 15 44 ab bf dd 24 77 03 51 13 44 08 00 45 00\n' \
-                    '0010  00 54 7b af 40 00 40 01 92 2a 0a 30 12 90 08 08\n' \
-                    '0020  08 08 08 00 ae 46 62 8b 00 01 e8 30 ab 5b 00 00\n' \
-                    '0030  00 00 88 cd 0c 00 00 00 00 00 10 11 12 13 14 15\n' \
-                    '0040  16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24 25\n' \
-                    '0050  26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35\n' \
-                    '0060  36 37                                          \n'
-
-        max_frame = '0000  24 77 03 51 13 44 88 15 44 ab bf dd 08 00 45 20\n' \
-                    '0010  00 54 2b bc 00 00 79 01 e8 fd 08 08 08 08 0a 30\n' \
-                    '0020  12 90 00 00 82 a5 63 11 00 01 f9 30 ab 5b 00 00\n' \
-                    '0030  00 00 a9 e8 0d 00 00 00 00 00 10 11 12 13 14 15\n' \
-                    '0040  16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24 25\n' \
-                    '0050  26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35\n' \
-                    '0060  36 37                                          \n'
+        min_frame = b'\x88\x15D\xab\xbf\xdd$w\x03Q\x13D\x08\x00E\x00\x00T{\xaf@\x00@\x01\x92*\n0\x12\x90\x08\x08\x08\x08\x08\x00\xaeFb\x8b\x00\x01\xe80\xab[\x00\x00\x00\x00\x88\xcd\x0c\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./01234567'  # noqa: E501 pylint: disable=C0301
+        max_frame = b'$w\x03Q\x13D\x88\x15D\xab\xbf\xdd\x08\x00E \x00T+\xbc\x00\x00y\x01\xe8\xfd\x08\x08\x08\x08\n0\x12\x90\x00\x00\x82\xa5c\x11\x00\x01\xf90\xab[\x00\x00\x00\x00\xa9\xe8\r\x00\x00\x00\x00\x00\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f !"#$%&\'()*+,-./01234567'  # noqa: E501 pylint: disable=C0301
 
         actual_min_frame, actual_max_frame = \
             self.set_obj.get_minmax_common_frames()
@@ -232,6 +218,6 @@ class TestPcapMath(unittest.TestCase):
             expected_symdiff_file = 'examples/set_ops/intersect.pcap'
 
             with tempfile.NamedTemporaryFile() as temp_file:
-                mfb.write_file_bytes(temp_file.name, frame_list, ts_list)
+                mfb.write_file_bytes(temp_file.name, frame_list, ts_list, 1)
                 self.assertTrue(
                     filecmp.cmp(temp_file.name, expected_symdiff_file))

@@ -91,6 +91,6 @@ class TestParsePackets(unittest.TestCase):
         frame_list = frame_ts_dict_by_pcap[filename]['frames']
         timestamp_list = frame_ts_dict_by_pcap[filename]['timestamps']
         temp_file = 'temp_delete.pcap'
-        write_file_bytes(temp_file, frame_list, timestamp_list)
+        write_file_bytes(temp_file, frame_list, timestamp_list, 1)
         self.assertFalse(filecmp.cmp(filename, temp_file))
         os.remove(temp_file)

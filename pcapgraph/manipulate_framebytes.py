@@ -23,6 +23,107 @@ import collections
 from . import get_wireshark_version
 
 
+def strip_l2(pcap_framelist):
+    """Get the PCAP JSON dict stripped per options.
+
+    Format of input and output:
+        {<PCAP>: {
+                'frames': [<FRAME>, ...],
+                'timestamps': [<TIMESTAMP>, ...]
+            }, ...
+        }
+
+    Args:
+        pcap_framelist (dict): Dict of frames and timestamps with pcap as key.
+    Returns:
+        (dict): The modified frame dict
+    """
+    for pcap in pcap_framelist:
+        for index, frame in enumerate(pcap_framelist[pcap]['frames']):
+            eth_len = get_frame_len(frame)
+            pcap_framelist[pcap]['frames'][index] = frame[eth_len:]
+
+    return pcap_framelist
+
+
+def strip_l3(pcap_framelist):
+    """Get the PCAP JSON dict stripped per options.
+
+    Args:
+        pcap_framelist (dict): Dict of frames and timestamps with pcap as key.
+            {<PCAP>: {<FRAME>: <TIMESTAMP>, ...}, ...}
+    Returns:
+        (dict): The modified frame dict
+            {<PCAP>: {<FRAME>: <TIMESTAMP>, ...}, ...}
+    """
+    for pcap in pcap_framelist:
+        # Convert to frame hex i.e. 'abc123' and then back to 'ab c1 23'.
+        for index, frame in enumerate(pcap_framelist[pcap]['frames']):
+            frame_header_end = get_frame_len(frame)
+            ip_version = int(frame[frame_header_end])
+            if ip_version == 4:
+                # IPv4 Internet Header Length = 8 nibbles * hex digit
+                ihl_index = frame_header_end + 1
+                ip_header_nibbles = 8 * int(frame[ihl_index])
+            else:  # IPv6 header is ALWAYS 40 octets.
+                ip_header_nibbles = 80
+            ip_header_end = frame_header_end + ip_header_nibbles
+            ip_header = frame[frame_header_end:ip_header_end]
+            homogenized_packet = get_homogenized_packet(ip_header) \
+                + frame.split(ip_header)[1]
+            pcap_framelist[pcap]['frames'][index] = homogenized_packet
+
+    return pcap_framelist
+
+
+def get_frame_len(frame):
+    """Get the length of the ethernet header from a frame. Only 802.3, 802.1Q.
+
+    Args:
+        frame (bytes): The bytes of a frame.
+    Returns:
+        (int): The length of the ethernet header.
+    """
+    frame_header_end = 14
+    has_vlan_tag = (frame[12:14] == b'\x81\x00')
+    if has_vlan_tag:
+        frame_header_end = 18
+    return frame_header_end
+
+
+def get_homogenized_packet(ip_raw):
+    """Change an IPv4 packet's fields to the same, homogenized values.
+
+    Replace TTL, header checksum, and IP src/dst with generic values.
+    This function is designed to replace all IP data that would change
+    on a layer 3 boundary
+
+    TTL is expected to change at every hop along with header
+    checksum. IPs are expected to change for NAT. In IPv6, only the next
+    hop field is changed as IPv6 does not have NAT or checksums.
+
+    Args:
+        ip_raw (bytes): bytes of packet.
+    Returns:
+        (bytes): For fields that would be changed by a layer3 boundary,
+            those fields of the packet are homogenized to the same values.
+    """
+    ip_raw_hex = ip_raw.hex()
+    if ip_raw_hex[0] == '4':
+        ttl = b'\xff'  # TTL = 256
+        ip_proto = ip_raw[18:20]
+        ip_header_checksum = b'\x13\x37'  # Checksum = 0x1337
+        src_ip = b'\x0a\x01\x01\x01'  # IP = 10.1.1.1
+        dst_ip = b'\x0a\x02\x02\x02'  # IP = 10.2.2.2
+        homogenized_packet = ip_raw[:16] + ttl + ip_proto + \
+            ip_header_checksum + src_ip + dst_ip + ip_raw[40:]
+    else:
+        # For IPv6, NAT is not a problem so only remove hop limit.
+        homogenized_packet = ip_raw[:14] + b'\x2a' + ip_raw[16:]
+
+    return homogenized_packet
+
+
 def print_10_most_common_frames(raw_frame_list):
     """After doing a packet union, find/print the 10 most common packets.
 
@@ -52,7 +153,7 @@ def print_10_most_common_frames(raw_frame_list):
         frame_hex = packet.hex()
         with tempfile.NamedTemporaryFile() as temp_file:
             zero_timestamp = b'\x00\x00\x00\x00\x00\x00\x00\x00'
-            write_file_bytes(temp_file.name, [packet], [zero_timestamp])
+            write_file_bytes(temp_file.name, [packet], [zero_timestamp], 1)
             tshark_cmds = ('tshark -r' + temp_file.name).split(' ')
             sp_pipe = sp.Popen(tshark_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
             formatted_packet = sp_pipe.communicate()[0].decode('utf-8')
@@ -178,7 +279,7 @@ def get_bytes_from_pcaps(filenames):
     return pcap_dict
 
 
-def write_file_bytes(filename, frame_list, timestamp_list):
+def write_file_bytes(filename, frame_list, timestamp_list, link_layer_type):
     """Write the raw hex back to a file.
 
     frame_list and timestamp_list already contain bytes objects,
@@ -188,6 +289,10 @@ def write_file_bytes(filename, frame_list, timestamp_list):
         filename (str): File to write to
         frame_list (list(bytes)): Frames to add to file
         timestamp_list (list(bytes)): Timestamps  to add to file
+        link_layer_type(int): Link layer type to encode.
+            1   : Ethernet
+            101 : Raw IP
+            105 : 802.11
     """
     # Every frame should have a timestamp.
     assert len(frame_list) == len(timestamp_list)
@@ -207,7 +312,7 @@ def write_file_bytes(filename, frame_list, timestamp_list):
         'utc_offset': 0,  # This is never used; don't start now.
         'timestamp_accuracy': 0,
         'snapshot_length': 0xffff,
-        'link_layer_type': 1  # Encode ethernet regardless of input
+        'link_layer_type': link_layer_type
     }
     pcap_header = struct.pack(endianness_char + 'IHHIiII',
                               *list(pcap_header_dict.values()))
