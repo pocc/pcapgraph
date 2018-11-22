@@ -18,7 +18,7 @@
 USAGE:
   ::
 
-    pcapgraph [-abdeipsuvwx23] (<file>)... [--output <format>]...
+    pcapgraph [-abdeimpsuvwx23] (<file>)... [--output <format>]...
     pcapgraph (-V | --version)
     pcapgraph (-h | --help)
 

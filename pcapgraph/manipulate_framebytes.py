@@ -251,6 +251,7 @@ def get_bytes_from_pcaps(filenames):
     # If not pcap, convert to pcap. All editcap types will now be supported.
     pcap_dict = {}
     for filename in filenames:
+        print('> Loading', filename, '...')
         if os.path.splitext(filename)[1] != '.pcap':
             # If not pcap, convert to pcap and get bytes
             pcap_bytes = get_pcap_bytes_from_non_pcap(filename)
@@ -259,6 +260,10 @@ def get_bytes_from_pcaps(filenames):
                 pcap_bytes = file_obj.read()
         # .pcap files must start with a magic number.
         magic_number = pcap_bytes[0:4]
+        # 2nd pass to catch files with .pcap extension but .pcapng encoding
+        if magic_number == b'\n\r\r\n':
+            pcap_bytes = get_pcap_bytes_from_non_pcap(filename)
+            magic_number = pcap_bytes[0:4]
         is_little_endian = (magic_number == b'\xd4\xc3\xb2\xa1')
         is_big_endian = (magic_number == b'\xa1\xb2\xc3\xd4')
         if is_little_endian:
@@ -266,13 +271,15 @@ def get_bytes_from_pcaps(filenames):
         elif is_big_endian:
             endianness_char = '>'
         else:
-            raise FileNotFoundError('ERROR: Invalid packet capture encoding. ',
-                                    magic_number, 'Now exiting...')
+            raise FileNotFoundError(
+                'ERROR: Bad packet capture encoding in file' + filename + '.',
+                '\nMagic number:', magic_number, 'Now exiting...')
 
         pcap_dict[filename] = {}
         frames, timestamps = get_frame_ts_bytes(pcap_bytes, endianness_char)
         pcap_dict[filename]['frames'] = frames
         pcap_dict[filename]['timestamps'] = timestamps
+        print(' \\==> Finished loading ' + filename + '!')
 
     return pcap_dict
 

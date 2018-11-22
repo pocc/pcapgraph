@@ -53,6 +53,7 @@ def draw_graph(pcap_packets, input_files, args):
     # So that if no save format is specified, print to screen and stdout
     output_fmts = args['--output']
     if not output_fmts:
+        print('No options selected. Showing graph.')
         output_fmts = ['show']
     pcap_filenames = list(pcap_packets)
     open_in_wireshark = False
@@ -65,7 +66,9 @@ def draw_graph(pcap_packets, input_files, args):
 
     if open_in_wireshark:
         for file in new_files:
-            print("Opening", file, "in wireshark.")
+            print(
+                "Opening", file, "in wireshark (you must close this " +
+                "wireshark window to look at the next).")
             sp.Popen(['wireshark', file])
 
 
@@ -92,8 +95,9 @@ def output_file(save_format, pcap_packets, new_files, args):
         print("Text file successfully created!")
     elif 'pcap' in save_format or 'pcapng' in save_format:
         for file in new_files:
-            mfb.write_file_bytes(file, pcap_packets[file]['frames'],
-                                 pcap_packets[file]['timestamps'], 1)
+            print('Saving ' + file + ' as ' + save_format + '!')
+            mfb.write_file_bytes(file, list(pcap_packets[file]),
+                                 list(pcap_packets[file].values()), 1)
     else:
         graph_startstop_dict = get_graph_vars(pcap_packets, new_files)
         empty_files = []
@@ -123,10 +127,10 @@ def get_graph_vars(pcap_packets, new_files):
     input_files = sorted(set(pcap_packets) - set(new_files))
     graph_startstop_dict = mfh.get_pcap_info(input_files)
     for pcap in new_files:
-        # Convert timestamp
-        timestamp_list = list(pcap_packets[pcap].values())
         float_timestamps = []
         if pcap_packets[pcap]:
+            # Convert timestamp
+            timestamp_list = list(pcap_packets[pcap].values())
             for timestamp in timestamp_list:
                 float_timestamps.append(mfb.get_ts_as_float(timestamp))
         pcap_name = os.path.splitext(pcap)[0]

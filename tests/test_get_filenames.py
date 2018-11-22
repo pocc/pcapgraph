@@ -39,7 +39,8 @@ class TestGetFilenames(unittest.TestCase):
         # directory and file should be properly detected as such and parsed.
         self.args['<file>'] = ['tests/files/test.pcap', 'tests/files/test_dir']
         expected_results = [
-            'tests/files/test_dir/test_dir.pcap', 'tests/files/test.pcap'
+            '/home/ross/code/pcapgraph/tests/files/test_dir/test_dir.pcap',
+            '/home/ross/code/pcapgraph/tests/files/test.pcap'
         ]
         self.assertEqual(expected_results, gf.parse_cli_args(self.args))
 

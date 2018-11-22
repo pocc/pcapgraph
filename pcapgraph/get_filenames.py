@@ -49,19 +49,47 @@ def parse_cli_args(args):
         raise SyntaxError("\nERROR: --output pcap/pcapng needs "
                           "a set operation (-bdeisu).")
 
-    directories = []
-    files = list(args['<file>'])
-    for file in args['<file>']:
-        if os.path.isdir(file):
-            directories.append(file)
-            files.remove(file)
-
-    filenames = get_filenames_from_directories(directories)
-    filenames.extend(get_filenames(files))
+    filenames = get_all_file_and_directory_names(args['<file>'])
     num_files = len(filenames)
     if has_set_operation and num_files < 2:
         raise SyntaxError("\nERROR: Set operations require 2 or more different"
                           " packet captures (" + str(num_files) + " provided)")
+    return filenames
+
+
+def get_all_file_and_directory_names(file_list):
+    """
+
+    Args:
+        file_list (list): Every sysarg that doesn't have a flag in front of it.
+    Returns:
+        (list): List of all filenames
+    """
+    system = sys.platform
+    directories = []
+    for index, file in enumerate(file_list):
+        # If the provided path is relative.
+        if system == 'win32' and "C:\\" not in file.upper():
+            extended_file = os.getcwd() + file
+        else:
+            # Tilde expansion on unix systems.
+            if file[0] == '~':
+                extended_file = os.path.expanduser(file)
+            elif file[0] != '/':
+                extended_file = os.getcwd() + '/' + file
+            else:
+                extended_file = file
+        if os.path.isdir(extended_file):
+            directories.append(extended_file)
+            file_list.remove(file)
+        elif os.path.isfile(extended_file):
+            file_list[index] = extended_file
+        else:
+            raise FileNotFoundError
+
+    filenames = get_filenames_from_directories(directories)
+    filenames.extend(get_filenames(file_list))
+
     return filenames
 
 
@@ -79,22 +107,12 @@ def get_filenames_from_directories(directories):
         '.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0', '.TRC1', '.enc',
         '.trc', '.fdc', '.syc', '.bfr', '.tr1', '.snoop'
     ]
-    system = sys.platform
-    cwd = os.getcwd() + '/'
     filenames = []
     for directory in directories:
-        # Tilde expansion on unix systems.
-        if directory[0] in '~':
-            directory = os.path.expanduser(directory)
-        dir_string = directory
-        # If the provided path is relative.
-        if (system == 'win32' and "C:\\" not in directory.upper()) \
-                or (system != 'win32' and directory[0] not in '/'):
-            dir_string = cwd + directory
-        if not os.path.isdir(dir_string):
-            print("ERROR: Directory", dir_string, "not found!")
+        if not os.path.isdir(directory):
+            print("ERROR: Directory", directory, "not found!")
             sys.exit()
-        for file in os.listdir(dir_string):
+        for file in os.listdir(directory):
             for pcap_ext in pcap_extensions:
                 if file.endswith(pcap_ext):
                     filenames.append(directory + '/' + file)
@@ -114,14 +132,8 @@ def get_filenames(files):
         '.pcapng', '.pcap', '.cap', '.dmp', '.5vw', '.TRC0', '.TRC1', '.enc',
         '.trc', '.fdc', '.syc', '.bfr', '.tr1', '.snoop'
     ]
-    cwd = os.getcwd() + '/'
     filenames = []
     for filename in files:
-        if os.name == 'posix':
-            # Expand ~ to full filepath
-            filename = os.path.expanduser(filename)
-        if os.name == 'nt' and "C:\\" not in filename.upper():
-            filename = cwd + filename
         if not os.path.isfile(filename):
             print("ERROR: File", filename, "not found!")
             sys.exit()
