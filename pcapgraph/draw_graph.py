@@ -95,9 +95,12 @@ def output_file(save_format, pcap_packets, new_files, args):
         print("Text file successfully created!")
     elif 'pcap' in save_format or 'pcapng' in save_format:
         for file in new_files:
-            print('Saving ' + file + ' as ' + save_format + '!')
-            mfb.write_file_bytes(file, list(pcap_packets[file]),
-                                 list(pcap_packets[file].values()), 1)
+            if pcap_packets[file]:
+                print('Saving ' + file + ' as ' + save_format + '!')
+                mfb.write_file_bytes(file, list(pcap_packets[file]),
+                                     list(pcap_packets[file].values()), 1)
+            else:
+                print('=> Excluding empty ' + file)
     else:
         graph_startstop_dict = get_graph_vars(pcap_packets, new_files)
         empty_files = []

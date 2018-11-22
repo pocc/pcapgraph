@@ -85,7 +85,8 @@ def get_all_file_and_directory_names(file_list):
         elif os.path.isfile(extended_file):
             file_list[index] = extended_file
         else:
-            raise FileNotFoundError
+            message = 'File ' + extended_file + 'does not exist!'
+            raise FileNotFoundError(message)
 
     filenames = get_filenames_from_directories(directories)
     filenames.extend(get_filenames(file_list))
