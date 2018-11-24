@@ -18,7 +18,7 @@ import os
 import filecmp
 
 from pcapgraph.manipulate_framebytes import get_bytes_from_pcaps, \
-    write_file_bytes
+    write_file_bytes, parse_pcapng
 
 
 class TestParsePackets(unittest.TestCase):
@@ -73,13 +73,30 @@ class TestParsePackets(unittest.TestCase):
         self.assertListEqual(frame_list, self.expected_frame_list)
         self.assertListEqual(timestamp_list, self.expected_timestamp_list)
 
-    def test_get_bytes_from_pcapng(self):
-        """test get_bytes_from_pcaps for pcapng files."""
+    def test_parse_pcapng(self):
+        """test get_bytes_from_pcaps for pcapng files.
+
+        Data structure for returned dict:
+        {<PCAP>: {
+            'frames': [<FRAME>, ...],
+            'timestamps': [<TIMESTAMP>, ...],
+            'ethertypes': [<ETHERTYPE, ...]
+            },
+            ...
+        }
+
+        Note that at return_dict['pcap_name'][x][int_y], that for all keys x,
+        with the same value of int_y should constitute 1 frame's data. I.e. the
+        23rd position of 'frames', 'timestamps', and 'ethertypes' lists should
+        constitute all of the information for the 23rd frame.
+        """
         filename = 'tests/files/in_order_packets.pcapng'
-        frame_ts_dict_by_pcap = get_bytes_from_pcaps([filename])
-        new_filename = list(frame_ts_dict_by_pcap)[0]
-        frame_list = frame_ts_dict_by_pcap[new_filename]['frames']
-        timestamp_list = frame_ts_dict_by_pcap[new_filename]['timestamps']
+        with open(filename, 'rb') as file:
+            file_bytes = file.read()
+            pcapng_dict = parse_pcapng(file_bytes, '<')
+        new_filename = list(pcapng_dict)[0]
+        frame_list = pcapng_dict[new_filename]['frames']
+        timestamp_list = pcapng_dict[new_filename]['timestamps']
         self.assertListEqual(frame_list, self.expected_frame_list)
         self.assertListEqual(timestamp_list, self.expected_timestamp_list)
 

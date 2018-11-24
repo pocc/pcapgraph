@@ -179,8 +179,8 @@ def get_ts_as_float(timestamp):
     return float(str(seconds) + '.' + microseconds)
 
 
-def get_frame_ts_bytes(file_bytes, endianness):
-    """Parse .pcap files
+def parse_pcap_to_frame_ts(file_bytes, endianness):
+    """Parse .pcap files to frames and timestamps
     Format: https://wiki.wireshark.org/Development/LibpcapFileFormat
     Example: http://www.kroosec.com/2012/10/a-look-at-pcap-file-format.html
     """
@@ -211,6 +211,59 @@ def get_frame_ts_bytes(file_bytes, endianness):
         b_index += frame_len
 
     return frames, timestamps
+
+
+def parse_pcapng(file_bytes, endianness):
+    """Parse .pcapng files to frames and timestamps
+    Format: https://www.winpcap.org/ntar/draft/PCAP-DumpFileFormat.html
+    Example: https://samsclass.info/seminars/wireshark/pcapng.htm
+
+    Block type|  name (required for, this fn's behavior for this type):
+    =================================================================
+    0x0A0D0D0A|  Section Header Block (mandatory, keep)
+    0x00000001|  Interface Description Block (mandatory, keep)
+    0x00000002|  Packet Block (obsolete, drop)
+    0x00000003|  Simple Packet Block (optional, keep)
+    0x00000004|  Name Resolution Block (optional, drop)
+    0x00000005|  Interface Statistics Block (optional, drop)
+    0x00000006|  Enhanced Packet Block (optional, keep)
+    """
+    assert(b'\n\r\r\n' == file_bytes[0:4])  # .pcapng expected
+    # B = byte, H = 2B, I = 4B, Q = 8B. Lowercase versions are signed.
+    blocks = []
+    while len(file_bytes) > 0:
+        block_len = struct.unpack(endianness + 'I', file_bytes[4:8])[0]
+        blocks.append(file_bytes[:block_len])
+        file_bytes = file_bytes[block_len:]  # Subtract block
+
+    frames = []
+    timestamps = []
+    linklayer_types = []
+    while len(file_bytes) > 0:
+        block_type = struct.unpack(endianness + 'I', file_bytes[0:4])[0]
+        if block_type == 10:
+            raise ImportError("ERROR: Unexpected second section header "
+                              "found! Now exiting...")
+        elif block_type == 1:
+            pass
+        elif block_type == 2:
+            pass
+        elif block_type == 3:
+            simple_length = struct.unpack(endianness + 'I', file_bytes[4:8])[0]
+            frames.append(file_bytes[12: simple_length - 4])
+            # This information is not given, so save ignorance
+            timestamps.append(None)
+            linklayer_types.append(None)
+
+        elif block_type == 4:
+            pass
+        elif block_type == 5:
+            pass
+        elif block_type == 6:
+            pass
+        else:
+            raise ImportError("ERROR: Unexpected pcapng block type "
+                              "encountered! Now exiting...")
 
 
 def get_pcap_bytes_from_non_pcap(filename):
@@ -276,7 +329,7 @@ def get_bytes_from_pcaps(filenames):
                 '\nMagic number:', magic_number, 'Now exiting...')
 
         pcap_dict[filename] = {}
-        frames, timestamps = get_frame_ts_bytes(pcap_bytes, endianness_char)
+        frames, timestamps = parse_pcap_to_frame_ts(pcap_bytes, endianness_char)
         pcap_dict[filename]['frames'] = frames
         pcap_dict[filename]['timestamps'] = timestamps
         print(' \\==> Finished loading ' + filename + '!')
