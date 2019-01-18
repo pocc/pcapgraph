@@ -39,7 +39,8 @@ class TestGetFilenames(unittest.TestCase):
         # directory and file should be properly detected as such and parsed.
         self.args['<file>'] = ['tests/files/test.pcap', 'tests/files/test_dir']
         expected_results = [
-            'tests/files/test_dir/test_dir.pcap', 'tests/files/test.pcap'
+            '/home/ross/code/pcapgraph/tests/files/test_dir/test_dir.pcap',
+            '/home/ross/code/pcapgraph/tests/files/test.pcap'
         ]
         self.assertEqual(expected_results, gf.parse_cli_args(self.args))
 
@@ -47,14 +48,14 @@ class TestGetFilenames(unittest.TestCase):
         """Test get_filenames_from_directories"""
         directories = ['tests/files', 'tests/files/test_dir']
         pcap_filenames = sorted(gf.get_filenames_from_directories(directories))
-        expected_result = ['tests/files/empty.pcap',
-                           'tests/files/in_order_packets.pcap',
-                           'tests/files/l2_stripped_intersect.pcap',
-                           'tests/files/l3_stripped_intersect.pcap',
-                           'tests/files/out_of_order_packets.pcap',
-                           'tests/files/test.pcap',
-                           'tests/files/test.pcapng',
-                           'tests/files/test_dir/test_dir.pcap']
+        expected_result = [
+            'tests/files/empty.pcap', 'tests/files/in_order_packets.pcap',
+            'tests/files/in_order_packets.pcapng',
+            'tests/files/l2_stripped_intersect.pcap',
+            'tests/files/l3_stripped_intersect.pcap',
+            'tests/files/out_of_order_packets.pcap', 'tests/files/test.pcap',
+            'tests/files/test.pcapng', 'tests/files/test_dir/test_dir.pcap'
+        ]
         self.assertEqual(expected_result, pcap_filenames)
 
     def test_get_filenames(self):
@@ -62,9 +63,10 @@ class TestGetFilenames(unittest.TestCase):
 
         If an incorrect file is entered, expected behavior is to exit.
         """
-        filenames = ['tests/files/test.txt',
-                     'tests/files/test.pcap',
-                     'tests/files/test.pcapng']
+        filenames = [
+            'tests/files/test.txt', 'tests/files/test.pcap',
+            'tests/files/test.pcapng'
+        ]
         packet_captures = []
         for filename in filenames:
             try:

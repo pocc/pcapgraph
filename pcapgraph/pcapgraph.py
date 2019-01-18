@@ -18,7 +18,7 @@
 USAGE:
   ::
 
-    pcapgraph [-abdeipsuvwx23] (<file>)... [--output <format>]...
+    pcapgraph [-abdeimpsuvwx23] (<file>)... [--output <format>]...
     pcapgraph (-V | --version)
     pcapgraph (-h | --help)
 
@@ -51,6 +51,9 @@ OPTIONS:
     OUTPUT OPTIONS:
       -a, --anonymize       Anonymize packet capture file names with fictional
                             place names and devices.
+      -m, --most-common-frames
+                            Print the 10 most common frames with count, frame
+                            hex, and tshark summary.
       -o, --output <format>
                             Output results as a file with format type.
       -p, --show-packets    When graphing, show a vertical line for each
@@ -292,9 +295,7 @@ def run():
     pcaps_frame_dict = pcap_math.parse_set_args(args)
     if args['-w']:
         args['--output'].extend(['wireshark', 'pcap'])
-    dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
-                  args['--exclude-empty'], args['--anonymize'],
-                  args['--show-packets'], options)
+    dg.draw_graph(pcaps_frame_dict, filenames, args)
 
 
 if __name__ == '__main__':

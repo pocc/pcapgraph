@@ -38,18 +38,16 @@ class TestDrawGraph(unittest.TestCase):
         Use existing files in set_ops to avoid expensive set operations.
         Only this function in this class as this is one of the longer tests.
 
-        Equivalent to `pcapgraph -disu examples/simul1.pcap
-        examples/simul2.pcap examples/simul3.pcap --output png"""
+        Equivalent to `pcapgraph -disu examples/simul1.pcapng
+        examples/simul2.pcapng examples/simul3.pcapng --output png"""
         self.args['--exclude-empty'] = True
         self.args['--difference'] = True
         self.args['--intersect'] = True
         self.args['--symmetric-difference'] = True
         self.args['--union'] = True
         self.args['<file>'] = [
-            'examples/simul1.pcap',
-            'examples/simul2.pcap',
-            'examples/simul3.pcap',
-            'tests/files/empty.pcap'
+            'examples/simul1.pcapng', 'examples/simul2.pcapng',
+            'examples/simul3.pcapng', 'tests/files/empty.pcap'
         ]
         # Graphs are generated differently on Windows.
         # This would incorrectly break tests based on file comparisons.
@@ -70,5 +68,4 @@ class TestDrawGraph(unittest.TestCase):
         options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
         pcap_math = pm.PcapMath(filenames, options)
         pcaps_frame_dict = pcap_math.parse_set_args(args)
-        dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
-                      True, False, False, options)
+        dg.draw_graph(pcaps_frame_dict, filenames, args)
