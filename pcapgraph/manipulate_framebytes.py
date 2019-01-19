@@ -335,14 +335,11 @@ def write_file_bytes(filename, frame_list, timestamp_list, link_layer_type):
         endianness_char = '<'
     else:
         endianness_char = '>'
-    version = get_wireshark_version().split('.')
-    # Do not use this version - for some reason wireshark does not properly
-    # encode it's own version and will always put 2.4.
 
     pcap_header_dict = {
         'magic_number': 0xa1b2c3d4,
-        'major_ver': int(version[0]),
-        'minor_ver': int(version[1]),
+        'pcap_fmt_major_ver': 2,
+        'pcap_fmt_minor_ver': 4,
         'utc_offset': 0,  # This is never used; don't start now.
         'timestamp_accuracy': 0,
         'snapshot_length': 0xffff,

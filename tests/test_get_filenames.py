@@ -15,6 +15,7 @@
 """Test get_filenames.py."""
 
 import unittest
+import os
 
 import pcapgraph.get_filenames as gf
 from tests import setup_testenv, DEFAULT_CLI_ARGS
@@ -38,14 +39,18 @@ class TestGetFilenames(unittest.TestCase):
 
         # directory and file should be properly detected as such and parsed.
         self.args['<file>'] = ['tests/files/test.pcap', 'tests/files/test_dir']
+        base_path = os.getcwd() + '/'
         expected_results = [
-            '/home/ross/code/pcapgraph/tests/files/test_dir/test_dir.pcap',
-            '/home/ross/code/pcapgraph/tests/files/test.pcap'
+            base_path + 'tests/files/test_dir/test_dir.pcap',
+            base_path + 'tests/files/test.pcap'
         ]
         self.assertEqual(expected_results, gf.parse_cli_args(self.args))
 
     def test_get_filenames_from_directories(self):
-        """Test get_filenames_from_directories"""
+        """Test get_filenames_from_directories
+
+        Recursively gets all packet captures that wireshark supports.
+        """
         directories = ['tests/files', 'tests/files/test_dir']
         pcap_filenames = sorted(gf.get_filenames_from_directories(directories))
         expected_result = [

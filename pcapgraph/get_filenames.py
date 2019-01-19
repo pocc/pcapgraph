@@ -95,7 +95,7 @@ def get_all_file_and_directory_names(file_list):
 
 
 def get_filenames_from_directories(directories):
-    """Get all the files from all provided directories.
+    """Get all the packet captures from all provided directories.
 
     This function is not recursive and searches one deep.
 

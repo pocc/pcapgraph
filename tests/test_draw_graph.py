@@ -42,7 +42,6 @@ class TestManipulateFrames(unittest.TestCase):
 
         Depending on integration and pcap_math tests to test this function.
         """
-        pass
 
     def test_generate_graph(self):
         """Do not test generate_graph as it needs a matplotlib.pyplot object.
@@ -50,7 +49,6 @@ class TestManipulateFrames(unittest.TestCase):
         Any test MUST test plt methods, and it is unclear where the graph
         variables are stored in order to test it.
         """
-        pass
 
     def test_get_x_minmax(self):
         """Test get_x_minmax: Given start/stop lists, choose x min, x max.
@@ -104,7 +102,6 @@ class TestManipulateFrames(unittest.TestCase):
         Any test MUST test plt.saveconfig, and it is unclear where the graph
         variables are stored in order for using this to trigger a save.
         """
-        pass
 
     def test_make_text_not_war(self):
         """Testing make_text_not_war."""
