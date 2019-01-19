@@ -139,11 +139,11 @@ class PcapMath:
         frame_intersection = self.generate_intersection()
 
         # Print intersection output like in docstring
-        intersection_ct = len(frame_intersection)
         print("{: <12} {: <}".format('\nSAME %', 'PCAP NAME'))
         for pcap in self.filenames:
-            same_percent = str(
-                round(100 * (intersection_ct / len(first_pcap_frames)))) + '%'
+            same_percent = \
+                str(round(100*(len(frame_intersection) /
+                               len(first_pcap_frames)))) + '%'
             print("{: <12} {: <}".format(same_percent, pcap))
 
         intersect_frame_dict = {}
@@ -159,8 +159,9 @@ class PcapMath:
 
         if frame_intersection:
             return intersect_frame_dict
-        print('WARNING! Intersection between ', self.filenames,
-              ' contains no packets!')
+        filename_string = '\n\t'.join(map(str, self.filenames))
+        print('\nWARNING! Intersection between files contains no packets:\n\t'
+              + filename_string + '\n')
         return ''
 
     def generate_intersection(self):

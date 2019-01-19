@@ -53,7 +53,7 @@ def draw_graph(pcap_packets, input_files, args):
     # So that if no save format is specified, print to screen and stdout
     output_fmts = args['--output']
     if not output_fmts:
-        print('No options selected. Showing graph.')
+        print('No output formats selected. Showing graph.')
         output_fmts = ['show']
     pcap_filenames = list(pcap_packets)
     open_in_wireshark = False

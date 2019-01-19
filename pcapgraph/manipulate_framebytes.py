@@ -20,8 +20,6 @@ import sys
 import tempfile
 import collections
 
-from . import get_wireshark_version
-
 
 def strip_l2(pcap_framelist):
     """Get the PCAP JSON dict stripped per options.

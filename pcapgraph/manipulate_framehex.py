@@ -153,7 +153,13 @@ def decode_stdout(stdout):
 def get_pcap_info(filenames):
     """Given a list of file, get the packet count and start/stop times per file
 
+    Found/documented a capinfos bug where it quits on an open/read error.
+    Wireshark bug 15433:
+        https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=15433
+    >> Execute capinfos once per file until fix is in most installations.
+
     NOTE: A file in `filenames` MUST have a valid path.
+
 
     Args:
         filenames (list): Paths of all files, including extension
@@ -165,44 +171,45 @@ def get_pcap_info(filenames):
                 'pcap_end': <float>
             }}
     """
+    pcap_info = {}
+    packet_count = 0
     pcap_formats = [
         'pcapng', 'pcap', 'cap', 'dmp', '5vw', 'TRC0', 'TRC1', 'enc', 'trc',
         'fdc', 'syc', 'bfr', 'tr1', 'snoop'
     ]
-    # Remove files that are not packet captures from list.
+
     for filename in filenames:
+        # Remove files that are not packet captures from list.
         if os.path.splitext(filename)[1][1:] not in pcap_formats:
             filenames.remove(filename)
 
-    pcap_info = {}
-    packet_count_cmds = ['capinfos', '-MaceS'] + filenames
+        packet_count_cmds = ['capinfos', '-MaceS', filename]
+        packet_count_pipe = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
+        packet_count_text = decode_stdout(packet_count_pipe)
+        packet_count_pipe.kill()
 
-    packet_count_pipe = sp.Popen(packet_count_cmds, stdout=sp.PIPE)
-    packet_count_text = decode_stdout(packet_count_pipe)
-    packet_count_pipe.kill()
+        # Output of capinfos is tabular with below as keys.
+        packet_count = re.findall(r'Number of packets:\s*(\d+)',
+                                  packet_count_text)[0]
+        start_time = re.findall(r'First packet time:\s*(\d+\.\d+|n/a)',
+                                packet_count_text)[0]
+        end_time = re.findall(r'Last packet time:\s*(\d+\.\d+|n/a)',
+                              packet_count_text)[0]
 
-    # Output of capinfos is tabular with below as keys.
-    count_list = re.findall(r'Number of packets:\s*(\d+)', packet_count_text)
-    start_times = re.findall(r'First packet time:\s*(\d+\.\d+|n/a)',
-                             packet_count_text)
-    end_times = re.findall(r'Last packet time:\s*(\d+\.\d+|n/a)',
-                           packet_count_text)
-    for index, filename in enumerate(filenames):
         name = os.path.basename(os.path.splitext(filename)[0])
-        is_invalid_packet = (count_list[index] == '0'
-                             or start_times[index] == 'n/a'
-                             or end_times[index] == 'n/a')
+        is_invalid_packet = (packet_count == '0' or start_time == 'n/a'
+                             or end_time == 'n/a')
         if is_invalid_packet:
             print("!!! ERROR: Packet capture ", filename,
                   " has no packets or cannot be read!\n")
             name += ' (no packets)'
         else:
             pcap_info[name] = {
-                'packet_count': int(count_list[index]),
-                'pcap_start': float(start_times[index]),
-                'pcap_end': float(end_times[index])
+                'packet_count': int(packet_count),
+                'pcap_start': float(start_time),
+                'pcap_end': float(end_time)
             }
-    if not count_list:
+    if not packet_count:
         raise FileNotFoundError('\nERROR: No valid packet captures found!'
                                 '\nValid types: ' + ', '.join(pcap_formats))
 
