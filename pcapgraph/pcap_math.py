@@ -104,6 +104,9 @@ class PcapMath:
                 **inv_bounded_pcap_frames
             }
 
+        # Output link layer type will always be the link type of the first file
+        pivot_file = self.filenames[0]
+        link_type = self.pcap_frame_list[pivot_file]['link_type']
         for pcap in generated_pcap_frames:
             if generated_pcap_frames[pcap] or not exclude_empty:
                 self.pcap_frame_list[pcap] = generated_pcap_frames[pcap]

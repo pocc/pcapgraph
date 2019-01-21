@@ -50,7 +50,7 @@ def parse_cli_args(args):
                           "a set operation (-bdeisu).")
 
     filenames = get_all_file_and_directory_names(args['<file>'])
-    num_files = len(filenames)
+    num_files = len(set(filenames).union())
     if has_set_operation and num_files < 2:
         raise SyntaxError("\nERROR: Set operations require 2 or more different"
                           " packet captures (" + str(num_files) + " provided)")
@@ -85,7 +85,7 @@ def get_all_file_and_directory_names(file_list):
         elif os.path.isfile(extended_file):
             file_list[index] = extended_file
         else:
-            message = 'File ' + extended_file + 'does not exist!'
+            message = 'File ' + extended_file + ' does not exist!'
             raise FileNotFoundError(message)
 
     filenames = get_filenames_from_directories(directories)

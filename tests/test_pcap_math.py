@@ -76,7 +76,7 @@ class TestPcapMath(unittest.TestCase):
         frame_list = list(pcap_frame_list)
         timestamp_list = list(pcap_frame_list.values())
         with tempfile.NamedTemporaryFile() as temp_file:
-            mfb.write_file_bytes(temp_file.name, frame_list, timestamp_list, 1)
+            mfb.write_pcap(temp_file.name, frame_list, timestamp_list, 1)
             self.assertTrue(
                 filecmp.cmp(temp_file.name, 'examples/set_ops/union.pcap'))
 
@@ -86,7 +86,7 @@ class TestPcapMath(unittest.TestCase):
         intersect_frame_dict = self.set_obj.intersect_pcap()
         # The generated file should be the same as examples/union.pcap
         with tempfile.NamedTemporaryFile() as temp_file:
-            mfb.write_file_bytes(
+            mfb.write_pcap(
                 temp_file.name,
                 list(intersect_frame_dict),  # frames
                 list(intersect_frame_dict.values()),  # ts
@@ -100,7 +100,7 @@ class TestPcapMath(unittest.TestCase):
             options=self.options)
         two_thirds_frame_dict = two_thirds.intersect_pcap()
         with tempfile.NamedTemporaryFile() as temp_file:
-            mfb.write_file_bytes(
+            mfb.write_pcap(
                 temp_file.name,
                 list(two_thirds_frame_dict),  # frames
                 list(two_thirds_frame_dict.values()),  # ts
@@ -122,7 +122,7 @@ class TestPcapMath(unittest.TestCase):
 
         expected_l2_stripped = 'tests/files/l2_stripped_intersect.pcap'
         with tempfile.NamedTemporaryFile() as temp_file:
-            mfb.write_file_bytes(temp_file.name, frame_list, ts_list, 101)
+            mfb.write_pcap(temp_file.name, frame_list, ts_list, 101)
             self.assertTrue(filecmp.cmp(temp_file.name, expected_l2_stripped))
 
     def test_strip_l3_intersect(self):
@@ -139,7 +139,7 @@ class TestPcapMath(unittest.TestCase):
 
         expected_l3_stripped = 'tests/files/l3_stripped_intersect.pcap'
         with tempfile.NamedTemporaryFile() as temp_file:
-            mfb.write_file_bytes(temp_file.name, frame_list, ts_list, 101)
+            mfb.write_pcap(temp_file.name, frame_list, ts_list, 101)
             self.assertTrue(filecmp.cmp(temp_file.name, expected_l3_stripped))
 
     def test_difference_pcap(self):
@@ -151,7 +151,7 @@ class TestPcapMath(unittest.TestCase):
         frame_list = list(diff_pcap_frames)
         timestamp_list = list(diff_pcap_frames.values())
         with tempfile.NamedTemporaryFile() as temp_file:
-            mfb.write_file_bytes(temp_file.name, frame_list, timestamp_list, 1)
+            mfb.write_pcap(temp_file.name, frame_list, timestamp_list, 1)
             self.assertTrue(filecmp.cmp(temp_file.name, expected_diff_file))
 
     def test_symmetric_difference(self):
@@ -165,7 +165,7 @@ class TestPcapMath(unittest.TestCase):
                 'examples/set_ops/symdiff_simul' + str(index + 1) + '.pcap'
 
             with tempfile.NamedTemporaryFile() as temp_file:
-                mfb.write_file_bytes(temp_file.name, frame_list, ts_list, 1)
+                mfb.write_pcap(temp_file.name, frame_list, ts_list, 1)
                 if index != 1:  # Symdiff 2 is expected to be empty
                     self.assertTrue(
                         filecmp.cmp(temp_file.name, expected_symdiff_file))
@@ -196,6 +196,6 @@ class TestPcapMath(unittest.TestCase):
             expected_symdiff_file = 'examples/set_ops/intersect.pcap'
 
             with tempfile.NamedTemporaryFile() as temp_file:
-                mfb.write_file_bytes(temp_file.name, frame_list, ts_list, 1)
+                mfb.write_pcap(temp_file.name, frame_list, ts_list, 1)
                 self.assertTrue(
                     filecmp.cmp(temp_file.name, expected_symdiff_file))

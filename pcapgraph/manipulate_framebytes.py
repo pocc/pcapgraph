@@ -149,7 +149,7 @@ def print_10_most_common_frames(raw_frame_list):
         frame_hex = packet.hex()
         with tempfile.NamedTemporaryFile() as temp_file:
             zero_timestamp = b'\x00\x00\x00\x00\x00\x00\x00\x00'
-            write_file_bytes(temp_file.name, [packet], [zero_timestamp], 1)
+            write_pcap(temp_file.name, [packet], [zero_timestamp], 1)
             tshark_cmds = ('tshark -r' + temp_file.name).split(' ')
             sp_pipe = sp.Popen(tshark_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
             formatted_packet = sp_pipe.communicate()[0].decode('utf-8')
@@ -188,6 +188,7 @@ def get_frame_ts_bytes(file_bytes, endianness):
     # (I) Snapshot Length | (I) Link-Layer Header Type
 
     pcap_header = struct.unpack(endianness + 'IHHiIII', file_bytes[:24])
+    link_type = pcap_header[6]
     b_index = 24
     pcap_end = len(file_bytes)
     frames = []
@@ -208,7 +209,7 @@ def get_frame_ts_bytes(file_bytes, endianness):
         frames.append(file_bytes[b_index:b_index + frame_len])
         b_index += frame_len
 
-    return frames, timestamps
+    return frames, timestamps, link_type
 
 
 def get_pcap_bytes_from_non_pcap(filename):
@@ -274,9 +275,11 @@ def get_bytes_from_pcaps(filenames):
                 '\nMagic number:', magic_number, 'Now exiting...')
 
         pcap_dict[filename] = {}
-        frames, timestamps = get_frame_ts_bytes(pcap_bytes, endianness_char)
+        frames, timestamps, link_type = \
+            get_frame_ts_bytes(pcap_bytes, endianness_char)
         pcap_dict[filename]['frames'] = frames
         pcap_dict[filename]['timestamps'] = timestamps
+        pcap_dict[filename]['link_type'] = link_type
         print(' \\==> Finished loading ' + filename + '!')
 
     return pcap_dict
@@ -293,7 +296,7 @@ def generate_frame_bytes(frame_list, timestamp_list):
     Returns:
         (bytes): Resultant text to encode to file
     """
-    frame_bytes = b''
+    frame_bytes = bytearray()
     # Reorder frames that are out-of-order. Key assumption is that
     # frames and timestamps are in the same order and correspond.
     # timestamps are in little-endian bytes, so needs conversion before sorting
@@ -311,11 +314,11 @@ def generate_frame_bytes(frame_list, timestamp_list):
     return frame_bytes
 
 
-def write_file_bytes(filename, frame_list, timestamp_list, link_layer_type):
-    """Write the raw hex back to a file.
+def write_pcap(filename, frame_list, timestamp_list, link_layer_type):
+    """Write the raw hex back to a pcap file.
 
     frame_list and timestamp_list already contain bytes objects,
-    so do not require any encoding.
+    so do not require any encoding. Use the link type from the first file.
 
     Args:
         filename (str): File to write to
