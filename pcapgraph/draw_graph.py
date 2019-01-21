@@ -94,11 +94,15 @@ def output_file(save_format, pcap_packets, new_files, args):
             file.close()
         print("Text file successfully created!")
     elif 'pcap' in save_format or 'pcapng' in save_format:
+        # Output files will only have packets from the first file
+        # so use that link type
         for file in new_files:
+            output_link_type = pcap_packets[file]['link_type']
             if pcap_packets[file]:
-                print('Saving ' + file + ' as ' + save_format + '!')
-                mfb.write_file_bytes(file, list(pcap_packets[file]),
-                                     list(pcap_packets[file].values()), 1)
+                print('Saving ' + file + ' as ' + save_format + '...')
+                mfb.write_pcap(
+                    file, list(pcap_packets[file]),
+                    list(pcap_packets[file].values()), output_link_type)
             else:
                 print('=> Excluding empty ' + file)
     else:
