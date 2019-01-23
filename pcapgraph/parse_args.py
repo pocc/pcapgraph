@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018 Ross Jacobs All Rights Reserved.
+# Copyright 2019 Ross Jacobs All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,43 @@
 # limitations under the License.
 """Parse options from docopt dict."""
 import re
+import sys
+
+from . import __version__
 
 
 def remove_rst_signals(docstring):
     """Remove ReStructuredText signals so docopt parses correctly."""
     return re.sub(r' *:: *\n\n|`|\*', '', docstring)
+
+
+def print_version():
+    """Print versions and exit."""
+    print('pcapgraph', __version__)
+    print('python', sys.version)
+    sys.exit()
+
+
+def check_args(args):
+    """Verify args are valid."""
+    has_set_ops = bool(get_set_operations(args))
+    pcap_out = 'pcap' in args['--output'] or 'pcapng' in args['--output']
+    if pcap_out and not has_set_ops:
+        raise SyntaxError("\nERROR: --output pcap/pcapng needs "
+                          "a set operation (-bdeiuy).")
+
+    num_files = len(set(args['<file>']).union())
+    if has_set_ops and num_files < 2:
+        raise SyntaxError("\nERROR: Set operations require 2 or more different"
+                          " packet captures (" + str(num_files) + " provided)")
+
+
+def get_set_operations(args):
+    """Return a list of all set operations specifiied"""
+    set_operations = ['--intersection', '--union', '--difference',
+                      '--symmetric-difference',
+                      '--bounded-intersection', '--inverse-bounded']
+    return get_selected_keys(args, set_operations)
 
 
 def get_strip_options(args):
@@ -32,6 +64,16 @@ def get_output_options(args):
     output_option_list = ['--anonymize', '--show-packets', '--exclude-empty',
                           '--wireshark', '--plot']
     return get_selected_keys(args, output_option_list)
+
+
+def requires_set_operations(args):
+    """Return whether the user's inputs require set operations to be used."""
+    has_set_ops = bool(get_set_operations(args))
+    return has_set_ops or args['--wireshark'] or args['--most-common-frames']
+
+
+def requires_graph_operations(args):
+    """Return whether the user's inputs require graph operations to be used."""
 
 
 def get_selected_keys(args, keys):

@@ -17,7 +17,7 @@ import unittest
 import os
 import filecmp
 
-import pcapgraph.get_filenames as gf
+import pcapgraph.wireshark_io as wsio
 import pcapgraph.draw_graph as dg
 import pcapgraph.pcap_math as pm
 import pcapgraph.parse_args as pa
@@ -65,8 +65,9 @@ class TestDrawGraph(unittest.TestCase):
     @staticmethod
     def mock_main(args):
         """Like main, but main doesn't take arguments"""
-        files = sorted(gf.parse_cli_args(args))
-        pcap_math = pm.PcapMath(files, strip_options=[])
+        filenames = sorted(wsio.get_filenames(args['<file>']))
+        pcap_math = pm.PcapMath(filenames, strip_options=[])
         pcaps_frame_dict = pcap_math.parse_set_args(args)
         output_options = pa.get_output_options(args)
-        dg.draw_graph(pcaps_frame_dict, files, args['--output'], output_options)
+        dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
+                      output_options)

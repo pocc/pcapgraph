@@ -29,6 +29,7 @@ def generate_example_pcaps(interface=None):
     Args:
         interface (string): Optional interface to specify for wireshark.
     """
+    print('Generating pcaps...')
     os.mkdir('examples')
     os.chdir('examples')
 
@@ -60,3 +61,5 @@ def generate_example_pcaps(interface=None):
         second_ct += 1
 
     os.chdir('..')
+    print('Pcaps sucessfully generated!')
+    sys.exit()

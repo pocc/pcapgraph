@@ -16,7 +16,6 @@
 
 import datetime
 import os
-import subprocess as sp
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -51,20 +50,9 @@ def draw_graph(pcap_packets, input_files, output_fmts, graph_opts):
         print('No output formats selected. Showing graph.')
         output_fmts = ['show']
     pcap_filenames = list(pcap_packets)
-    open_in_wireshark = False
-    if 'wireshark' in output_fmts:
-        output_fmts.remove('wireshark')
-        open_in_wireshark = True
     new_files = sorted(set(pcap_filenames) - set(input_files))
     for save_format in output_fmts:
         output_file(save_format, pcap_packets, new_files, graph_opts)
-
-    if open_in_wireshark:
-        for file in new_files:
-            print(
-                "Opening", file, "in wireshark (you must close this " +
-                "wireshark window to look at the next).")
-            sp.Popen(['wireshark', file])
 
 
 def output_file(save_format, pcap_packets, new_files, graph_opts):
@@ -117,9 +105,14 @@ def output_file(save_format, pcap_packets, new_files, graph_opts):
         if save_format != 'show':
             export_graph(pcap_filenames, save_format)
         else:
-            # Print text version because it's possible.
+            show_graph()
+            """Print text because it's possible"""
             print(generate_text(graph_startstop_dict))
-            plt.show()
+
+
+def show_graph():
+    """Show graph."""
+    plt.show()
 
 
 def get_graph_vars(pcap_packets, new_files):
@@ -388,3 +381,12 @@ def generate_text(pcap_times):
         )
 
     return result_string
+
+
+def get_matplotlib_fmts():
+    """Get the matplotlib supported formats.
+
+    Supported save file types will vary across platforms.
+    """
+    supported_format_list = set(plt.gcf().canvas.get_supported_filetypes())
+    return supported_format_list

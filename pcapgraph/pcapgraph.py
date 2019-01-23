@@ -74,8 +74,8 @@ OPTIONS:
 
       -a, --anonymize       Anonymize packet capture file names with fictional
                             place names and devices.
-      -p, --plot            Plot the graph with a GUI matplotlib window. This is
-                            the default if no output options are specified.
+      -p, --plot            Plot the graph with a GUI matplotlib window. This
+                            is the default if no output options are specified.
       -s, --show-packets    When graphing, show a vertical line for each
                             packet in a pcap instead of a fully-colored
                             horizontal bar. This is a slow operation and not
@@ -274,19 +274,25 @@ SEE ALSO:
     matplotlib (https://matplotlib.org/):
         Python package to plot 2D graphs.
 """
-import re
-
 import docopt
 
-import pcapgraph.get_filenames as gf
 import pcapgraph.draw_graph as dg
 import pcapgraph.pcap_math as pm
 import pcapgraph.parse_args as pa
-from . import check_requirements
+import pcapgraph.wireshark_io as ws_utils
 
 
 def run():
     """Main function that contains the major moving parts:
+
+    Run function cares about orchestrating the program:
+        * docopt input args
+        * Getting args
+        * Sending args to other parts of the program
+        *
+
+    Beyond scope:
+        * Operating on pcaps or pcap structures
 
     1. Verify tshark
     2. Get filenames from CLI args
@@ -294,19 +300,36 @@ def run():
            frame dict form: {<file/operation>: {frame: timestamp, ...}, ...}
     4. Draw the graph/export files
     """
-    check_requirements()
+    ws_utils.check_requirements()
 
+    # Get/organize user-provided args
     sanitized_docstring = pa.remove_rst_signals(__doc__)
     args = docopt.docopt(sanitized_docstring)
-    args['<file>'] = sorted(gf.parse_cli_args(args))
+    if args['--version']:
+        pa.print_version()
+    args['<file>'] = sorted(ws_utils.get_filenames(args['<file>']))
+    pa.check_args(args)
 
+    # Categorize output formats/options
     strip_options = pa.get_strip_options(args)
-    pcap_math = pm.PcapMath(args['<file>'], strip_options)
-
     output_options = pa.get_output_options(args)
-    pcaps_frame_dict = pcap_math.parse_set_args(args)
-    dg.draw_graph(pcaps_frame_dict, args['<file>'],
-                  args['--output'], output_options)
+    output_pcap_fmts = {'pcap', 'pcapng'}.intersection(args['--output'])
+    output_image_fmts = dg.get_matplotlib_fmts().intersection(args['--output'])
+
+    pcaps_frame_dict = {}
+    if pa.requires_set_operations(args):
+        pcap_obj = pm.PcapMath(args['<file>'], strip_options)
+        pcaps_frame_dict = pcap_obj.parse_set_args(args)
+
+        generated_files = set(pcaps_frame_dict).difference(set(args['<file>']))
+        if args['--wireshark']:
+            ws_utils.open_in_wireshark(generated_files)
+
+    if pa.requires_graph_operations(args):
+        dg.draw_graph(pcaps_frame_dict, args['<file>'],
+                      args['--output'], output_options)
+        if args['--plot'] or not args['--output']:
+            dg.show_graph()
 
 
 if __name__ == '__main__':

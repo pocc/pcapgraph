@@ -4,7 +4,7 @@
 
 import os
 
-from pcapgraph import check_requirements
+from pcapgraph.wireshark_io import check_requirements
 
 
 def setup_testenv():
