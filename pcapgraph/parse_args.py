@@ -13,14 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Parse options from docopt dict."""
+import re
+
+
+def remove_rst_signals(docstring):
+    """Remove ReStructuredText signals so docopt parses correctly."""
+    return re.sub(r' *:: *\n\n|`|\*', '', docstring)
+
+
+def get_strip_options(args):
+    """Get --strip-l2 and --strip-l3 options"""
+    strip_option_list = ['--strip-l2', '--strip-l3']
+    return get_selected_keys(args, strip_option_list)
 
 
 def get_output_options(args):
     """Return output options from input args if they are user selected."""
     output_option_list = ['--anonymize', '--show-packets', '--exclude-empty',
                           '--wireshark', '--plot']
-    selected_output_options = get_selected_keys(args, output_option_list)
-    return selected_output_options
+    return get_selected_keys(args, output_option_list)
 
 
 def get_selected_keys(args, keys):

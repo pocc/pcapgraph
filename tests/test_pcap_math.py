@@ -36,7 +36,7 @@ class TestPcapMath(unittest.TestCase):
             'examples/simul1.pcapng', 'examples/simul2.pcapng',
             'examples/simul3.pcapng'
         ]
-        self.set_obj = PcapMath(self.filenames, False, False)
+        self.set_obj = PcapMath(self.filenames, strip_options=[])
 
     def test_exclude_empty(self):
         """Verify --exclude-empty option. Relevant for pcap differences.
@@ -52,7 +52,7 @@ class TestPcapMath(unittest.TestCase):
         filenames = [
             'examples/simul1.pcapng', '../pcapgraph/examples/simul1.pcapng'
         ]
-        exclude_set_obj = PcapMath(filenames, False, False)
+        exclude_set_obj = PcapMath(filenames, strip_options=[])
         excluded_pcap_frames = exclude_set_obj.parse_set_args(args)
         excluded_filenames = list(excluded_pcap_frames)
         self.assertEqual(filenames, excluded_filenames)
@@ -94,8 +94,8 @@ class TestPcapMath(unittest.TestCase):
                 filecmp.cmp(temp_file.name, 'examples/set_ops/intersect.pcap'))
         # examples/intersect.pcap is from all 3 simul pcaps, so using
         # 2 of 3 should fail as the generated intersection will be different.
-        two_thirds = PcapMath(
-            ['examples/simul1.pcapng', 'examples/simul2.pcapng'], False, False)
+        two_thirds_files = ['examples/simul1.pcapng', 'examples/simul2.pcapng']
+        two_thirds = PcapMath(two_thirds_files, strip_options=[])
         two_thirds_frame_dict = two_thirds.intersect_pcap()
         with tempfile.NamedTemporaryFile() as temp_file:
             mfb.write_pcap(
@@ -112,8 +112,7 @@ class TestPcapMath(unittest.TestCase):
         One function for both because setup has so much in common.
         In the produced intersect, we should see only packets of type raw-ip.
         """
-        strip_l2_obj = PcapMath(self.filenames,
-                                will_strip_l2=True, will_strip_l3=False)
+        strip_l2_obj = PcapMath(self.filenames, strip_options=['--strip-l2'])
         intersect_frame_dict = strip_l2_obj.intersect_pcap()
         frame_list = list(intersect_frame_dict)
         ts_list = list(intersect_frame_dict.values())
@@ -129,8 +128,7 @@ class TestPcapMath(unittest.TestCase):
         In the produced intersect, we should see only packets that are not
         distinguishable at l3.
         """
-        strip_l3_obj = PcapMath(self.filenames,
-                                will_strip_l2=False, will_strip_l3=True)
+        strip_l3_obj = PcapMath(self.filenames, strip_options=['--strip-l3'])
         intersect_frame_dict = strip_l3_obj.intersect_pcap()
         frame_list = list(intersect_frame_dict)
         ts_list = list(intersect_frame_dict.values())
@@ -142,8 +140,8 @@ class TestPcapMath(unittest.TestCase):
 
     def test_difference_pcap(self):
         """Test the difference_pcap method with multiple pcaps."""
-        diff1and3 = PcapMath(
-            ['examples/simul1.pcapng', 'examples/simul3.pcapng'], False, False)
+        diff1and3_files = ['examples/simul1.pcapng', 'examples/simul3.pcapng']
+        diff1and3 = PcapMath(diff1and3_files, strip_options=[])
         diff_pcap_frames = diff1and3.difference_pcap()
         expected_diff_file = 'examples/set_ops/diff_simul1-simul3.pcap'
         frame_list = list(diff_pcap_frames)

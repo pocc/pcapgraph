@@ -4,12 +4,12 @@
 
 import os
 
-from pcapgraph import get_tshark_status
+from pcapgraph import check_requirements
 
 
 def setup_testenv():
     """Set up PATH and current working directory."""
-    get_tshark_status()
+    check_requirements()
     # If testing from ./tests, change to root directory (useful in PyCharm)
     if os.getcwd().endswith('tests'):
         os.chdir('..')

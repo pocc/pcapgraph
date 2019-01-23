@@ -66,7 +66,7 @@ class TestDrawGraph(unittest.TestCase):
     def mock_main(args):
         """Like main, but main doesn't take arguments"""
         files = sorted(gf.parse_cli_args(args))
-        pcap_math = pm.PcapMath(files, False, False)
+        pcap_math = pm.PcapMath(files, strip_options=[])
         pcaps_frame_dict = pcap_math.parse_set_args(args)
         output_options = pa.get_output_options(args)
         dg.draw_graph(pcaps_frame_dict, files, args['--output'], output_options)

@@ -10,7 +10,7 @@ import webbrowser
 import shutil
 
 
-def get_tshark_status():
+def check_requirements():
     """Errors and quits if tshark is not installed.
 
     On Windows, tshark may not be recognized by cmd even if Wireshark is

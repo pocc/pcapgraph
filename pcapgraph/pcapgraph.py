@@ -281,8 +281,8 @@ import docopt
 import pcapgraph.get_filenames as gf
 import pcapgraph.draw_graph as dg
 import pcapgraph.pcap_math as pm
-from . import get_tshark_status
-from pcapgraph.parse_args import get_output_options
+import pcapgraph.parse_args as pa
+from . import check_requirements
 
 
 def run():
@@ -294,14 +294,16 @@ def run():
            frame dict form: {<file/operation>: {frame: timestamp, ...}, ...}
     4. Draw the graph/export files
     """
-    get_tshark_status()
-    # Remove ReStructuredText signals.
-    cli_docs = re.sub(r' *:: *\n\n|`|\*', '', __doc__)
-    args = docopt.docopt(cli_docs)
+    check_requirements()
+
+    sanitized_docstring = pa.remove_rst_signals(__doc__)
+    args = docopt.docopt(sanitized_docstring)
     args['<file>'] = sorted(gf.parse_cli_args(args))
-    pcap_math = pm.PcapMath(args['<file>'],
-                            args['--strip-l2'], args['--strip-l3'])
-    output_options = get_output_options(args)
+
+    strip_options = pa.get_strip_options(args)
+    pcap_math = pm.PcapMath(args['<file>'], strip_options)
+
+    output_options = pa.get_output_options(args)
     pcaps_frame_dict = pcap_math.parse_set_args(args)
     dg.draw_graph(pcaps_frame_dict, args['<file>'],
                   args['--output'], output_options)
