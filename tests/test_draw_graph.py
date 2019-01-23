@@ -18,7 +18,7 @@ import unittest
 import pickle
 
 from pcapgraph.draw_graph import set_xticks, \
-    make_text_not_war, set_horiz_bars, \
+    generate_text, set_horiz_bars, \
     get_x_minmax
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
@@ -121,5 +121,5 @@ class TestManipulateFrames(unittest.TestCase):
         }
 
         expected_result = "\nPCAP NAME           YEAR  DATE 0  DATE $     TIME 0    TIME $       UTC 0              UTC $\nin_order_packets    2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.65536   1537945792.720895 \nout_of_order_pack   2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.720895  1537945792.65536  \ntest                2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.667334  1537945792.667334 "  # noqa: E501 pylint: disable=C0301
-        actual_result = make_text_not_war(pcap_times)
+        actual_result = generate_text(pcap_times)
         self.assertEqual(expected_result, actual_result)

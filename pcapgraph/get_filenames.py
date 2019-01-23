@@ -47,7 +47,7 @@ def parse_cli_args(args):
     pcap_out = 'pcap' in args['--output'] or 'pcapng' in args['--output']
     if pcap_out and not has_set_operation:
         raise SyntaxError("\nERROR: --output pcap/pcapng needs "
-                          "a set operation (-bdeisu).")
+                          "a set operation (-bdeiuy).")
 
     filenames = get_all_file_and_directory_names(args['<file>'])
     num_files = len(set(filenames).union())

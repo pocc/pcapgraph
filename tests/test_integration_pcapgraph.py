@@ -20,6 +20,7 @@ import filecmp
 import pcapgraph.get_filenames as gf
 import pcapgraph.draw_graph as dg
 import pcapgraph.pcap_math as pm
+import pcapgraph.parse_args as pa
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 
@@ -47,7 +48,7 @@ class TestDrawGraph(unittest.TestCase):
         self.args['--union'] = True
         self.args['<file>'] = [
             'examples/simul1.pcapng', 'examples/simul2.pcapng',
-            'examples/simul3.pcapng', 'tests/files/empty.pcap'
+            'examples/simul3.pcapng'
         ]
         # Graphs are generated differently on Windows.
         # This would incorrectly break tests based on file comparisons.
@@ -64,8 +65,8 @@ class TestDrawGraph(unittest.TestCase):
     @staticmethod
     def mock_main(args):
         """Like main, but main doesn't take arguments"""
-        filenames = sorted(gf.parse_cli_args(args))
-        options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
-        pcap_math = pm.PcapMath(filenames, options)
+        files = sorted(gf.parse_cli_args(args))
+        pcap_math = pm.PcapMath(files, False, False)
         pcaps_frame_dict = pcap_math.parse_set_args(args)
-        dg.draw_graph(pcaps_frame_dict, filenames, args)
+        output_options = pa.get_output_options(args)
+        dg.draw_graph(pcaps_frame_dict, files, args['--output'], output_options)

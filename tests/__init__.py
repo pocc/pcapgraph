@@ -25,14 +25,14 @@ DEFAULT_CLI_ARGS = {
     '--inverse-bounded': False,
     '--most-common-frames': False,
     '--output': [],
+    '--plot': False,
     '--show-packets': False,
     '--strip-l2': False,
     '--strip-l3': False,
     '--symmetric-difference': False,
     '--union': False,
-    '--verbose': False,
     '--version': False,
-    '-w': False,
+    '--wireshark': False,
     '<file>': [],
 }
 

@@ -113,3 +113,6 @@ venv.bak/
 # Pipenv
 Pipfile
 Pipfile.lock
+
+# Macos
+.DS_Store

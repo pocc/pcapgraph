@@ -26,7 +26,7 @@ class PcapMath:
     Use different PcapMath objects if input files are different.
     """
 
-    def __init__(self, filenames, options):
+    def __init__(self, filenames, will_strip_l2, will_strip_l3):
         """Prepare PcapMath object for one or multiple operations.
 
         Every PcapMath object should start with the data structures filled with
@@ -34,13 +34,14 @@ class PcapMath:
 
         Args:
             filenames (list): List of filenames.
-            options (dict): Whether to strip L2 and L3 headers.
+            will_strip_l2  (bool): Whether to strip L2 header
+            will_strip_l3  (bool): Whether to strip L2 header
         """
         self.filenames = filenames
         pcap_frame_list = get_bytes_from_pcaps(filenames)
-        if options['strip-l2']:
+        if will_strip_l2:
             self.pcap_frame_list = strip_l2(pcap_frame_list)
-        elif options['strip-l3']:
+        elif will_strip_l3:
             self.pcap_frame_list = strip_l3(pcap_frame_list)
         else:
             self.pcap_frame_list = pcap_frame_list
@@ -55,7 +56,6 @@ class PcapMath:
             k: v
             for k, v in zip(self.frame_list, self.timestamp_list)
         }
-        self.options = options
 
     def parse_set_args(self, args):
         """Call the appropriate method per CLI flags.

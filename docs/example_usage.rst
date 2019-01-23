@@ -476,7 +476,7 @@ Examples of all output formats
 
 .. code-block:: bash
 
-    pcapgraph examples/ -bdeisu --output pcap
+    pcapgraph examples/ -bdeiuy --output pcap
 
 Output
   | bounded_intersect-simul1.pcap
