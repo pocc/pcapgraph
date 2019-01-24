@@ -274,63 +274,20 @@ SEE ALSO:
     matplotlib (https://matplotlib.org/):
         Python package to plot 2D graphs.
 """
+import re
+import sys
+
 import docopt
 
-import pcapgraph.draw_graph as dg
-import pcapgraph.pcap_math as pm
-import pcapgraph.parse_args as pa
-import pcapgraph.wireshark_io as ws_utils
 
-
-def run():
-    """Main function that contains the major moving parts:
-
-    Run function cares about orchestrating the program:
-        * docopt input args
-        * Getting args
-        * Sending args to other parts of the program
-        *
-
-    Beyond scope:
-        * Operating on pcaps or pcap structures
-
-    1. Verify tshark
-    2. Get filenames from CLI args
-    3. Get a per-pcap frame list to be graphed/exported
-           frame dict form: {<file/operation>: {frame: timestamp, ...}, ...}
-    4. Draw the graph/export files
-    """
-    ws_utils.check_requirements()
-
-    # Get/organize user-provided args
-    sanitized_docstring = pa.remove_rst_signals(__doc__)
-    args = docopt.docopt(sanitized_docstring)
-    if args['--version']:
-        pa.print_version()
-    args['<file>'] = sorted(ws_utils.get_filenames(args['<file>']))
-    pa.check_args(args)
-
-    # Categorize output formats/options
-    strip_options = pa.get_strip_options(args)
-    output_options = pa.get_output_options(args)
-    output_pcap_fmts = {'pcap', 'pcapng'}.intersection(args['--output'])
-    output_image_fmts = dg.get_matplotlib_fmts().intersection(args['--output'])
-
-    pcaps_frame_dict = {}
-    if pa.requires_set_operations(args):
-        pcap_obj = pm.PcapMath(args['<file>'], strip_options)
-        pcaps_frame_dict = pcap_obj.parse_set_args(args)
-
-        generated_files = set(pcaps_frame_dict).difference(set(args['<file>']))
-        if args['--wireshark']:
-            ws_utils.open_in_wireshark(generated_files)
-
-    if pa.requires_graph_operations(args):
-        dg.draw_graph(pcaps_frame_dict, args['<file>'],
-                      args['--output'], output_options)
-        if args['--plot'] or not args['--output']:
-            dg.show_graph()
-
+def run(args = None):
+    """Get arguments and send them to."""
+    if len(sys.argv) == 1:
+        # No GUI implementation.
+        pass
+    else:
+    args = docopt.docopt(re.sub(r' *:: *\n\n|`|\*', '', __doc__))
+    parse_args(args)
 
 if __name__ == '__main__':
     run()

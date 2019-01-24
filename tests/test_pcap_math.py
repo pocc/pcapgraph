@@ -12,7 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test pcap_math.py."""
+"""Test pcap_math.py
+
+Class methods: bounded_intersect_pcap, difference_pcap, generate_intersection,
+get_minmax_common_frames, intersect_pcap, inverse_bounded_intersect_pcap,
+parse_set_args, symmetric_difference_pcap, union_pcap
+"""
 
 import unittest
 import filecmp
@@ -22,7 +27,7 @@ from contextlib import redirect_stdout
 import tempfile
 
 from pcapgraph.pcap_math import PcapMath
-import pcapgraph.manipulate_framebytes as mfb
+import pcapgraph.pcap_io as mfb
 from tests import setup_testenv, DEFAULT_CLI_ARGS, EXPECTED_UNION_STDOUT
 
 
@@ -37,6 +42,10 @@ class TestPcapMath(unittest.TestCase):
             'examples/simul3.pcapng'
         ]
         self.set_obj = PcapMath(self.filenames, strip_options=[])
+
+    def parse_set_args(self):
+        """Parse set args. Write."""
+        self.assertTrue(False)
 
     def test_exclude_empty(self):
         """Verify --exclude-empty option. Relevant for pcap differences.

@@ -14,16 +14,24 @@
 # limitations under the License.
 """Test manipulate_framehex"""
 
+import filecmp
+import shutil
+import os
 import unittest
+import pytest
 
 from tests import setup_testenv, DEFAULT_CLI_ARGS, EXPECTED_STRIPPED_PCAP
-from pcapgraph.manipulate_framehex import get_homogenized_packet, \
-    get_pcap_info, get_frametext_from_files, strip_layers
+from tests.utils.hex_utils import get_canonical_hex, get_frame_len, \
+    get_frametext_from_files, get_homogenized_packet, reorder_packets, \
+    save_pcap, strip_layers
 
 
+@pytest.mark.slow
 class TestManipulateFrames(unittest.TestCase):
-    """Test manipulate_frames"""
+    """Test manipulate_frames.
 
+    Pytest skips because Manipulate Framebytes is used as pcap parser
+    instead. These tests (and functions they're testing take >10s)"""
     def setUp(self):
         """set directory to project root."""
         setup_testenv()
@@ -33,7 +41,7 @@ class TestManipulateFrames(unittest.TestCase):
         ]
         self.pcap_frame_list = get_frametext_from_files(self.filenames)
 
-    def skip_test_strip_layers(self):
+    def test_strip_layers(self):
         """test strip layers"""
         filename = 'tests/files/test.pcap'
         options = {'strip-l2': False, 'strip-l3': True, 'pcapng': False}
@@ -41,7 +49,7 @@ class TestManipulateFrames(unittest.TestCase):
         actual_stripped = strip_layers(pcap_framelist, options)
         self.assertDictEqual(actual_stripped, EXPECTED_STRIPPED_PCAP)
 
-    def skip_test_get_homogenized_packet(self):
+    def test_get_homogenized_packet(self):
         """test get_homogenized_packet.
 
         get_homogenized_packet will change ttl, checksom, src/dst ip to
@@ -52,27 +60,7 @@ class TestManipulateFrames(unittest.TestCase):
         actual_result = get_homogenized_packet(packet_ip_raw)
         self.assertEqual(actual_result, expected_result)
 
-    def skip_test_get_pcap_info(self):
-        """Test get_pcap_info with an expected result."""
-        filenames = [
-            'tests/files/in_order_packets.pcap', 'tests/files/test.pcap'
-        ]
-        expected_result = {
-            'in_order_packets': {
-                'packet_count': 2,
-                'pcap_start': 1537945792.65536,
-                'pcap_end': 1537945792.720895
-            },
-            'test': {
-                'packet_count': 1,
-                'pcap_start': 1537945792.667334,
-                'pcap_end': 1537945792.667334
-            }
-        }
-        actual_result = get_pcap_info(filenames)
-        self.assertDictEqual(actual_result, expected_result)
-
-    def skip_test_get_frametext_from_files(self):
+    def test_get_frametext_from_files(self):
         """Test get_frametext_from_files
             Each list within this list is all of the frames from one pcap
         """
@@ -110,3 +98,56 @@ class TestManipulateFrames(unittest.TestCase):
         }
 
         self.assertDictEqual(actual_frame_dict, expected_frame_dict)
+
+
+class TestSaveFile(unittest.TestCase):
+    """Test save_file.py"""
+
+    def setUp(self):
+        """Setup env."""
+        setup_testenv()
+        self.options = {'strip-l2': False, 'strip-l3': False, 'pcapng': False}
+        self.test_packet = "247703511344881544abbfdd0800452000542bbc00007901" \
+                           "e8fd080808080a301290000082a563110001f930ab5b0000" \
+                           "0000a9e80d0000000000101112131415161718191a1b1c1d" \
+                           "1e1f202122232425262728292a2b2c2d2e2f303132333435" \
+                           "3637"
+        self.result_packet = \
+            """0000  24 77 03 51 13 44 88 15 44 ab bf dd 08 00 45 20
+0010  00 54 2b bc 00 00 79 01 e8 fd 08 08 08 08 0a 30
+0020  12 90 00 00 82 a5 63 11 00 01 f9 30 ab 5b 00 00
+0030  00 00 a9 e8 0d 00 00 00 00 00 10 11 12 13 14 15
+0040  16 17 18 19 1a 1b 1c 1d 1e 1f 20 21 22 23 24 25
+0050  26 27 28 29 2a 2b 2c 2d 2e 2f 30 31 32 33 34 35
+0060  36 37              \n"""
+
+    def test_get_frame_len(self):
+        expected_len = 28
+        actual_len = get_frame_len(self.test_packet)
+        self.assertEqual(expected_len, actual_len)
+
+    def test_convert_to_pcaptext(self):
+        """test the conversion of ASCII hexdump to text2pcap-readable"""
+        actual = get_canonical_hex(self.test_packet)
+        expected = self.result_packet
+        self.assertEqual(expected, actual)
+
+    def test_reorder_packets(self):
+        """Reorder packets in tempfile inplace and compare with expected."""
+        out_of_order = 'tests/files/out_of_order_packets.pcap'
+        temp_out_of_order = 'tests/files/out_of_order_temp.pcap'
+        in_order = 'tests/files/in_order_packets.pcap'
+
+        shutil.copyfile(out_of_order, temp_out_of_order)
+        self.assertTrue(filecmp.cmp(temp_out_of_order, out_of_order))
+        reorder_packets(temp_out_of_order)
+
+        self.assertTrue(filecmp.cmp(temp_out_of_order, in_order))
+        os.remove(temp_out_of_order)
+
+    def test_save_pcap(self):
+        """test save_pacp."""
+        pcap_dict = {self.result_packet: '1537945792.667334763'}
+        save_pcap(pcap_dict=pcap_dict, name='test.pcap', options=self.options)
+        self.assertTrue(filecmp.cmp('test.pcap', 'tests/files/test.pcap'))
+        os.remove('test.pcap')

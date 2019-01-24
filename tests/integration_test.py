@@ -12,20 +12,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test draw_graph.py against existing png files."""
+"""Test plot_graph.py against existing png files."""
 import unittest
 import os
 import filecmp
 
-import pcapgraph.wireshark_io as wsio
-import pcapgraph.draw_graph as dg
-import pcapgraph.pcap_math as pm
-import pcapgraph.parse_args as pa
 from tests import setup_testenv, DEFAULT_CLI_ARGS
+from pcapgraph import run
 
 
 class TestDrawGraph(unittest.TestCase):
-    """Test draw_graph.py against existing png files."""
+    """Test plot_graph.py against existing png files."""
 
     def setUp(self):
         """set directory to project root."""
@@ -65,9 +62,4 @@ class TestDrawGraph(unittest.TestCase):
     @staticmethod
     def mock_main(args):
         """Like main, but main doesn't take arguments"""
-        filenames = sorted(wsio.get_filenames(args['<file>']))
-        pcap_math = pm.PcapMath(filenames, strip_options=[])
-        pcaps_frame_dict = pcap_math.parse_set_args(args)
-        output_options = pa.get_output_options(args)
-        dg.draw_graph(pcaps_frame_dict, filenames, args['--output'],
-                      output_options)
+        run(args)

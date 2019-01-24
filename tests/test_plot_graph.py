@@ -12,35 +12,39 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test draw_graph.py."""
+"""Test plot_graph.py."""
 
 import unittest
 import pickle
+import random
 
-from pcapgraph.draw_graph import set_xticks, \
-    generate_text, set_horiz_bars, \
-    get_x_minmax
+from pcapgraph.plot_graph import anonymous_pcap_names, export_graph, \
+    generate_graph, get_matplotlib_fmts, get_x_minmax, \
+    output_files, set_graph_vars, set_horiz_barlines, \
+    set_horiz_bars, set_xticks, show_graph
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 
-class TestManipulateFrames(unittest.TestCase):
-    """Test manipulate_framse"""
+class TestDrawGraph(unittest.TestCase):
+    """Test draw_graph"""
 
     def setUp(self):
         """set directory to project root."""
         setup_testenv()
         self.args = dict(DEFAULT_CLI_ARGS)
 
-    def test_draw_graph(self):
-        """Test draw_graph in the following ways:
+    def test_anonymous_pcap_names(self):
+        num_entries = random.randint(1, 100)
+        names = anonymous_pcap_names(num_entries)
+        self.assertEqual(type(names), list)
+        self.assertEqual(type(names[0]), str)
+        self.assertEqual(len(names), num_entries)
 
-        * output -w verify that wireshark is opened
-        * output show: Verify that matplotlib is opened
-        * output pcap: Verify that pcap is saved
-        * output pcapng: Verify that pcapng is saved
-        * output png: Verify that there are no pcaps
+    def test_export_graph(self):
+        """Do not test export_graph as it needs a matplotlib.pyplot object.
 
-        Depending on integration and pcap_math tests to test this function.
+        Any test MUST test plt.saveconfig, and it is unclear where the graph
+        variables are stored in order for using this to trigger a save.
         """
 
     def test_generate_graph(self):
@@ -94,32 +98,4 @@ class TestManipulateFrames(unittest.TestCase):
         ], 'Time (2018)')
         actual_result = set_xticks(first, last)
 
-        self.assertEqual(expected_result, actual_result)
-
-    def test_export_graph(self):
-        """Do not test export_graph as it needs a matplotlib.pyplot object.
-
-        Any test MUST test plt.saveconfig, and it is unclear where the graph
-        variables are stored in order for using this to trigger a save.
-        """
-
-    def test_make_text_not_war(self):
-        """Testing make_text_not_war."""
-        pcap_times = {
-            'in_order_packets': {
-                'pcap_start': 1537945792.65536,
-                'pcap_end': 1537945792.720895
-            },
-            'out_of_order_packets': {
-                'pcap_start': 1537945792.720895,
-                'pcap_end': 1537945792.65536
-            },
-            'test': {
-                'pcap_start': 1537945792.667334,
-                'pcap_end': 1537945792.667334
-            }
-        }
-
-        expected_result = "\nPCAP NAME           YEAR  DATE 0  DATE $     TIME 0    TIME $       UTC 0              UTC $\nin_order_packets    2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.65536   1537945792.720895 \nout_of_order_pack   2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.720895  1537945792.65536  \ntest                2018  Sep-26  Sep-26     00:09:52  00:09:52     1537945792.667334  1537945792.667334 "  # noqa: E501 pylint: disable=C0301
-        actual_result = generate_text(pcap_times)
         self.assertEqual(expected_result, actual_result)

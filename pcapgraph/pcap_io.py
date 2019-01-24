@@ -132,9 +132,8 @@ def print_10_most_common_frames(raw_frame_list):
     Alternatively, just use the existing information in pcap_dict.
 
     The goal is to print
-    frame#, VLAN, src/dst MAC, src/dst IP, L4 src/dst ports, protocol
-
-    This should likely be its own CLI flag in future.
+        frame#, VLAN, src/dst MAC, src/dst IP, L4 src/dst ports, protocol
+    which is currently done by saving to pcap and then rereading with tshark.
 
     Args:
         raw_frame_list (list): List of raw frames

@@ -4,14 +4,14 @@
 
 import os
 
-from pcapgraph.wireshark_io import check_requirements
+from pcapgraph.wireshark_io import verify_wireshark
 
 
 def setup_testenv():
     """Set up PATH and current working directory."""
-    check_requirements()
+    verify_wireshark()
     # If testing from ./tests, change to root directory (useful in PyCharm)
-    if os.getcwd().endswith('tests'):
+    while os.getcwd().endswith('tests'):
         os.chdir('..')
 
 
