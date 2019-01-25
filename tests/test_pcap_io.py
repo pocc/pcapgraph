@@ -12,15 +12,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test manipulate_framebytes"""
+"""Test manipulate_framebytes
+
+Missing tests: generate_frame_bytes, get_frame_len, get_frame_ts_bytes, \
+    get_homogenized_packet, get_pcap_bytes_from_non_pcap, get_ts_as_float, \
+    print_10_most_common_frames, strip_l2, strip_l3, tempfile,
+"""
 import unittest
 import os
 import filecmp
 
-from pcapgraph.pcap_io import generate_frame_bytes, \
-    get_bytes_from_pcaps, get_frame_len, get_frame_ts_bytes, \
-    get_homogenized_packet, get_pcap_bytes_from_non_pcap, get_ts_as_float, \
-    print_10_most_common_frames, strip_l2, strip_l3, tempfile, write_pcap
+from pcapgraph.pcap_io import get_bytes_from_pcaps, write_pcap
 
 
 class TestParsePackets(unittest.TestCase):

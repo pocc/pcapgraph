@@ -12,14 +12,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""A journey of a thousand miles begins with a hop through your gateway."""
-import pcapgraph
+"""Test pcapgraph_cli.py
+
+Not tested: from pcapgraph.pcapgraph_cli import check_args, get_docstring, \
+    get_output_options, get_selected_keys, get_set_operations, \
+    get_strip_options, init_cli, print_version, requires_set_operations
+"""
+import unittest
+
+import tests
 
 
-def main():
-    """Entry point for pcapgraph."""
-    pcapgraph.start()
+class TestPcapgraphCli(unittest.TestCase):
+    """Test draw_graph"""
 
-
-if __name__ == '__main__':
-    main()
+    def setUp(self):
+        """set directory to project root."""
+        tests.setup_testenv()

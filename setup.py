@@ -15,7 +15,7 @@
 # limitations under the License.
 """setup file."""
 from setuptools import setup
-from pcapgraph import __version__
+from pcapgraph import _version
 from codecs import open
 
 with open('README.md', 'r', encoding='utf-8') as file:
@@ -23,12 +23,12 @@ with open('README.md', 'r', encoding='utf-8') as file:
 
 setup(
     name='PcapGraph',
-    version=__version__,
+    version=_version,
     description='Create a graph out of packet captures.',
     long_description=readme,
     long_description_content_type='text/markdown',
     author='Ross Jacobs',
-    author_email='whim42+pcapgraph@gmail.com',
+    author_email='rossbjacobs@gmail.com',
     url='https://www.github.com/pocc/pcapgraph/',
     download_url='https://github.com/pocc/pcapgraph/releases',
     license='Apache 2.0',
@@ -59,5 +59,5 @@ setup(
         'Topic :: System :: Networking :: Monitoring',
         'Topic :: Utilities',
     ],
-    entry_points={'console_scripts': ['pcapgraph = pcapgraph.pcapgraph:run']},
+    entry_points={'console_scripts': ['pcapgraph = pcapgraph:run']},
 )

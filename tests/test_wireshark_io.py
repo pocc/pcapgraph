@@ -12,18 +12,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test wireshark_io.py"""
+"""Test wireshark_io.py
+
+Not implemented: verify_wireshark, get_wireshark_version
+"""
 
 import unittest
+import tempfile
 import subprocess as sp
 import sys
-import psutil
 import os
+import filecmp
+
+import psutil
 
 from tests import setup_testenv
-from pcapgraph.wireshark_io import abs_filepaths, verify_wireshark, \
-    decode_stdout, get_pcap_info, get_wireshark_version, open_in_wireshark, \
-    parse_filenames
+from pcapgraph.wireshark_io import abs_filepaths, convert_to_pcap, \
+    decode_stdout, get_pcap_info, get_tshark_output, \
+    open_in_wireshark, parse_filenames
 
 
 class TestWiresharkIO(unittest.TestCase):
@@ -41,9 +47,18 @@ class TestWiresharkIO(unittest.TestCase):
         common_elems = set(files).intersection(set(absolute_filepaths))
         self.assertSetEqual(common_elems, set())
 
-    def test_check_requirements(self):
-        """If there's a problem, check_requiremetns will fail."""
-        verify_wireshark()
+    def test_convert_to_pcap(self):
+        """Test convert to pcap with tests/files pcaps
+
+        in_order_packets.pcapng and ~.pcap should have the same packets.
+        convert one to the other and verify whether result has the same hash
+        as the existing .pcap file.
+        """
+        from_file = 'tests/files/in_order_packets.pcapng'
+        target_file = 'tests/files/in_order_packets.pcap'
+        with tempfile.NamedTemporaryFile() as temp_file:
+            convert_to_pcap(from_file, temp_file.name)
+            self.assertTrue(filecmp.cmp(target_file, temp_file.name))
 
     def test_decode_stdout(self):
         """python -V should equal sys.version. decode_stdout can test this"""
@@ -73,9 +88,14 @@ class TestWiresharkIO(unittest.TestCase):
         actual_result = get_pcap_info(filenames)
         self.assertDictEqual(actual_result, expected_result)
 
-    def test_get_wireshark_version(self):
-        """Test whether it errors out."""
-        get_wireshark_version()
+    def test_tshark_output(self):
+        """Test tshark_output.py w expected output from in_order_packets.py"""
+        input_file = os.getcwd() + '/tests/files/in_order_packets.pcap'
+        expected_output = """1   0.000000 10.48.18.144 → 10.128.128.128 DN\
+S 70 Standard query 0x9b13 A amazon.com\n    2   0.065535 10.48.18.144 → \
+8.8.8.8      ICMP 98 Echo (ping) request  id=0x6122, seq=1/256, ttl=64"""
+        actual_output = get_tshark_output(input_file)
+        self.assertEqual(expected_output, actual_output)
 
     def test_open_in_wireshark(self):
         """test open_in_wireshark. process.open_files() doesn't exist?
@@ -94,7 +114,7 @@ class TestWiresharkIO(unittest.TestCase):
             psutil.Process(pid).terminate()
 
     def test_parse_filenames(self):
-        """Test parsing filenames."""
+        """Test parsing filenames. Should not include the .pickle in dir."""
         current_dir = os.getcwd()
         expected_files = \
             [current_dir + '/test.pcapng',

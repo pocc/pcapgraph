@@ -122,6 +122,7 @@ class TestSaveFile(unittest.TestCase):
 0060  36 37              \n"""
 
     def test_get_frame_len(self):
+        """test get_frame_len.py"""
         expected_len = 28
         actual_len = get_frame_len(self.test_packet)
         self.assertEqual(expected_len, actual_len)

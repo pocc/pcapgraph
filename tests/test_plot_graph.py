@@ -12,16 +12,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test plot_graph.py."""
+"""Test plot_graph.py.
+
+Not tested: export_graph, \
+    generate_graph, get_matplotlib_fmts, \
+    output_files, set_graph_vars, set_horiz_barlines, show_graph
+"""
 
 import unittest
 import pickle
 import random
 
-from pcapgraph.plot_graph import anonymous_pcap_names, export_graph, \
-    generate_graph, get_matplotlib_fmts, get_x_minmax, \
-    output_files, set_graph_vars, set_horiz_barlines, \
-    set_horiz_bars, set_xticks, show_graph
+from pcapgraph.plot_graph import anonymous_pcap_names, get_x_minmax, \
+    set_horiz_bars, set_xticks
 from tests import setup_testenv, DEFAULT_CLI_ARGS
 
 
@@ -34,6 +37,7 @@ class TestDrawGraph(unittest.TestCase):
         self.args = dict(DEFAULT_CLI_ARGS)
 
     def test_anonymous_pcap_names(self):
+        """Test anonymous_pcap_names.py"""
         num_entries = random.randint(1, 100)
         names = anonymous_pcap_names(num_entries)
         self.assertEqual(type(names), list)

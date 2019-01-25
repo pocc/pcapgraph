@@ -14,6 +14,8 @@
 # limitations under the License.
 """Test pcap_math.py
 
+Not implemented: parse_set_args
+
 Class methods: bounded_intersect_pcap, difference_pcap, generate_intersection,
 get_minmax_common_frames, intersect_pcap, inverse_bounded_intersect_pcap,
 parse_set_args, symmetric_difference_pcap, union_pcap
@@ -42,10 +44,6 @@ class TestPcapMath(unittest.TestCase):
             'examples/simul3.pcapng'
         ]
         self.set_obj = PcapMath(self.filenames, strip_options=[])
-
-    def parse_set_args(self):
-        """Parse set args. Write."""
-        self.assertTrue(False)
 
     def test_exclude_empty(self):
         """Verify --exclude-empty option. Relevant for pcap differences.

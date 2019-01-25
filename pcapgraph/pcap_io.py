@@ -14,11 +14,12 @@
 # limitations under the License.
 """Parse frames as bytes objects for speed."""
 import struct
-import subprocess as sp
 import os
 import sys
 import tempfile
 import collections
+
+import pcapgraph.wireshark_io as wireshark_io
 
 
 def strip_l2(pcap_framelist):
@@ -149,15 +150,13 @@ def print_10_most_common_frames(raw_frame_list):
         with tempfile.NamedTemporaryFile() as temp_file:
             zero_timestamp = b'\x00\x00\x00\x00\x00\x00\x00\x00'
             write_pcap(temp_file.name, [packet], [zero_timestamp], 1)
-            tshark_cmds = ('tshark -r' + temp_file.name).split(' ')
-            sp_pipe = sp.Popen(tshark_cmds, stdout=sp.PIPE, stderr=sp.PIPE)
-            formatted_packet = sp_pipe.communicate()[0].decode('utf-8')
+            formatted_packets = wireshark_io.get_tshark_output(temp_file.name)
             counter += 1
             if counter == 10:
                 break
             print("Count: {: <7}\n{: <}\n{: <}".format(
                 packet_stats[packet], 'Frame hex: ' + frame_hex,
-                formatted_packet))
+                formatted_packets))
 
 
 def get_ts_as_float(timestamp):
@@ -223,10 +222,7 @@ def get_pcap_bytes_from_non_pcap(filename):
         (bytes): Bytes object of converted pcap file
     """
     with tempfile.NamedTemporaryFile() as temp_file:
-        editcap_cmd_str = 'editcap -F pcap ' + filename + ' ' + temp_file.name
-        editcap_cmds = editcap_cmd_str.split(' ')
-        sp_pipe = sp.Popen(editcap_cmds)
-        sp_pipe.communicate()
+        wireshark_io.convert_to_pcap(filename, temp_file.name)
         with open(temp_file.name, 'rb') as file_obj:
             pcap_bytes = file_obj.read()
 

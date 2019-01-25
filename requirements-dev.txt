@@ -7,5 +7,6 @@ flake8
 pylint
 yapf
 pytest
+psutil
 
 -r requirements.txt

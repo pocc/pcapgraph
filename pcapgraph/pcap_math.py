@@ -15,7 +15,7 @@
 """Do algebraic operations on sets like union, intersect, difference."""
 import os
 
-from pcapgraph.manipulate_framebytes import get_bytes_from_pcaps,\
+from pcapgraph.pcap_io import get_bytes_from_pcaps,\
     print_10_most_common_frames, get_ts_as_float, strip_l2, strip_l3
 
 
@@ -104,12 +104,19 @@ class PcapMath:
             }
 
         # Output link layer type will always be the link type of the first file
-        # todo fixme
+        # todoo
         # pivot_file = self.filenames[0]
         # link_type = self.pcap_frame_list[pivot_file]['link_type']
         for pcap in generated_pcap_frames:
             if generated_pcap_frames[pcap] or not exclude_empty:
-                self.pcap_frame_list[pcap] = generated_pcap_frames[pcap]
+                # Current format is dict of frames to timestamps. Change format
+                # to lists of timestamps, frames, and link types per file.
+                reformatted_dict = {
+                    'frames': list(generated_pcap_frames[pcap].keys()),
+                    'timestamps': list(generated_pcap_frames[pcap].values()),
+                    'link_type': 1
+                }
+                self.pcap_frame_list[pcap] = reformatted_dict
 
         return self.pcap_frame_list
 

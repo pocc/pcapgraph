@@ -28,8 +28,7 @@ def get_imported_modules(file):
     with open(file) as myfile:
         file_text = myfile.read()
     instructions = dis.get_instructions(file_text)
-    imports = [__ for __ in instructions if
-               'IMPORT' in __.opname]
+    imports = [__ for __ in instructions if 'IMPORT' in __.opname]
     grouped = defaultdict(list)
     for instr in imports:
         grouped[instr.opname].append(instr.argval)
@@ -38,7 +37,11 @@ def get_imported_modules(file):
 
 
 class ImportAssertions:
-    """Class for asserting that a python file has an import"""
+    """Class for asserting that a python file has an import
+
+    Ignore pylint C0103 as asserts should be CamelCase.
+    """
+    # pylint: disable=C0103
     @staticmethod
     def assertModuleImported(file, module):
         """Assert module has been imported in a file."""
@@ -116,7 +119,7 @@ class ImportAssertions:
 
         return modules
 
-    def generate_test_file(self, folder, using_pylint=False):
+    def generate_test_file(self, folder):
         """Generate a test file from the imports of the projects' files."""
         modules = self.get_project_state(folder)
         file_string = """\"\"\"Test imports.\"\"\"
@@ -125,8 +128,6 @@ import unittest
     \"\"\"Test class to enforce imports.\"\"\"
     def test_imports(self):
         \"\"\"Test the imports in """ + folder + "/\"\"\"\n"
-        if using_pylint:
-            file_string += 8*" " + "# pylint: disable=C0301\n"
         for file in modules:
             file_string += 8*" " + "self.assertModulesEqual('" + file \
                            + "', ['" + "', '".join(modules[file]) + "'])\n"
@@ -136,48 +137,76 @@ import unittest
 
 class TestImports(unittest.TestCase, ImportAssertions):
     """Expected to be run from project root."""
+
     def setUp(self):
         """Make sure that the environment is setup correctly."""
         setup_testenv()
+        self.source_folder = 'pcapgraph'
 
     def test_frozen_imports(self):
         """Test the imports in pcapgraph/"""
         self.assertModulesEqual('pcapgraph/print_text.py', ['datetime'])
-        self.assertModulesEqual('pcapgraph/pcap_io.py', ['struct', 'os', 'sys', 'tempfile', 'collections', 'pcapgraph.wireshark_io'])
-        self.assertModulesEqual('pcapgraph/__init__.py', ['sys', 'docopt', 'pcapgraph.pcapgraph_cli', 'pcapgraph.wireshark_io'])
-        self.assertModulesEqual('pcapgraph/plot_graph.py', ['datetime', 'os', 'random', 'matplotlib.pyplot', 'numpy', 'pcapgraph.wireshark_io'])
-        self.assertModulesEqual('pcapgraph/parse_args.py', ['re', 'sys'])
-        self.assertModulesEqual('pcapgraph/wireshark_io.py', ['os', 're', 'sys', 'time', 'subprocess', 'webbrowser', 'shutil'])
-        self.assertModulesEqual('pcapgraph/pcapgraph_cli.py', ['re', 'sys', 'pcapgraph.__init__', 'pcapgraph.wireshark_io'])
-        self.assertModulesEqual('pcapgraph/pcap_math.py', ['os', 'pcapgraph.pcap_io'])
-
-    def test_wireshark_io_import_monopoly(self):
-        # Only wireshark_io should be sending wireshark commands to subprocess.
-        self.assertModuleImportUnique(file='pcapgraph/wireshark_io.py',
-                                      folder='pcapgraph',
-                                      module='subprocess')
-
-    def test_plot_graph_import_monopoly(self):
-        # Only plot_graph should be graphing anything.
-        self.assertModuleImportUnique(file='pcapgraph/plot_graph.py',
-                                      folder='pcapgraph',
-                                      module='matplotlib.pyplot')
-        self.assertModuleImportUnique(file='pcapgraph/plot_graph.py',
-                                      folder='pcapgraph',
-                                      module='numpy')
-
-    def test_pcap_math_import_monopoly(self):
-        # Only pcap_math should be doing packet bytecode manipulation
-        self.assertModuleImportUnique(file='pcapgraph/pcap_math.py',
-                                      folder='pcapgraph',
-                                      module='pcapgraph.pcap_io')
+        self.assertModulesEqual('pcapgraph/pcap_io.py', [
+            'struct', 'os', 'sys', 'tempfile', 'collections',
+            'pcapgraph.wireshark_io'
+        ])
+        self.assertModulesEqual('pcapgraph/__init__.py', [
+            'sys', 'docopt', 'pcapgraph.pcapgraph_cli',
+            'pcapgraph.wireshark_io'
+        ])
+        self.assertModulesEqual('pcapgraph/plot_graph.py', [
+            'datetime', 'os', 'random', 'matplotlib.pyplot', 'numpy',
+            'pcapgraph.wireshark_io'
+        ])
+        self.assertModulesEqual(
+            'pcapgraph/wireshark_io.py',
+            ['os', 're', 'sys', 'time', 'subprocess', 'webbrowser', 'shutil'])
+        self.assertModulesEqual('pcapgraph/pcapgraph_cli.py', [
+            're', 'pcapgraph.pcap_math',
+            'pcapgraph.wireshark_io', 'pcapgraph.plot_graph'
+        ])
+        self.assertModulesEqual('pcapgraph/pcap_math.py',
+                                ['os', 'pcapgraph.pcap_io'])
 
     def test_init_import_monopoly(self):
-        # Only __init__ should be able to read docopt and init CLI
-        self.assertModuleImportUnique(file='pcapgraph/__init__.py',
-                                      folder='pcapgraph',
-                                      module='docopt')
+        """Only __init__ should be able to read docopt and init CLI."""
+        self.assertModuleImportUnique(
+            file='pcapgraph/__init__.py',
+            folder=self.source_folder,
+            module='docopt')
+
+    def test_wireshark_io_import_monopoly(self):
+        """Only wireshark_io should send wireshark commands to subprocess."""
+        self.assertModuleImportUnique(
+            file='pcapgraph/wireshark_io.py',
+            folder=self.source_folder,
+            module='subprocess')
+
+    def test_plot_graph_import_monopoly(self):
+        """Only plot_graph should be graphing anything."""
+        file = 'pcapgraph/plot_graph.py'
+        self.assertModuleImportUnique(
+            file=file, folder=self.source_folder, module='matplotlib.pyplot')
+        self.assertModuleImportUnique(
+            file=file, folder=self.source_folder, module='numpy')
+
+    def test_pcapgraph_cli_import_monopoly(self):
+        """Only pcapgraph_cli should be calling for graphs/pcaps to be made."""
+        file = 'pcapgraph/pcapgraph_cli.py'
+        self.assertModuleImportUnique(
+            file=file, folder=self.source_folder, module='pcapgraph.pcap_math')
+        self.assertModuleImportUnique(
+            file=file,
+            folder=self.source_folder,
+            module='pcapgraph.plot_graph')
+
+    def test_pcap_math_import_monopoly(self):
+        """Only pcap_math should be doing packet bytecode manipulation."""
+        self.assertModuleImportUnique(
+            file='pcapgraph/pcap_math.py',
+            folder=self.source_folder,
+            module='pcapgraph.pcap_io')
 
     def skip_test_generate_test_file(self):
         """Generate the test file. Remove skip_ to run in test suite."""
-        self.generate_test_file('pcapgraph', using_pylint=True)
+        self.generate_test_file(self.source_folder)
